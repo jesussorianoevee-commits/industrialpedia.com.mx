@@ -1,0 +1,30 @@
+{
+  "name": "Source",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "catalog",
+        "datasheet",
+        "website",
+        "manual",
+        "other"
+      ],
+      "default": "datasheet"
+    },
+    "retrieved_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "url"
+  ]
+}

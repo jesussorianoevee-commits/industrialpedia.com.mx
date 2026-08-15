@@ -1,0 +1,49 @@
+{
+  "name": "Specification",
+  "type": "object",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "attribute_name": {
+      "type": "string"
+    },
+    "attribute_canonical": {
+      "type": "string"
+    },
+    "original_value": {
+      "type": "string"
+    },
+    "normalized_value": {
+      "type": "string"
+    },
+    "original_unit": {
+      "type": "string"
+    },
+    "normalized_unit": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "evidence_id": {
+      "type": "string"
+    },
+    "validation_state": {
+      "type": "string",
+      "enum": [
+        "processed",
+        "validated",
+        "published",
+        "rejected",
+        "incomplete"
+      ],
+      "default": "processed"
+    }
+  },
+  "required": [
+    "part_id",
+    "attribute_name",
+    "original_value"
+  ]
+}

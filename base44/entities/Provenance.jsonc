@@ -1,0 +1,38 @@
+{
+  "name": "Provenance",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "extract",
+        "normalize",
+        "validate",
+        "publish",
+        "reject",
+        "manual_edit"
+      ],
+      "default": "extract"
+    },
+    "rule_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "operation"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Manufacturer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "canonical_hash": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "draft"
+      ],
+      "default": "draft"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

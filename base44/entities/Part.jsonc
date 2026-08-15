@@ -1,0 +1,45 @@
+{
+  "name": "Part",
+  "type": "object",
+  "properties": {
+    "manufacturer_id": {
+      "type": "string"
+    },
+    "manufacturer_name": {
+      "type": "string"
+    },
+    "part_number": {
+      "type": "string"
+    },
+    "part_number_normalized": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "validation_state": {
+      "type": "string",
+      "enum": [
+        "processed",
+        "validated",
+        "published",
+        "rejected",
+        "incomplete"
+      ],
+      "default": "processed"
+    }
+  },
+  "required": [
+    "part_number",
+    "manufacturer_name"
+  ]
+}

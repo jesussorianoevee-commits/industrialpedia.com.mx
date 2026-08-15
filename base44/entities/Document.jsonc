@@ -1,0 +1,45 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "file_uri": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "catalog",
+        "datasheet",
+        "manual",
+        "other"
+      ],
+      "default": "datasheet"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "processed",
+        "validated",
+        "published",
+        "rejected",
+        "incomplete"
+      ],
+      "default": "processed"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
