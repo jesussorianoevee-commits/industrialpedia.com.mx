@@ -1,45 +1,63 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft } from 'lucide-react';
+import { Search, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import ResultCard from '@/components/search/ResultCard';
+import FilterPanel from '@/components/search/FilterPanel';
+import EmptyState from '@/components/search/EmptyState';
+
+const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: true };
 
 export default function Buscar() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const q = params.get('q') || '';
   const [input, setInput] = useState(q);
-  const [results, setResults] = useState([]);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const runSearch = useCallback(async (query, f) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
+      const payload = {
+        q: query,
+        filters: { manufacturers: f.manufacturers, categories: f.categories, has_specification: f.has_specification, validation_states },
+        limit: 25
+      };
+      const res = await base44.functions.invoke('Buscar', payload);
+      setData(res.data);
+    } catch (e) {
+      setError(e.message || 'Error en la búsqueda');
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     setInput(q);
-    if (!q) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    (async () => {
-      try {
-        const parts = await base44.entities.Part.list('-updated_date', 1000);
-        const needle = q.toLowerCase();
-        const filtered = parts.filter((p) =>
-          (p.part_number || '').toLowerCase().includes(needle) ||
-          (p.manufacturer_name || '').toLowerCase().includes(needle) ||
-          (p.description || '').toLowerCase().includes(needle)
-        );
-        setResults(filtered);
-      } catch (e) {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [q]);
+    runSearch(q, filters);
+  }, [q, filters, runSearch]);
 
   const submit = (e) => {
     e.preventDefault();
-    if (input.trim()) navigate(`/buscar?q=${encodeURIComponent(input.trim())}`);
+    const next = input.trim();
+    if (next) setParams({ q: next });
   };
+
+  const onReset = () => {
+    setFilters(DEFAULT_FILTERS);
+    setInput('');
+    navigate('/buscar');
+  };
+
+  const facets = data?.facets || { manufacturers: [], categories: [] };
+  const results = data?.results || [];
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
@@ -52,7 +70,7 @@ export default function Buscar() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ej: Siemens, Festo, SKF, Fanuc..."
+            placeholder="Ej: Siemens, Festo, SKF, Fanuc, ABC-123..."
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-1.5"
             autoFocus
           />
@@ -61,36 +79,41 @@ export default function Buscar() {
           </button>
         </form>
       </header>
-      <main className="px-5 py-6 max-w-2xl mx-auto">
-        <div className="text-white/40 text-xs mb-4">
-          {loading ? 'Buscando…' : q ? `${results.length} resultado(s) para "${q}"` : 'Escribe un término para buscar en el Knowledge Core.'}
+
+      <main className="px-4 py-5 max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-white/40 text-xs">
+            {loading ? 'Buscando en el Knowledge Core…' : q ? `${data?.total ?? 0} resultado(s) para "${q}"` : 'Escribe un término para buscar en el Knowledge Core.'}
+          </div>
+          <button
+            onClick={() => setShowFilters((s) => !s)}
+            className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs border border-white/10 rounded-lg px-2.5 py-1.5"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
+          </button>
         </div>
-        {loading ? (
+
+        {showFilters && (
+          <div className="mb-4">
+            <FilterPanel
+              facets={facets}
+              filters={filters}
+              onChange={setFilters}
+              onReset={() => setFilters(DEFAULT_FILTERS)}
+            />
+          </div>
+        )}
+
+        {error ? (
+          <div className="text-center py-10 text-white/50 text-sm">{error}</div>
+        ) : loading ? (
           <div className="text-white/40 text-sm">Cargando…</div>
         ) : results.length === 0 ? (
-          q ? (
-            <div className="text-center py-16">
-              <p className="text-white/50 text-sm mb-2">Sin resultados todavía.</p>
-              <p className="text-white/30 text-xs max-w-xs mx-auto leading-relaxed">
-                El Knowledge Core aún no contiene refacciones publicadas para este término. Cuando se ingiera y valide documentación, los resultados aparecerán aquí con su fuente y evidencia.
-              </p>
-            </div>
-          ) : null
+          <EmptyState q={q} onReset={onReset} />
         ) : (
           <div className="space-y-3">
-            {results.map((p) => (
-              <div key={p.id} className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-white font-semibold text-sm">{p.part_number}</div>
-                    <div className="text-white/50 text-xs">{p.manufacturer_name}</div>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white/50 capitalize">
-                    {p.validation_state}
-                  </span>
-                </div>
-                {p.description && <p className="text-white/45 text-xs mt-2">{p.description}</p>}
-              </div>
+            {results.map((r) => (
+              <ResultCard key={r.id} result={r} />
             ))}
           </div>
         )}
