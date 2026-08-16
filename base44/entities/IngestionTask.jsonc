@@ -1,0 +1,61 @@
+{
+  "name": "IngestionTask",
+  "type": "object",
+  "properties": {
+    "crawl_document_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "processing",
+        "published",
+        "incomplete",
+        "failed",
+        "rejected",
+        "skipped"
+      ],
+      "default": "queued"
+    },
+    "attempts": {
+      "type": "integer",
+      "default": 0
+    },
+    "max_attempts": {
+      "type": "integer",
+      "default": 3
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "checkpoint": {
+      "type": "string"
+    },
+    "last_attempt_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document_id": {
+      "type": "string"
+    },
+    "part_id": {
+      "type": "string"
+    },
+    "specs_published": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "crawl_document_id"
+  ]
+}

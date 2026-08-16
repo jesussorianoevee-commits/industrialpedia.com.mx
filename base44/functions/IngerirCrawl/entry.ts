@@ -1,24 +1,36 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared/normalize.js';
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
-import { extractHTML, extractPlainText, extractPartNumber, extractPDF } from '../../shared/extract.js';
+import { extractHTML, extractPlainText, extractPartNumber, extractTextSpecs, findPageFor } from '../../shared/extract.js';
+import { extractPDF } from '../../shared/pdfExtract.js';
 
-// JOB DE INGESTA DETERMINÍSTICO desde CrawlDocument (sin IA).
-// CrawlDocument -> EXTRACCION -> ESTRUCTURACION -> NORMALIZACION ->
-//   PROVENANCE/EVIDENCE -> QUALITY GATEWAY -> KNOWLEDGE CORE.
+// PIPELINE MASIVO DE INGESTA DETERMINÍSTICA (sin IA) desde CrawlDocument.
+// Cola (IngestionTask) -> extraccion PDF/HTML -> estructuracion -> normalizacion ->
+//   provenance/evidence -> quality gateway -> knowledge core -> (indexado por Buscar).
 //
-// Reanudable: procesa CrawlDocument en estado 'downloaded' con ingested=false, por lote.
-// Idempotente: si ya existe un Document con el mismo content_hash, se omite (no duplica).
+// Reanudable, idempotente, fallo aislado (retry+backoff), concurrencia controlada.
+// 1 documento y 1,000 documentos usan el mismo pipeline (solo cambia el numero de invocaciones).
 //
-// Contrato de entrada:
+// Contrato:
 // {
-//   document_id?: string,   // ingerir un CrawlDocument concreto
-//   limit?: number,         // tamaño de lote (default 10)
-//   dry_run?: boolean,      // true: ejecuta SIN persistir (verificación estructural)
+//   enqueue?: boolean,       // true: crear IngestionTask para CrawlDocument pendientes (default true)
+//   limit?: number,          // max tareas a procesar por invocacion (default 20)
+//   concurrency?: number,    // paralelismo (default 3)
+//   max_attempts?: number,   // reintentos por documento (default 3)
+//   backoff_ms?: number,     // backoff base entre reintentos (default 5000)
+//   dry_run?: boolean,
 //   manufacturer_hint?: string  // pista MANUAL (precedencia MANUAL > INDUCIDO > GENERICO)
 // }
 
-const LIMIT_DEFAULT = 10;
+const LIMIT_DEFAULT = 20, CONC_DEFAULT = 3, MAX_ATT_DEFAULT = 3, BACKOFF_DEFAULT = 5000;
+const STALE_MS = 10 * 60 * 1000;
+
+async function pool(items, n, worker) {
+  let i = 0; const out = new Array(items.length);
+  async function run() { while (i < items.length) { const idx = i++; out[idx] = await worker(items[idx]); } }
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, run));
+  return out;
+}
 
 export default async function (req) {
   try {
@@ -29,191 +41,166 @@ export default async function (req) {
 
     const body = await req.json().catch(() => ({}));
     const dryRun = !!body.dry_run;
-    const limit = Math.max(1, Math.min(50, Number(body.limit) || LIMIT_DEFAULT));
+    const enqueue = body.enqueue !== false;
+    const limit = Math.max(1, Math.min(100, Number(body.limit) || LIMIT_DEFAULT));
+    const concurrency = Math.max(1, Math.min(8, Number(body.concurrency) || CONC_DEFAULT));
+    const maxAttempts = Math.max(1, Number(body.max_attempts) || MAX_ATT_DEFAULT);
+    const backoffMs = Math.max(0, Number(body.backoff_ms) || BACKOFF_DEFAULT);
     const manualHint = (body.manufacturer_hint || '').trim();
+    const t0 = Date.now();
 
-    // 1. Selección de CrawlDocument reales disponibles para ingerir.
-    let docs;
-    if (body.document_id) {
-      const one = await base44.asServiceRole.entities.CrawlDocument.get(body.document_id).catch(() => null);
-      docs = one ? [one] : [];
-    } else {
-      docs = await base44.asServiceRole.entities.CrawlDocument.filter(
-        { state: 'downloaded', ingested: false },
-        'created_date',
-        limit
+    // 1. COLA: encolar CrawlDocument pendientes como IngestionTask (idempotente: no duplica).
+    let enqueued = 0;
+    if (enqueue && !dryRun) {
+      const pending = await base44.asServiceRole.entities.CrawlDocument.filter(
+        { state: 'downloaded', ingested: false }, 'created_date', 200
       );
+      if (pending.length) {
+        const ids = pending.map((d) => d.id);
+        const existing = await base44.asServiceRole.entities.IngestionTask.filter(
+          { crawl_document_id: { $in: ids } }, 'created_date', 500
+        );
+        const have = new Set(existing.map((t) => t.crawl_document_id));
+        for (const d of pending) {
+          if (have.has(d.id)) continue;
+          await base44.asServiceRole.entities.IngestionTask.create({
+            crawl_document_id: d.id, source_id: d.source_id || '', url: d.url,
+            content_hash: d.content_hash || '', state: 'queued', attempts: 0, max_attempts: maxAttempts
+          });
+          enqueued++;
+        }
+      }
     }
 
-    if (!docs.length) {
+    // 2. Seleccion de tareas: queued, failed con reintentos restantes (respetando backoff), o processing stale.
+    const now = Date.now();
+    const candidates = await base44.asServiceRole.entities.IngestionTask.list('created_date', 500);
+    const eligible = candidates.filter((t) => {
+      if (t.state === 'queued') return true;
+      if (t.state === 'failed' && (t.attempts || 0) < (t.max_attempts || maxAttempts)) {
+        const last = t.last_attempt_date ? Date.parse(t.last_attempt_date) : 0;
+        return (now - last) >= backoffMs * Math.pow(2, (t.attempts || 1) - 1);
+      }
+      if (t.state === 'processing') {
+        const last = t.last_attempt_date ? Date.parse(t.last_attempt_date) : 0;
+        return (now - last) >= STALE_MS;
+      }
+      return false;
+    }).slice(0, limit);
+
+    if (!eligible.length) {
       return Response.json({
-        mode: dryRun ? 'dry_run' : 'publish',
-        available: 0,
-        note: 'No hay CrawlDocument en estado "downloaded" sin ingerir. El crawler debe producir documentos reales (dry_run:false sobre una fuente aprobada con documentos) antes de poder ingerir.'
+        mode: dryRun ? 'dry_run' : 'publish', enqueued,
+        selected: 0, metrics: { total: 0, processed: 0, published: 0, incomplete: 0, rejected: 0, failed: 0, retries: 0, time_ms: Date.now() - t0, pending: candidates.filter((t) => t.state === 'queued').length },
+        note: 'No hay IngestionTask pendientes. Ejecuta el crawler (dry_run:false) sobre una fuente aprobada con documentos, o invoca con enqueue:true.'
       });
     }
 
-    // Pre-carga de sources (INDUCED manufacturer) para evitar lookups repetidos.
+    // cache de fuentes (fabricante INDUCED).
     const sourceCache = new Map();
     async function getSource(sid) {
       if (!sid) return null;
       if (sourceCache.has(sid)) return sourceCache.get(sid);
       const s = await base44.asServiceRole.entities.CrawlSource.get(sid).catch(() => null);
-      sourceCache.set(sid, s);
-      return s;
+      sourceCache.set(sid, s); return s;
     }
 
-    // Idempotencia: Document ya creado con el mismo content_hash -> omitir.
-    const hashes = docs.map((d) => d.content_hash).filter(Boolean);
-    const existingHashes = new Set();
+    // idempotencia: Document ya publicado con el mismo hash -> skip.
+    const hashes = eligible.map((t) => t.content_hash).filter(Boolean);
+    const publishedHashes = new Set();
     if (hashes.length) {
-      const dup = await base44.asServiceRole.entities.Document.filter(
-        { content_hash: { $in: hashes } }, '-updated_date', 500
-      );
-      dup.forEach((d) => existingHashes.add(d.content_hash));
+      const dup = await base44.asServiceRole.entities.Document.filter({ content_hash: { $in: hashes } }, 'updated_date', 500);
+      dup.forEach((d) => publishedHashes.add(d.content_hash));
     }
 
+    let processed = 0, published = 0, incomplete = 0, rejected = 0, failed = 0, retries = 0;
     const report = [];
-    let published = 0, incomplete = 0, rejected = 0, skipped = 0, errors = 0;
 
-    for (const cd of docs) {
+    async function processTask(task) {
+      if (task.content_hash && publishedHashes.has(task.content_hash)) {
+        if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'skipped' });
+        report.push({ task_id: task.id, url: task.url, status: 'skipped_duplicate_hash' }); processed++; return;
+      }
+      if (!dryRun) {
+        await base44.asServiceRole.entities.IngestionTask.update(task.id, {
+          state: 'processing', attempts: (task.attempts || 0) + 1, last_attempt_date: new Date().toISOString()
+        });
+      }
       try {
-        if (cd.content_hash && existingHashes.has(cd.content_hash)) {
-          skipped++;
-          report.push({ crawl_document_id: cd.id, url: cd.url, status: 'skipped_duplicate_hash' });
-          if (!dryRun) await base44.asServiceRole.entities.CrawlDocument.update(cd.id, { ingested: true });
-          continue;
-        }
-
-        // 2. EXTRACCION: traer el documento real y extraer texto/estructura.
-        let extracted = { extractable: false, reason: 'not fetched' };
-        try {
-          const res = await fetch(cd.url, { headers: { 'User-Agent': 'IndustrialpediaIngesta/1.0 (deterministic; +https://industrialpedia)' } });
-          const ct = (res.headers.get('content-type') || '').toLowerCase();
+        // EXTRACCION
+        const res = await fetch(task.url, { headers: { 'User-Agent': 'IndustrialpediaIngesta/1.0 (deterministic)' } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        const isPdf = task.url.toLowerCase().endsWith('.pdf') || ct.includes('pdf');
+        let extracted;
+        if (isPdf) {
+          const buf = await res.arrayBuffer();
+          extracted = await extractPDF(new Uint8Array(buf));
+        } else {
           const raw = await res.text();
-          const isPdf = ct.includes('pdf') || cd.url.toLowerCase().endsWith('.pdf') || cd.type === 'pdf';
-          if (isPdf) {
-            extracted = extractPDF();
-          } else if (ct.includes('html') || /<\/html>/i.test(raw)) {
-            extracted = extractHTML(raw);
-          } else {
-            extracted = extractPlainText(raw);
-          }
-        } catch (e) {
-          // Error transitorio de red: NO marca ingested (reanudable). No inventa.
-          errors++;
-          report.push({ crawl_document_id: cd.id, url: cd.url, status: 'fetch_error', error: e.message });
-          continue;
+          extracted = /<\/html>/i.test(raw) || ct.includes('html') ? extractHTML(raw) : extractPlainText(raw);
         }
+        if (!extracted.extractable) throw new Error(extracted.reason || 'not extractable');
 
-        if (!extracted.extractable) {
-          // No se puede extraer de forma determinística -> INCOMPLETE (no se publica, no se inventa).
-          incomplete++;
-          report.push({ crawl_document_id: cd.id, url: cd.url, status: 'incomplete', reason: extracted.reason });
-          if (!dryRun) {
-            await base44.asServiceRole.entities.Document.create({
-              title: cd.title || cd.url, file_url: cd.url, content_hash: cd.content_hash,
-              document_type: 'other', status: 'incomplete'
-            });
-            await base44.asServiceRole.entities.CrawlDocument.update(cd.id, { ingested: true });
-          }
-          continue;
-        }
-
-        // 3. ESTRUCTURACION (precedencia MANUAL > INDUCIDO > GENERICO).
-        const source = await getSource(cd.source_id);
-        const inducedManufacturer = source?.manufacturer || source?.name || '';
-        const manufacturerName = manualHint || inducedManufacturer || '';
-        const partNumber = extractPartNumber(extracted.text, extracted.title);
+        // ESTRUCTURACION (MANUAL > INDUCIDO > GENERICO)
+        const source = await getSource(task.source_id);
+        const manufacturerName = manualHint || (source && (source.manufacturer || source.name)) || '';
+        const partNumber = extractPartNumber(extracted.text, extracted.title || '');
         const description = (extracted.title || extracted.text || '').slice(0, 240);
-
-        const specs = extracted.specTable
-          .filter((r) => r.attribute && r.value)
-          .map((r) => {
-            const { value, unit } = splitValueUnit(r.value);
-            return {
-              attribute_name: r.attribute,
-              attribute_canonical: r.attribute,
-              original_value: r.value,
-              normalized_value: value,
-              original_unit: unit,
-              normalized_unit: normalizeUnit(unit)
-            };
-          });
+        const rawSpecs = (extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text);
+        const specs = rawSpecs.filter((r) => r.attribute && r.value).map((r) => {
+          const { value, unit } = splitValueUnit(r.value);
+          return {
+            attribute_name: r.attribute, attribute_canonical: r.attribute,
+            original_value: r.value, normalized_value: value,
+            original_unit: unit, normalized_unit: normalizeUnit(unit),
+            page: findPageFor(r.value, extracted.pages)
+          };
+        });
 
         const rec = {
-          part_number: partNumber,
-          part_number_normalized: normalizePartNumber(partNumber),
-          manufacturer_name: manufacturerName,
-          description,
-          specs,
-          raw_text: extracted.text
+          part_number: partNumber, part_number_normalized: normalizePartNumber(partNumber),
+          manufacturer_name: manufacturerName, description, specs, raw_text: extracted.text
         };
         const gate = gatePart(rec);
 
         if (dryRun) {
-          report.push({
-            crawl_document_id: cd.id, url: cd.url,
-            status: gate.state,
-            part_number: rec.part_number,
-            manufacturer_name: rec.manufacturer_name,
-            spec_count: rec.specs.length,
-            causes: gate.causes
-          });
-          if (gate.state === 'published') published++;
-          else if (gate.state === 'incomplete') incomplete++;
-          else rejected++;
-          continue;
+          processed++;
+          if (gate.state === 'published') published++; else if (gate.state === 'incomplete') incomplete++; else rejected++;
+          report.push({ task_id: task.id, url: task.url, status: gate.state, part_number: rec.part_number, manufacturer: rec.manufacturer_name, spec_count: rec.specs.length, causes: gate.causes });
+          return;
         }
 
-        // 4/5/6/7. PUBLICACION en Knowledge Core (solo si PUBLISHED).
         if (gate.state !== 'published') {
-          if (gate.state === 'incomplete') incomplete++;
-          else rejected++;
+          if (gate.state === 'incomplete') incomplete++; else rejected++;
           const docRec = await base44.asServiceRole.entities.Document.create({
-            title: cd.title || extracted.title || cd.url, file_url: cd.url,
-            content_hash: cd.content_hash, document_type: 'other', status: gate.state
+            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'other', status: gate.state
           });
-          await base44.asServiceRole.entities.Provenance.create({
-            entity_type: 'document', entity_id: docRec.id, operation: 'reject',
-            source_id: cd.source_id || '', note: `causas: ${gate.causes.join(', ')}`
-          });
-          await base44.asServiceRole.entities.CrawlDocument.update(cd.id, { ingested: true });
-          report.push({ crawl_document_id: cd.id, status: gate.state, causes: gate.causes });
-          continue;
+          await base44.asServiceRole.entities.Provenance.create({ entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '', note: 'causas: ' + gate.causes.join(', ') });
+          await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: gate.state, document_id: docRec.id, last_error: gate.causes.join(', ') });
+          await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true }).catch(() => {});
+          report.push({ task_id: task.id, url: task.url, status: gate.state, causes: gate.causes });
+          return;
         }
 
+        // PUBLICACION en Knowledge Core (cadena PART->SPEC->PROVENANCE->EVIDENCE->DOCUMENT->SOURCE)
         const docRec = await base44.asServiceRole.entities.Document.create({
-          title: cd.title || extracted.title || cd.url, file_url: cd.url,
-          content_hash: cd.content_hash, document_type: 'datasheet', status: 'published'
+          title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'published'
         });
         const sourceRec = await base44.asServiceRole.entities.Source.create({
-          document_id: docRec.id, url: cd.url, type: 'datasheet', retrieved_date: new Date().toISOString()
+          document_id: docRec.id, url: task.url, type: 'datasheet', retrieved_date: new Date().toISOString()
         });
-
-        // Manufacturer find-or-create (no duplica).
         let manufacturerId = '';
-        const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, '-updated_date', 1);
-        if (manuf.length) {
-          manufacturerId = manuf[0].id;
-        } else {
-          const m = await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' });
-          manufacturerId = m.id;
-        }
+        const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, 'updated_date', 1);
+        manufacturerId = manuf.length ? manuf[0].id : (await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' })).id;
 
         const partRec = await base44.asServiceRole.entities.Part.create({
           manufacturer_id: manufacturerId, manufacturer_name: rec.manufacturer_name,
           part_number: rec.part_number, part_number_normalized: rec.part_number_normalized,
-          category: source?.name || '', description: rec.description, validation_state: 'published'
+          category: (source && source.name) || '', description: rec.description, validation_state: 'published'
         });
-
-        const partEvidence = await base44.asServiceRole.entities.Evidence.create({
-          document_id: docRec.id, part_id: partRec.id, raw_text: rec.raw_text
-        });
-        await base44.asServiceRole.entities.Provenance.create({
-          entity_type: 'part', entity_id: partRec.id, operation: 'extract',
-          source_id: sourceRec.id, rule_id: 'extract.html', note: 'ingesta determinística desde CrawlDocument'
-        });
+        const partEv = await base44.asServiceRole.entities.Evidence.create({ document_id: docRec.id, part_id: partRec.id, raw_text: rec.raw_text.slice(0, 8000) });
+        await base44.asServiceRole.entities.Provenance.create({ entity_type: 'part', entity_id: partRec.id, operation: 'extract', source_id: sourceRec.id, rule_id: 'extract.' + (isPdf ? 'pdf' : 'html'), note: 'ingesta deterministica batch' });
 
         let specsPublished = 0;
         for (const s of rec.specs) {
@@ -222,42 +209,43 @@ export default async function (req) {
             part_id: partRec.id, attribute_name: s.attribute_name, attribute_canonical: s.attribute_canonical,
             original_value: s.original_value, normalized_value: s.normalized_value,
             original_unit: s.original_unit, normalized_unit: s.normalized_unit,
-            source_id: sourceRec.id, evidence_id: '', validation_state: sg.state
+            source_id: sourceRec.id, validation_state: sg.state
           });
           if (sg.pass) {
-            const ev = await base44.asServiceRole.entities.Evidence.create({
-              document_id: docRec.id, part_id: partRec.id, specification_id: specRec.id,
-              raw_text: `${s.attribute_name}: ${s.original_value}`
-            });
+            const ev = await base44.asServiceRole.entities.Evidence.create({ document_id: docRec.id, part_id: partRec.id, specification_id: specRec.id, raw_text: s.attribute_name + ': ' + s.original_value, page: s.page || null });
             await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: ev.id, validation_state: 'published' });
-            await base44.asServiceRole.entities.Provenance.create({
-              entity_type: 'specification', entity_id: specRec.id, operation: 'normalize',
-              source_id: sourceRec.id, rule_id: 'normalize.valueUnit', note: 'normalización determinística valor/unidad'
-            });
+            await base44.asServiceRole.entities.Provenance.create({ entity_type: 'specification', entity_id: specRec.id, operation: 'normalize', source_id: sourceRec.id, rule_id: 'normalize.valueUnit', note: 'normalizacion deterministica' });
             specsPublished++;
           }
         }
-
-        await base44.asServiceRole.entities.CrawlDocument.update(cd.id, { ingested: true, state: 'ingested' });
-        published++;
-        report.push({
-          crawl_document_id: cd.id, url: cd.url, status: 'published',
-          document_id: docRec.id, source_id: sourceRec.id, part_id: partRec.id,
-          manufacturer_id: manufacturerId, part_number: rec.part_number,
-          specs_published: specsPublished, evidence_id: partEvidence.id
-        });
+        await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'published', document_id: docRec.id, part_id: partRec.id, specs_published: specsPublished, last_error: '' });
+        await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true, state: 'ingested' }).catch(() => {});
+        published++; processed++;
+        report.push({ task_id: task.id, url: task.url, status: 'published', document_id: docRec.id, part_id: partRec.id, manufacturer_id: manufacturerId, part_number: rec.part_number, specs_published: specsPublished, evidence_id: partEv.id });
       } catch (e) {
-        errors++;
-        report.push({ crawl_document_id: cd.id, url: cd.url, status: 'error', error: e.message });
+        // FALLO AISLADO: registrar error, incrementar retry; FAILED al agotar intentos.
+        const attempts = (task.attempts || 0) + 1;
+        const isFailed = attempts >= maxAttempts;
+        if (isFailed) failed++; else retries++;
+        if (!dryRun) {
+          await base44.asServiceRole.entities.IngestionTask.update(task.id, {
+            state: isFailed ? 'failed' : 'queued', attempts, last_error: (e && e.message) || String(e),
+            checkpoint: 'fetch/extract'
+          });
+        }
+        report.push({ task_id: task.id, url: task.url, status: isFailed ? 'failed' : 'retry', attempts, error: (e && e.message) || String(e) });
+        processed++;
       }
     }
 
-    return Response.json({
-      mode: dryRun ? 'dry_run' : 'publish',
-      available: docs.length,
-      published, incomplete, rejected, skipped, errors,
-      report
-    });
+    await pool(eligible, concurrency, processTask);
+
+    const metrics = {
+      total: eligible.length, processed, published, incomplete, rejected, failed, retries,
+      time_ms: Date.now() - t0,
+      pending: candidates.filter((t) => t.state === 'queued').length
+    };
+    return Response.json({ mode: dryRun ? 'dry_run' : 'publish', enqueued, selected: eligible.length, metrics, report });
   } catch (error) {
     return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }

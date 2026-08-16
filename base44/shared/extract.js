@@ -45,7 +45,30 @@ export function extractPartNumber(text, title) {
   return best[0] || '';
 }
 
-// PDF: sin parser determinístico cableado -> NO extraíble (honestidad del Quality Gateway).
-export function extractPDF() {
-  return { extractable: false, reason: 'no deterministic PDF text extractor wired (no IA)' };
+// Extracción de especificaciones desde texto plano (PDF/CSV-like). Determinística y conservadora:
+// sólo líneas "Etiqueta: valor con dígito" con etiqueta corta (<=6 palabras). No inventa datos.
+export function extractTextSpecs(text) {
+  const specs = [];
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t.length > 140) continue;
+    const m = t.match(/^(.{2,55}?)\s*[:：]\s*([^\n:]{1,45})$/);
+    if (!m) continue;
+    const label = m[1].trim();
+    const val = m[2].trim();
+    if (!/\d/.test(val)) continue;
+    if (label.split(/\s+/).length > 6) continue;
+    specs.push({ attribute: label, value: val });
+  }
+  return specs;
+}
+
+// Localiza en qué página (1-based) aparece un texto; null si no se puede determinar.
+export function findPageFor(needle, pages) {
+  if (!Array.isArray(pages) || !needle) return null;
+  for (let i = 0; i < pages.length; i++) {
+    if (pages[i] && pages[i].includes(needle)) return i + 1;
+  }
+  return null;
 }
