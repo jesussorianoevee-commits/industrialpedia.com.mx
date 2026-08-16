@@ -179,7 +179,7 @@ export default async function (req) {
     const drained = pending.length < batchSize;
     let jobState = 'crawling', sourceState = 'crawling';
     if (cp.limits_reached) { jobState = 'paused'; sourceState = 'paused'; }
-    else if (drained) { jobState = 'completed'; sourceState = 'completed'; }
+    else if (drained) { jobState = 'completed'; sourceState = 'downloaded'; }
 
     cp.blockCount = blockCount;
     const duration = (job.duration_ms || 0) + (Date.now() - start);
