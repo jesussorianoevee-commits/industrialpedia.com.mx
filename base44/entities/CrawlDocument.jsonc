@@ -1,0 +1,63 @@
+{
+  "name": "CrawlDocument",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "url_normalized": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "datasheet",
+        "manual",
+        "catalog",
+        "product_page",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "size": {
+      "type": "integer"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "downloaded",
+        "ingested",
+        "failed"
+      ],
+      "default": "downloaded"
+    },
+    "origin": {
+      "type": "string"
+    },
+    "discovered_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "download_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ingested": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "source_id",
+    "url"
+  ]
+}

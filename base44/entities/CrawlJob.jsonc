@@ -1,0 +1,65 @@
+{
+  "name": "CrawlJob",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "crawling",
+        "paused",
+        "completed",
+        "failed",
+        "blocked"
+      ],
+      "default": "queued"
+    },
+    "checkpoint": {
+      "type": "string"
+    },
+    "discovered": {
+      "type": "integer"
+    },
+    "accepted": {
+      "type": "integer"
+    },
+    "rejected": {
+      "type": "integer"
+    },
+    "documents": {
+      "type": "integer"
+    },
+    "errors": {
+      "type": "integer"
+    },
+    "http_403": {
+      "type": "integer"
+    },
+    "http_429": {
+      "type": "integer"
+    },
+    "limits_reached": {
+      "type": "boolean"
+    },
+    "duration_ms": {
+      "type": "integer"
+    },
+    "last_checkpoint": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "robots_checked": {
+      "type": "boolean"
+    },
+    "last_request_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "source_id"
+  ]
+}

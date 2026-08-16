@@ -1,0 +1,67 @@
+{
+  "name": "CrawlURL",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "url_normalized": {
+      "type": "string"
+    },
+    "origin": {
+      "type": "string",
+      "enum": [
+        "seed",
+        "sitemap",
+        "internal_link",
+        "category_page",
+        "product_page",
+        "document"
+      ]
+    },
+    "type_detected": {
+      "type": "string",
+      "enum": [
+        "page",
+        "pdf",
+        "datasheet",
+        "manual",
+        "catalog",
+        "product_page",
+        "unknown"
+      ]
+    },
+    "depth": {
+      "type": "integer"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "fetched",
+        "downloaded",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "reject_reason": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "discovered_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "source_id",
+    "url"
+  ]
+}
