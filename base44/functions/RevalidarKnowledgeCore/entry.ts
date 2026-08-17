@@ -10,31 +10,30 @@ function norm(v: unknown) {
 }
 
 function partEvidenceIsDemonstrated(part: any, evidence: any, document: any, fact: any) {
-  if (!evidence || !document || !fact) return { ok: false, reason: 'missing_part_fact_evidence_or_document' };
-  if (!evidence.raw_text || !Number.isFinite(Number(evidence.page)) || Number(evidence.page) < 1) return { ok: false, reason: 'part_evidence_incomplete' };
-  if (!evidence.rule_id) return { ok: false, reason: 'part_evidence_rule_missing' };
-  if (norm(fact.value) !== norm(part.part_number)) return { ok: false, reason: 'demonstrated_fact_value_mismatch' };
-  if (!norm(evidence.raw_text).includes(norm(part.part_number))) return { ok: false, reason: 'part_number_not_in_evidence' };
+  if (!evidence || !document || !fact) return { semanticOk: false, complete: false, reason: 'missing_part_fact_evidence_or_document' };
+  if (norm(fact.value) !== norm(part.part_number)) return { semanticOk: false, complete: false, reason: 'demonstrated_fact_value_mismatch' };
+  if (!evidence.raw_text) return { semanticOk: false, complete: false, reason: 'part_evidence_text_missing' };
+  if (!norm(evidence.raw_text).includes(norm(part.part_number))) return { semanticOk: false, complete: false, reason: 'part_number_not_in_evidence' };
 
   const text = norm(evidence.raw_text);
   const pn = norm(part.part_number).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const explicit = new RegExp(`(?:part number|part no|p/n|mpn|ordering number|order number|order code|model number|product number)\\s*[:#]?\\s*${pn}(?:\\b|$)`, 'i').test(text);
-  if (explicit) return { ok: true, reason: 'explicit_part_number_evidence' };
-
   const titleHasPart = norm(document.title).includes(norm(part.part_number));
   const excluded = /(?:vref\d*|voltage reference|reference voltage|literature number|document number|revision|package|standard|jep\d*|jesd\d*|iec|iso|mil-std)/i.test(text);
-  if (titleHasPart && !excluded) return { ok: true, reason: 'document_identity_corroborrated' };
 
-  const candidate = {
-    text: part.part_number,
-    label: '',
-    context_text: evidence.raw_text,
-    label_same_line: false,
-    label_exclusive: false
-  };
-  const role = classifyIdentifier(candidate);
-  if (role.demonstrated && role.role === 'PART_NUMBER' && !excluded) return { ok: true, reason: role.reason };
-  return { ok: false, reason: 'part_number_role_not_demonstrated' };
+  let semanticOk = false;
+  let reason = 'part_number_role_not_demonstrated';
+  if (explicit) { semanticOk = true; reason = 'explicit_part_number_evidence'; }
+  else if (titleHasPart && !excluded) { semanticOk = true; reason = 'document_identity_corroborrated'; }
+  else {
+    const candidate = { text: part.part_number, label: '', context_text: evidence.raw_text, label_same_line: false, label_exclusive: false };
+    const role = classifyIdentifier(candidate);
+    semanticOk = role.demonstrated && role.role === 'PART_NUMBER' && !excluded;
+    reason = semanticOk ? role.reason : (role.reason || reason);
+  }
+
+  const complete = semanticOk && Number.isFinite(Number(evidence.page)) && Number(evidence.page) >= 1 && !!evidence.rule_id;
+  return { semanticOk, complete, reason: complete ? reason : (semanticOk ? 'part_evidence_contract_incomplete' : reason) };
 }
 
 export default async function (req: Request) {
