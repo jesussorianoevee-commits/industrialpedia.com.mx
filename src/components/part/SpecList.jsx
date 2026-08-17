@@ -34,7 +34,7 @@ function SpecRow({ spec, evidence, provenance }) {
           {evidence.map((ev, i) => (
             <div key={ev.id || i} className="flex items-start gap-2 text-[11px] text-white/50">
               <FileText className="w-3 h-3 mt-0.5 shrink-0 text-white/40" />
-              <span className="line-clamp-2">"{ev.raw_text}"{ev.page ? ` · pág. ${ev.page}` : ''}{ev.rule_id ? ` · regla ${ev.rule_id}` : ''}</span>
+              <span className="line-clamp-2">"{ev.raw_text}"{ev.page ? ` · pág. ${ev.page}` : ''}{ev.bbox ? ` · bbox ${ev.bbox}` : ''}{ev.rule_id ? ` · regla ${ev.rule_id}` : ''}</span>
             </div>
           ))}
         </div>

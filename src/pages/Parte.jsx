@@ -119,6 +119,21 @@ export default function Parte() {
           <SpecList specs={specs} evidenceBySpec={evidenceBySpec} provenanceBySpec={provenanceBySpec} />
         </div>
 
+        {docs.length > 0 && (
+          <div>
+            <h2 className="text-white font-semibold text-sm mb-2">Documento</h2>
+            <div className="space-y-2">
+              {docs.map((d) => (
+                <a key={d.id} href={d.file_url} target="_blank" rel="noreferrer" className="block bg-[#161a20] border border-white/10 rounded-lg p-3 hover:border-white/20">
+                  <div className="text-white/70 text-xs truncate">{d.title || d.file_url}</div>
+                  {d.file_url && <div className="text-[#5a9cd9] text-[11px] mt-0.5 truncate">{d.file_url}</div>}
+                  <div className="text-white/30 text-[10px] mt-1">{d.document_type || 'datasheet'} · {d.status}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {sources.length > 0 && (
           <div>
             <h2 className="text-white font-semibold text-sm mb-2">Fuentes</h2>
