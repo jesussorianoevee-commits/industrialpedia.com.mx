@@ -144,7 +144,7 @@ export default async function (req) {
 
         // ESTRUCTURACION (MANUAL > INDUCIDO > GENERICO)
         const source = await getSource(task.source_id);
-        const manufacturerName = manualHint || (source && (source.manufacturer || source.name)) || '';
+        const manufacturerName = manualHint || (source && source.manufacturer) || '';
         const partNumber = extractPartNumber(extracted.text, extracted.title || '');
         const description = (extracted.title || extracted.text || '').slice(0, 240);
         const rawSpecs = (extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text);
