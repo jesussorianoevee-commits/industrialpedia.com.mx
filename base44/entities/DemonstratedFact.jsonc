@@ -1,0 +1,33 @@
+{
+  "name": "DemonstratedFact",
+  "type": "object",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "document_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "value": {
+      "type": "string"
+    },
+    "derivation": {
+      "type": "string"
+    },
+    "grammar_id": {
+      "type": "string"
+    },
+    "grammar_version": {
+      "type": "integer"
+    },
+    "evidence_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "value"
+  ]
+}

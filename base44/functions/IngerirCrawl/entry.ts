@@ -1,8 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared/normalize.js';
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
-import { extractHTML, extractPlainText, extractPartNumber, extractTextSpecs, findPageFor } from '../../shared/extract.js';
+import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractPDF } from '../../shared/pdfExtract.js';
+import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 
 // PIPELINE MASIVO DE INGESTA DETERMINÍSTICA (sin IA) desde CrawlDocument.
 // Cola (IngestionTask) -> extraccion PDF/HTML -> estructuracion -> normalizacion ->
@@ -47,6 +48,7 @@ export default async function (req) {
     const maxAttempts = Math.max(1, Number(body.max_attempts) || MAX_ATT_DEFAULT);
     const backoffMs = Math.max(0, Number(body.backoff_ms) || BACKOFF_DEFAULT);
     const manualHint = (body.manufacturer_hint || '').trim();
+    const manualPN = (body.part_number_hint || '').trim();
     const t0 = Date.now();
 
     // 1. COLA: encolar CrawlDocument pendientes como IngestionTask (idempotente: no duplica).
@@ -104,6 +106,18 @@ export default async function (req) {
       const s = await base44.asServiceRole.entities.CrawlSource.get(sid).catch(() => null);
       sourceCache.set(sid, s); return s;
     }
+    // grammar INDUCIDA activa (Manufacturer Knowledge Builder, validada fuera de muestra).
+    const grammarCache = new Map();
+    async function loadActiveGrammar(sid, manufacturer) {
+      const key = sid || manufacturer || '';
+      if (!key) return null;
+      if (grammarCache.has(key)) return grammarCache.get(key);
+      let g = null;
+      const filt = sid ? { source_id: sid } : { manufacturer };
+      const list = await base44.asServiceRole.entities.PartNumberGrammar.filter({ ...filt, status: 'active' }, '-version', 1).catch(() => []);
+      if (list && list.length) g = list[0];
+      grammarCache.set(key, g); return g;
+    }
 
     // idempotencia: Document ya publicado con el mismo hash -> skip.
     const hashes = eligible.map((t) => t.content_hash).filter(Boolean);
@@ -145,7 +159,24 @@ export default async function (req) {
         // ESTRUCTURACION (MANUAL > INDUCIDO > GENERICO)
         const source = await getSource(task.source_id);
         const manufacturerName = manualHint || (source && source.manufacturer) || '';
-        const partNumber = extractPartNumber(extracted.text, extracted.title || '');
+        // KNOWLEDGE BUILDER: candidatos con contexto + selección por precedencia (MANUAL > INDUCIDO > directo).
+        // El GENÉRICO ya NO adjudica part_number: sólo detecta candidatos; el significado lo demuestra
+        // una etiqueta positiva en el documento o una grammar activa validada fuera de muestra.
+        const idCandidates = extractCandidates(extracted.text, extracted.pages);
+        if (!dryRun && idCandidates.length) {
+          await base44.asServiceRole.entities.CandidateIdentifier.bulkCreate(
+            idCandidates.slice(0, 60).map((c) => ({
+              source_id: task.source_id || '', manufacturer: manufacturerName,
+              crawl_document_id: task.crawl_document_id || '', url: task.url,
+              candidate_text: c.text, format_sig: c.format_sig, page: c.page, line_index: c.line_index,
+              label: c.label || '', label_type: c.label_type, in_title: !!c.in_title
+            }))
+          );
+        }
+        const grammar = await loadActiveGrammar(task.source_id, manufacturerName);
+        const sel = manualPN ? { value: manualPN, demonstrated: true, reason: 'manual', candidate: null, grammar_id: '' }
+          : selectPartNumber(idCandidates, grammar);
+        const partNumber = sel.value;
         const description = (extracted.title || extracted.text || '').slice(0, 240);
         const rawSpecs = (extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text);
         const specs = rawSpecs.filter((r) => r.attribute && r.value).map((r) => {
@@ -177,6 +208,16 @@ export default async function (req) {
             title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'other', status: gate.state
           });
           await base44.asServiceRole.entities.Provenance.create({ entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '', note: 'causas: ' + gate.causes.join(', ') });
+          // Observaciones pendientes: el part_number no pudo demostrarse (sin grammar activa ni etiqueta positiva).
+          for (const c of idCandidates) {
+            if (c.label_type === 'positive') continue;
+            await base44.asServiceRole.entities.PendingObservation.create({
+              document_id: docRec.id, source_id: task.source_id || '', manufacturer: manufacturerName,
+              candidate_text: c.text, page: c.page, line_index: c.line_index,
+              label: c.label || '', label_type: c.label_type, grammar_id: sel.grammar_id || '',
+              missing_link: c.label_type === 'negative' ? 'etiqueta negativa (no part_number)' : 'sin etiqueta positiva ni grammar activa'
+            });
+          }
           await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: gate.state, document_id: docRec.id, last_error: gate.causes.join(', ') });
           await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true }).catch(() => {});
           report.push({ task_id: task.id, url: task.url, status: gate.state, causes: gate.causes });
@@ -201,6 +242,15 @@ export default async function (req) {
         });
         const partEv = await base44.asServiceRole.entities.Evidence.create({ document_id: docRec.id, part_id: partRec.id, raw_text: rec.raw_text.slice(0, 8000) });
         await base44.asServiceRole.entities.Provenance.create({ entity_type: 'part', entity_id: partRec.id, operation: 'extract', source_id: sourceRec.id, rule_id: 'extract.' + (isPdf ? 'pdf' : 'html'), note: 'ingesta deterministica batch' });
+        // DemonstratedFact: el part_number fue demostrado (etiqueta directa, grammar activa o MANUAL).
+        if (sel.demonstrated) {
+          await base44.asServiceRole.entities.DemonstratedFact.create({
+            part_id: partRec.id, document_id: docRec.id, source_id: sourceRec.id,
+            value: rec.part_number, derivation: sel.reason,
+            grammar_id: sel.grammar_id || '', grammar_version: (grammar && grammar.version) ? grammar.version : 0,
+            evidence_id: partEv.id
+          });
+        }
 
         let specsPublished = 0;
         for (const s of rec.specs) {
@@ -221,7 +271,7 @@ export default async function (req) {
         await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'published', document_id: docRec.id, part_id: partRec.id, specs_published: specsPublished, last_error: '' });
         await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true, state: 'ingested' }).catch(() => {});
         published++; processed++;
-        report.push({ task_id: task.id, url: task.url, status: 'published', document_id: docRec.id, part_id: partRec.id, manufacturer_id: manufacturerId, part_number: rec.part_number, specs_published: specsPublished, evidence_id: partEv.id });
+        report.push({ task_id: task.id, url: task.url, status: 'published', document_id: docRec.id, part_id: partRec.id, manufacturer_id: manufacturerId, part_number: rec.part_number, derivation: sel.reason, specs_published: specsPublished, evidence_id: partEv.id });
       } catch (e) {
         // FALLO AISLADO: registrar error, incrementar retry; FAILED al agotar intentos.
         const attempts = (task.attempts || 0) + 1;

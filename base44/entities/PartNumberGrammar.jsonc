@@ -1,0 +1,93 @@
+{
+  "name": "PartNumberGrammar",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "field": {
+      "type": "string",
+      "default": "part_number"
+    },
+    "selector": {
+      "type": "string",
+      "enum": [
+        "positive_label",
+        "title_format",
+        "none"
+      ],
+      "default": "none"
+    },
+    "format_sig": {
+      "type": "string"
+    },
+    "negative_formats": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "positive_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "negative_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "induction_doc_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation_doc_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "integer",
+      "default": 1
+    },
+    "hash": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "rejected",
+        "superseded"
+      ],
+      "default": "pending"
+    },
+    "tp": {
+      "type": "integer",
+      "default": 0
+    },
+    "fp": {
+      "type": "integer",
+      "default": 0
+    },
+    "fn": {
+      "type": "integer",
+      "default": 0
+    },
+    "coverage": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "hash"
+  ]
+}

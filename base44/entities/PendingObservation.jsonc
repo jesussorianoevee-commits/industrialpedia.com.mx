@@ -1,0 +1,39 @@
+{
+  "name": "PendingObservation",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string"
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "manufacturer": {
+      "type": "string"
+    },
+    "candidate_text": {
+      "type": "string"
+    },
+    "page": {
+      "type": "integer"
+    },
+    "line_index": {
+      "type": "integer"
+    },
+    "label": {
+      "type": "string"
+    },
+    "label_type": {
+      "type": "string"
+    },
+    "grammar_id": {
+      "type": "string"
+    },
+    "missing_link": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_text"
+  ]
+}
