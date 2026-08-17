@@ -9,6 +9,17 @@ const PART_LABELS = new Set([
   'manufacturer part', 'manufacturer part number', 'orderable part number'
 ]);
 
+const CONTEXTUAL_LABELS = new Set(['device', 'component']);
+
+const ROLE_PATTERNS = [
+  { role: 'LITERATURE_NUMBER', re: /\b(?:literature|lit(?:erature)?)\s+(?:number|no|#)\b/i },
+  { role: 'REVISION', re: /\b(?:revision|rev\.?)\b/i },
+  { role: 'PACKAGE', re: /\bpackage\b/i },
+  { role: 'STANDARD_REFERENCE', re: /\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)\b/i },
+  { role: 'VOLTAGE_REFERENCE', re: /\b(?:vref\d*|voltage\s+reference|reference\s+voltage)\b/i },
+  { role: 'ELECTRICAL_VALUE', re: /(?:^|\s)\d+(?:\.\d+)?\s*(?:v|mv|kv|a|ma|ua|hz|khz|mhz|ohm|kohm|mohm|w|mw)(?:$|\s)/i }
+];
+
 const NEGATIVE_IDENTIFIER_PATTERNS = [
   /\bliterature\s+number\b/i, /\blit(?:erature)?\s*(?:no|#)\b/i,
   /\bdocument\s+(?:number|no|#)\b/i, /\brevision\b/i, /\brev\.?\b/i,
@@ -36,7 +47,9 @@ export function classifyIdentifier(candidate) {
   const text = normalized(candidate?.text);
 
   if (PART_LABELS.has(label)) {
-    return { role: 'PART_NUMBER', demonstrated: true, reason: 'explicit_part_number_label' };
+    const structurallyBound = !!candidate?.label_same_line || !!candidate?.label_exclusive;
+    if (structurallyBound) return { role: 'PART_NUMBER', demonstrated: true, reason: 'explicit_part_number_label' };
+    return { role: 'IDENTIFIER_CANDIDATE', demonstrated: false, reason: 'part_label_not_structurally_bound' };
   }
   if (NEGATIVE_IDENTIFIER_PATTERNS.some((re) => re.test(label))) {
     if (/literature/i.test(label)) return { role: 'LITERATURE_NUMBER', demonstrated: false, reason: 'negative_literature_label' };
@@ -59,9 +72,13 @@ export function classifyIdentifier(candidate) {
   }
 
   // "device"/"component" alone never proves PART_NUMBER. A contextual identity
-  // must be corroborated by title or repeated first-page occurrence in the caller.
-  if (label === 'device' || label === 'component') {
+  // must be corroborated by document identity evidence in the caller.
+  if (CONTEXTUAL_LABELS.has(label)) {
     return { role: 'IDENTIFIER_CANDIDATE', demonstrated: false, reason: 'contextual_label_requires_corroboration' };
+  }
+
+  for (const { role, re } of ROLE_PATTERNS) {
+    if (re.test(context) || re.test(text)) return { role, demonstrated: false, reason: `context_${role.toLowerCase()}` };
   }
 
   return { role: 'UNKNOWN', demonstrated: false, reason: 'insufficient_semantic_evidence' };
