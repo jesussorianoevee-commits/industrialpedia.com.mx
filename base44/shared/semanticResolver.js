@@ -84,34 +84,29 @@ export function classifyIdentifier(candidate) {
   return { role: 'UNKNOWN', demonstrated: false, reason: 'insufficient_semantic_evidence' };
 }
 
+const GENERIC_TECHNICAL_ATTRIBUTE = /(?:^|[^a-z])(voltage|current|frequency|power|resistance|capacitance|inductance|temperature|pressure|flow|force|torque|speed|stroke|bore|diameter|length|width|height|weight|dimension|accuracy|repeatability|resolution|response|switching|load|range|supply|input|output|operating|storage|lifetime|duty|cycle|impedance|gain|bandwidth|delay|rise|fall|leakage|threshold|sensitivity|material|mounting|connection|connector|interface|communication|protection|insulation|ingress|thread|port|housing|package|size|rating|class|degree|seal|travel|displacement|hardness|viscosity|density|capacity|volume|area)(?:$|[^a-z])/i;
+const ENGINEERING_VALUE = /[<>≤≥+\-]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v|mv|kv|a|ma|ua|ka|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|nf|pf|h|uh|mh|w|mw|kw|va|mm|cm|m|um|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|bar|kpa|mpa|psi|rpm|ms|us|ns|s|db|dbm|deg|degree|x)(?:$|[ ,;])/i;
+
 export function isTechnicalSpecification(attribute, value) {
   const a = normalized(attribute);
   const v = String(value || '').trim();
   if (!a || !v) return { ok: false, role: 'UNKNOWN', reason: 'missing_attribute_or_value' };
 
   const nonTechnical = [
-    /^product\s+folder\s+links?$/i,
-    /^catalog(?:\s+(?:number|no|#))?$/i,
-    /^military$/i,
-    /^typical\s+characteristics?$/i,
-    /^\d+(?:\.\d+)*\s+typical\s+characteristics?/i,
-    /^scale$/i,
-    /^revision(?:\s+history)?$/i,
-    /^document\s+(?:number|no|#)$/i,
-    /^literature\s+(?:number|no|#)$/i,
-    /\b(?:top|bottom|middle)\s+trace\b/i,
-    /\b(?:\d+(?:\.\d+)?\s*)?v\/div\b/i,
-    /\btime\s*=.*\/div\b/i,
-    /\b(?:page|figure|table)\s*(?:number|no|#)?\b/i
+    /^product[ ]+folder[ ]+links?$/i, /^catalog(?:[ ]+(?:number|no|#))?$/i, /^military$/i,
+    /^typical[ ]+characteristics?$/i, /^\d+(?:\.\d+)*[ ]+typical[ ]+characteristics?/i,
+    /^scale$/i, /^revision(?:[ ]+history)?$/i, /^document[ ]+(?:number|no|#)$/i,
+    /^literature[ ]+(?:number|no|#)$/i, /(?:^|[^a-z])(top|bottom|middle)[ ]+trace(?:$|[^a-z])/i,
+    /(?:^|[^a-z])(?:\d+(?:\.\d+)?[ ]*)?v\/div(?:$|[^a-z])/i,
+    /(?:^|[^a-z])time[ ]*=.*\/div(?:$|[^a-z])/i,
+    /(?:^|[^a-z])(page|figure|table)(?:[ ]*(number|no|#))?(?:$|[^a-z])/i
   ];
   if (nonTechnical.some((re) => re.test(a) || re.test(v))) {
     return { ok: false, role: 'DOCUMENT_METADATA', reason: 'non_technical_document_or_graph_context' };
   }
-
-  // Current deterministic text extractor only accepts numeric values. Keep that
-  // conservative contract and require a technical-looking numeric/value relation.
-  if (!/\d/.test(v)) return { ok: false, role: 'UNKNOWN', reason: 'value_has_no_numeric_anchor' };
-  if (a.length > 100 || a.split(/\s+/).length > 8) return { ok: false, role: 'UNKNOWN', reason: 'attribute_too_long' };
-
-  return { ok: true, role: 'TECHNICAL_SPECIFICATION', reason: 'technical_attribute_value_relation' };
+  if (a.length > 100 || a.split(/[ ]+/).length > 8) return { ok: false, role: 'UNKNOWN', reason: 'attribute_too_long' };
+  if (GENERIC_TECHNICAL_ATTRIBUTE.test(a) && ENGINEERING_VALUE.test(v)) {
+    return { ok: true, role: 'TECHNICAL_SPECIFICATION', reason: 'technical_attribute_and_engineering_value' };
+  }
+  return { ok: false, role: 'UNKNOWN', reason: 'insufficient_technical_semantics' };
 }
