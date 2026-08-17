@@ -5,6 +5,7 @@ import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '..
 import { extractPDF } from '../../shared/pdfExtract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
+import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 
 // PIPELINE MASIVO DE INGESTA DETERMINÍSTICA (sin IA) desde CrawlDocument.
 // Cola (IngestionTask) -> extraccion PDF/HTML -> estructuracion -> normalizacion ->
@@ -146,13 +147,21 @@ export default async function (req) {
         const res = await fetch(task.url, { headers: { 'User-Agent': 'IndustrialpediaIngesta/1.0 (deterministic)' } });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const ct = (res.headers.get('content-type') || '').toLowerCase();
-        const isPdf = task.url.toLowerCase().endsWith('.pdf') || ct.includes('pdf');
+        const payload = new Uint8Array(await res.arrayBuffer());
+        const integrity = await validateDownloadedDocument({ bytes: payload, contentType: ct, url: task.url });
+        if (!integrity.valid) {
+          const reason = 'document_integrity_failed: ' + integrity.errors.join(',');
+          if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'failed', last_error: reason, checkpoint: 'document_integrity' });
+          report.push({ task_id: task.id, url: task.url, status: 'quarantined', content_hash: integrity.content_hash, byte_length: integrity.byte_length, errors: integrity.errors });
+          processed++; failed++;
+          return;
+        }
+        const isPdf = integrity.detected_pdf;
         let extracted;
         if (isPdf) {
-          const buf = await res.arrayBuffer();
-          extracted = await extractPDF(new Uint8Array(buf));
+          extracted = await extractPDF(payload);
         } else {
-          const raw = await res.text();
+          const raw = new TextDecoder().decode(payload);
           extracted = /<\/html>/i.test(raw) || ct.includes('html') ? extractHTML(raw) : extractPlainText(raw);
         }
         if (!extracted.extractable) throw new Error(extracted.reason || 'not extractable');
