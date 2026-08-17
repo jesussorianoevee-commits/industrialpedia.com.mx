@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared/normalize.js';
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
-import { extractPDF } from '../../shared/pdfExtract.js';
+import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
@@ -172,7 +172,7 @@ export default async function (req) {
         // KNOWLEDGE BUILDER: candidatos con contexto + selección por precedencia (MANUAL > INDUCIDO > directo).
         // El GENÉRICO ya NO adjudica part_number: sólo detecta candidatos; el significado lo demuestra
         // una etiqueta positiva en el documento o una grammar activa validada fuera de muestra.
-        const idCandidates = extractCandidates(extracted.text, extracted.pages);
+        const idCandidates = extractCandidates(extracted.text, extracted.pages, extracted.blocks || []);
         if (!dryRun && idCandidates.length) {
           await base44.asServiceRole.entities.CandidateIdentifier.bulkCreate(
             idCandidates.slice(0, 60).map((c) => ({
@@ -194,10 +194,12 @@ export default async function (req) {
           : selectPartNumber(idCandidates, grammar);
         const partNumber = sel.value;
         const description = (extracted.title || extracted.text || '').slice(0, 240);
-        const rawSpecs = (extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text);
+        const rawSpecs = isPdf
+          ? extractStructuredSpecs(extracted)
+          : ((extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text));
         const specs = rawSpecs.filter((r) => r.attribute && r.value).map((r) => {
           const { value, unit } = splitValueUnit(r.value);
-          const page = findPageFor(r.value, extracted.pages);
+          const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages);
           const semantic = isTechnicalSpecification(r.attribute, r.value);
           return {
             attribute_name: r.attribute, attribute_canonical: r.attribute,
@@ -205,6 +207,8 @@ export default async function (req) {
             original_unit: unit, normalized_unit: normalizeUnit(unit),
             page,
             evidence_text: r.attribute + ': ' + r.value,
+            evidence_bbox: r.bbox || null,
+            evidence_context: r.context || '',
             semantic_role: semantic.role,
             semantic_reason: semantic.reason
           };
@@ -281,6 +285,7 @@ export default async function (req) {
           part_id: partRec.id,
           raw_text: partCandidate?.context_text || rec.raw_text.slice(0, 8000),
           page: Number.isFinite(Number(partCandidate?.page)) ? partCandidate.page : null,
+          bbox: partCandidate?.bbox || null,
           rule_id: sel.reason === 'explicit_part_number_label' ? 'PN.EXPLICIT_LABEL.v1'
             : sel.reason === 'active_grammar' ? 'PN.ACTIVE_GRAMMAR.v1'
             : sel.reason === 'contextual_identity_corroborrated' ? 'PN.CONTEXTUAL_CORROBORATED.v1'
@@ -313,6 +318,7 @@ export default async function (req) {
               specification_id: specRec.id,
               raw_text: s.evidence_text,
               page: s.page || null,
+              bbox: s.evidence_bbox || null,
               rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
             });
             await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: ev.id, validation_state: 'published' });
