@@ -33,16 +33,13 @@ export function extractPlainText(text) {
   return { title: '', text: String(text || '').trim(), specTable: [], extractable: true };
 }
 
-// Candidato a part number: token alfanumérico con dígitos y letras, 4-24 chars.
-// Determinístico (regex), no heurístico de IA.
+// Candidato a part number (GENÉRICO conservador): primera ocurrencia en título/página 1
+// de un token tipo número de parte (1-4 mayúsculas + dígito + alnum/guion). Determinístico.
 export function extractPartNumber(text, title) {
-  const blob = `${title || ''} ${text || ''}`;
-  const cand = blob.match(/[A-Z0-9][A-Z0-9\-/.]{3,23}/gi) || [];
-  const best = cand
-    .filter((s) => /\d/.test(s) && /[A-Za-z]/.test(s))
-    .filter((s) => !/^(http|https|www|html|pdf|json|csv)$/i.test(s))
-    .sort((a, b) => b.length - a.length);
-  return best[0] || '';
+  const scope = `${title || ''}\n${(text || '').slice(0, 1500)}`;
+  const re = /\b[A-Z]{1,4}-?\d[A-Z0-9-]{1,12}\b/g;
+  const matches = scope.match(re) || [];
+  return matches[0] || '';
 }
 
 // Extracción de especificaciones desde texto plano (PDF/CSV-like). Determinística y conservadora:
