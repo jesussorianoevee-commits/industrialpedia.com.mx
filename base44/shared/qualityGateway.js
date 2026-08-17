@@ -7,6 +7,14 @@ const NON_TECHNICAL_SPEC_ATTRIBUTES = new Set([
   'scale', 'revision history', 'revision', 'document number', 'literature number'
 ]);
 
+const GRAPH_OR_DOCUMENT_PATTERNS = [
+  /\b(?:top|bottom|middle)\s+trace\b/i,
+  /\btime\s*=.*\/div\b/i,
+  /\b(?:\d+(?:\.\d+)?\s*)?v\/div\b/i,
+  /\b(?:page|figure|table)\s*(?:number|no|#)?\b/i,
+  /^\d+(?:\.\d+)*\s+typical\s+characteristics?/i
+];
+
 function normalizeAttribute(value) {
   return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
@@ -28,7 +36,7 @@ export function gatePart(rec) {
   }
 
   const specIncomplete = rec.specs.filter((s) => {
-    return !s.original_value || !s.evidence_text || !Number.isFinite(Number(s.page)) || Number(s.page) < 1;
+    return !s.original_value || !s.evidence_text || !s.semantic_role || s.semantic_role !== 'TECHNICAL_SPECIFICATION' || !Number.isFinite(Number(s.page)) || Number(s.page) < 1;
   });
   if (specIncomplete.length === rec.specs.length) {
     return { pass: false, state: 'incomplete', causes: ['all specifications lack complete evidence'] };
@@ -42,7 +50,11 @@ export function gateSpec(spec) {
   if (!spec.original_value) causes.push('empty original_value');
   if (!spec.evidence_text) causes.push('missing evidence_text');
   if (!Number.isFinite(Number(spec.page)) || Number(spec.page) < 1) causes.push('missing evidence_page');
+  if (spec.semantic_role !== 'TECHNICAL_SPECIFICATION') causes.push('technical_specification_role_not_demonstrated');
   if (NON_TECHNICAL_SPEC_ATTRIBUTES.has(attribute)) causes.push('non_technical_document_attribute');
+  if (GRAPH_OR_DOCUMENT_PATTERNS.some((re) => re.test(String(spec.attribute_name || '')) || re.test(String(spec.original_value || '')))) {
+    causes.push('graph_or_document_context');
+  }
   if (/^\d+(?:\.\d+)*\s+(?:typical characteristics|applications|features|description|revision history)$/i.test(String(spec.attribute_name || '').trim())) {
     causes.push('document_section_heading');
   }
