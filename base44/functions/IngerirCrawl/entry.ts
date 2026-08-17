@@ -257,6 +257,7 @@ export default async function (req) {
         const sourceRec = await base44.asServiceRole.entities.Source.create({
           document_id: docRec.id, url: task.url, type: 'datasheet', retrieved_date: new Date().toISOString()
         });
+        await base44.asServiceRole.entities.Document.update(docRec.id, { source_id: sourceRec.id });
         let manufacturerId = '';
         const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, 'updated_date', 1);
         manufacturerId = manuf.length ? manuf[0].id : (await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' })).id;
@@ -266,7 +267,16 @@ export default async function (req) {
           part_number: rec.part_number, part_number_normalized: rec.part_number_normalized,
           category: (source && source.name) || '', description: rec.description, validation_state: 'published'
         });
-        const partEv = await base44.asServiceRole.entities.Evidence.create({ document_id: docRec.id, part_id: partRec.id, raw_text: rec.raw_text.slice(0, 8000) });
+        const partEv = await base44.asServiceRole.entities.Evidence.create({
+          document_id: docRec.id,
+          part_id: partRec.id,
+          raw_text: partCandidate?.context_text || rec.raw_text.slice(0, 8000),
+          page: Number.isFinite(Number(partCandidate?.page)) ? partCandidate.page : null,
+          rule_id: sel.reason === 'explicit_part_number_label' ? 'PN.EXPLICIT_LABEL.v1'
+            : sel.reason === 'active_grammar' ? 'PN.ACTIVE_GRAMMAR.v1'
+            : sel.reason === 'contextual_identity_corroborrated' ? 'PN.CONTEXTUAL_CORROBORATED.v1'
+            : sel.reason === 'manual_verified_against_document' ? 'PN.MANUAL_VERIFIED.v1' : ''
+        });
         await base44.asServiceRole.entities.Provenance.create({ entity_type: 'part', entity_id: partRec.id, operation: 'extract', source_id: sourceRec.id, rule_id: 'extract.' + (isPdf ? 'pdf' : 'html'), note: 'ingesta deterministica batch' });
         // DemonstratedFact: el part_number fue demostrado (etiqueta directa, grammar activa o MANUAL).
         if (sel.demonstrated) {
@@ -288,9 +298,16 @@ export default async function (req) {
             source_id: sourceRec.id, validation_state: sg.state
           });
           if (sg.pass) {
-            const ev = await base44.asServiceRole.entities.Evidence.create({ document_id: docRec.id, part_id: partRec.id, specification_id: specRec.id, raw_text: s.attribute_name + ': ' + s.original_value, page: s.page || null });
+            const ev = await base44.asServiceRole.entities.Evidence.create({
+              document_id: docRec.id,
+              part_id: partRec.id,
+              specification_id: specRec.id,
+              raw_text: s.evidence_text,
+              page: s.page || null,
+              rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
+            });
             await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: ev.id, validation_state: 'published' });
-            await base44.asServiceRole.entities.Provenance.create({ entity_type: 'specification', entity_id: specRec.id, operation: 'normalize', source_id: sourceRec.id, rule_id: 'normalize.valueUnit', note: 'normalizacion deterministica' });
+            await base44.asServiceRole.entities.Provenance.create({ entity_type: 'specification', entity_id: specRec.id, operation: 'validate', source_id: sourceRec.id, rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1', note: 'resolucion semantica deterministica + normalizacion de valor/unidad' });
             specsPublished++;
           }
         }
