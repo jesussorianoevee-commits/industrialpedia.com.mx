@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "type": "string"
+    },
+    "page": {
+      "type": "number"
+    },
+    "block_type": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "bbox": {
+      "type": "object"
+    },
+    "reading_order": {
+      "type": "number"
+    },
+    "table_id": {
+      "type": "string"
+    },
+    "row_index": {
+      "type": "number"
+    },
+    "column_index": {
+      "type": "number"
+    }
+  },
+  "required": [],
+  "name": "DocumentLayoutBlock"
+}
