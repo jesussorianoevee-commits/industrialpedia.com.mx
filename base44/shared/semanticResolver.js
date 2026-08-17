@@ -18,7 +18,7 @@ const NEGATIVE_IDENTIFIER_PATTERNS = [
 ];
 
 const EXCLUDED_PART_CONTEXT = [
-  /\b(?:vref|voltage\s+reference|reference\s+voltage)\b/i,
+  /\b(?:vref\d*|voltage\s+reference|reference\s+voltage)\b/i,
   /\b(?:supply|input|output)\s+voltage\b/i,
   /\b(?:typical\s+characteristics|electrical\s+characteristics)\b/i,
   /\b(?:literature|document)\s+(?:number|no|#)\b/i,
@@ -52,7 +52,7 @@ export function classifyIdentifier(candidate) {
     if (/\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std|standard)\b/i.test(context)) {
       return { role: 'STANDARD_REFERENCE', demonstrated: false, reason: 'standard_context' };
     }
-    if (/\b(?:vref|voltage\s+reference|reference\s+voltage)\b/i.test(context)) {
+    if (/\b(?:vref\d*|voltage\s+reference|reference\s+voltage)\b/i.test(context)) {
       return { role: 'VOLTAGE_REFERENCE', demonstrated: false, reason: 'voltage_reference_context' };
     }
     return { role: 'DOCUMENT_REFERENCE', demonstrated: false, reason: 'excluded_document_context' };
