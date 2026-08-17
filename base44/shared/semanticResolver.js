@@ -47,7 +47,9 @@ export function classifyIdentifier(candidate) {
   const text = normalized(candidate?.text);
 
   if (PART_LABELS.has(label)) {
-    const structurallyBound = !!candidate?.label_same_line || !!candidate?.label_exclusive;
+    const tableBound = candidate?.label_relation === 'table_header';
+    const structurallyBound = tableBound || !!candidate?.label_same_line || !!candidate?.label_exclusive;
+    if (tableBound) return { role: 'PART_NUMBER', demonstrated: true, reason: 'explicit_part_number_table_header' };
     if (structurallyBound) return { role: 'PART_NUMBER', demonstrated: true, reason: 'explicit_part_number_label' };
     return { role: 'IDENTIFIER_CANDIDATE', demonstrated: false, reason: 'part_label_not_structurally_bound' };
   }
