@@ -70,8 +70,9 @@ export default async function (req: Request) {
       if (valid) break;
     }
     if (valid) partsValid++; else partsInvalid++;
-    partReport.push({ id: part.id, part_number: part.part_number, manufacturer_name: part.manufacturer_name, current_state: part.validation_state, verdict: valid ? 'VERIFIED' : 'INVALID', reason: valid ? selected.reason : reason, evidence: selected });
-    if (!dryRun && !valid) await base44.asServiceRole.entities.Part.update(part.id, { validation_state: 'rejected' });
+    const partState = valid ? 'published' : (reason.includes('not_demonstrated') || reason.includes('mismatch') ? 'rejected' : 'incomplete');
+    partReport.push({ id: part.id, part_number: part.part_number, manufacturer_name: part.manufacturer_name, current_state: part.validation_state, verdict: valid ? 'VERIFIED' : partState.toUpperCase(), reason: valid ? selected.reason : reason, evidence: selected });
+    if (!dryRun && !valid) await base44.asServiceRole.entities.Part.update(part.id, { validation_state: partState });
   }
 
   for (const spec of specs) {
@@ -81,6 +82,7 @@ export default async function (req: Request) {
     const reasons: string[] = [];
     if (!ev) reasons.push('missing_evidence');
     if (!doc) reasons.push('missing_document');
+    if (!doc?.source_id) reasons.push('missing_document_source_link');
     if (!spec.source_id) reasons.push('missing_spec_source');
     if (!ev?.raw_text) reasons.push('missing_evidence_text');
     if (!Number.isFinite(Number(ev?.page)) || Number(ev?.page) < 1) reasons.push('missing_evidence_page');
@@ -89,8 +91,10 @@ export default async function (req: Request) {
     if (!semantic.ok || semantic.role !== 'TECHNICAL_SPECIFICATION') reasons.push(semantic.reason);
     const valid = reasons.length === 0;
     if (valid) specsValid++; else specsInvalid++;
-    specReport.push({ id: spec.id, part_id: spec.part_id, attribute_name: spec.attribute_name, original_value: spec.original_value, current_state: spec.validation_state, verdict: valid ? 'VERIFIED' : 'INVALID', reasons, evidence_id: spec.evidence_id || null });
-    if (!dryRun && !valid) await base44.asServiceRole.entities.Specification.update(spec.id, { validation_state: 'rejected' });
+    const hardSemanticFailure = reasons.some((r) => ['non_technical_document_or_graph_context', 'insufficient_technical_semantics'].includes(r));
+    const specState = valid ? 'published' : (hardSemanticFailure ? 'rejected' : 'incomplete');
+    specReport.push({ id: spec.id, part_id: spec.part_id, attribute_name: spec.attribute_name, original_value: spec.original_value, current_state: spec.validation_state, verdict: valid ? 'VERIFIED' : specState.toUpperCase(), reasons, evidence_id: spec.evidence_id || null });
+    if (!dryRun && !valid) await base44.asServiceRole.entities.Specification.update(spec.id, { validation_state: specState });
   }
 
   return Response.json({
