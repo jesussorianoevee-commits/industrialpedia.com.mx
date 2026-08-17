@@ -85,7 +85,7 @@ export function classifyIdentifier(candidate) {
 }
 
 const GENERIC_TECHNICAL_ATTRIBUTE = /(?:^|[^a-z])(voltage|current|frequency|power|resistance|capacitance|inductance|temperature|pressure|flow|force|torque|speed|stroke|bore|diameter|length|width|height|weight|dimension|accuracy|repeatability|resolution|response|switching|load|range|supply|input|output|operating|storage|lifetime|duty|cycle|impedance|gain|bandwidth|delay|rise|fall|leakage|threshold|sensitivity|material|mounting|connection|connector|interface|communication|protection|insulation|ingress|thread|port|housing|package|size|rating|class|degree|seal|travel|displacement|hardness|viscosity|density|capacity|volume|area)(?:$|[^a-z])/i;
-const ENGINEERING_VALUE = /[<>≤≥+\-]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v|mv|kv|a|ma|ua|ka|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|nf|pf|h|uh|mh|w|mw|kw|va|mm|cm|m|um|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|bar|kpa|mpa|psi|rpm|ms|us|ns|s|db|dbm|deg|degree|x)(?:$|[ ,;])/i;
+const ENGINEERING_VALUE = /[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v|mv|kv|a|ma|ua|μa|µa|ka|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|μf|µf|nf|pf|h|uh|μh|µh|mh|w|mw|kw|va|mm|cm|m|um|μm|µm|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|bar|kpa|mpa|psi|rpm|ms|us|μs|µs|ns|s|db|dbm|deg|degree|x)(?:$|[ ,;\/])/i;
 
 export function isTechnicalSpecification(attribute, value) {
   const a = normalized(attribute);
