@@ -68,8 +68,43 @@ function findLabelEvidence(lines, li) {
 const ID_RE = /\b[A-Z0-9][A-Z0-9._\/-]{2,29}\b/g;
 
 // 1. CANDIDATOS: detectar identificadores con contexto. NO adjudican significado.
-export function extractCandidates(text, pages, layoutBlocks = []) {
+function extractTableBoundCandidates(tables = []) {
   const out = [];
+  for (const table of Array.isArray(tables) ? tables : []) {
+    for (const row of Array.isArray(table.rows) ? table.rows : []) {
+      const partCell = row.find((cell) => cell?.header === 'PART_NUMBER');
+      if (!partCell || partCell.is_header) continue;
+      ID_RE.lastIndex = 0;
+      const matches = String(partCell.text || '').match(ID_RE) || [];
+      for (const tok of matches) {
+        if (!/\d/.test(tok) || !/[A-Za-z]/.test(tok)) continue;
+        const contextText = row.map((c) => c?.text || '').join(' ').replace(/\s+/g, ' ').trim();
+        out.push({
+          text: tok,
+          format_sig: formatSignature(tok),
+          page: Number(table.page) || null,
+          line_index: row[0]?.row_index ?? null,
+          label: 'part number',
+          label_type: 'positive',
+          label_same_line: false,
+          label_distance: 0,
+          label_exclusive: false,
+          label_relation: 'table_header',
+          context_text: contextText,
+          bbox: partCell.bbox || null,
+          in_title: false,
+          table_id: table.id || '',
+          row_index: partCell.row_index ?? null,
+          column_index: partCell.column_index ?? null
+        });
+      }
+    }
+  }
+  return out;
+}
+
+export function extractCandidates(text, pages, layoutBlocks = [], tables = []) {
+  const out = extractTableBoundCandidates(tables);
   const pagesArr = (Array.isArray(pages) && pages.length) ? pages : [text || ''];
   const blockByPageText = new Map();
   for (const b of Array.isArray(layoutBlocks) ? layoutBlocks : []) {
@@ -105,7 +140,13 @@ export function extractCandidates(text, pages, layoutBlocks = []) {
       }
     }
   }
-  return out;
+  const seen = new Set();
+  return out.filter((c) => {
+    const key = `${c.page}|${c.text}|${c.bbox?.x0}|${c.bbox?.y0}|${c.label_relation || 'line'}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function modeKey(counts) {
