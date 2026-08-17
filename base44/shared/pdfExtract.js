@@ -121,20 +121,54 @@ function buildPage(pageNumber, content) {
   const text = lines.map((l) => l.text).join('\n');
   const specTable = [];
   for (const table of tables) {
+    const headerIndex = Number.isInteger(table.header_row_index) ? table.header_row_index : -1;
     for (const row of table.rows) {
-      if (row.length >= 2) {
-        specTable.push({
-          attribute: row[0].text,
-          value: row.slice(1).map((c) => c.text).join(' '),
-          page: pageNumber,
-          bbox: mergeBbox(row),
-          attribute_bbox: row[0].bbox,
-          value_bbox: mergeBbox(row.slice(1)),
-          table_id: table.id,
-          row_index: row[0].row_index,
-          column_count: row.length
-        });
-      }
+      if (row.length < 2 || row[0].is_header) continue;
+      const attributeCell = row.find((c) => c.header === 'PARAMETER') || row[0];
+      const valueCells = row.filter((c) => c !== attributeCell);
+      const unitCell = valueCells.find((c) => c.header === 'UNIT');
+      const scalarValueCells = valueCells.filter((c) => ['MIN', 'TYP', 'MAX'].includes(c.header));
+      const unheadedValueCells = valueCells.filter((c) => !c.header || c.header === 'DESCRIPTION');
+      const hasStructuredNumericColumns = scalarValueCells.length > 0;
+      const hasSingleUnheadedValue = !hasStructuredNumericColumns && unheadedValueCells.length === 1;
+      const valueCell = hasSingleUnheadedValue ? unheadedValueCells[0] : null;
+      const structuredValues = scalarValueCells.map((c) => ({
+        role: c.header,
+        text: c.text,
+        bbox: c.bbox,
+        column_index: c.column_index
+      }));
+      if (unitCell) structuredValues.push({ role: 'UNIT', text: unitCell.text, bbox: unitCell.bbox, column_index: unitCell.column_index });
+
+      // A row with MIN/TYP/MAX columns is represented structurally, but is not
+      // flattened into a fake scalar value. Publication must use an exact value
+      // or remain unverified rather than mixing columns (e.g. "4.5 16 V").
+      const exactScalar = valueCell ? valueCell.text : '';
+      const exactUnit = unitCell?.text || '';
+      const exactValue = exactScalar && exactUnit ? `${exactScalar} ${exactUnit}` : exactScalar;
+      const ambiguous = hasStructuredNumericColumns && scalarValueCells.length !== 1;
+
+      specTable.push({
+        attribute: cleanText(attributeCell.text),
+        value: exactValue,
+        page: pageNumber,
+        bbox: mergeBbox(row),
+        attribute_bbox: attributeCell.bbox,
+        value_bbox: exactValue ? (valueCell?.bbox || unitCell?.bbox || null) : null,
+        table_id: table.id,
+        row_index: row[0].row_index,
+        column_count: row.length,
+        header_row_index: headerIndex,
+        header_roles: table.header_roles || [],
+        structured_values: structuredValues,
+        ambiguous_value: ambiguous,
+        relation_context: row.map((c) => ({
+          text: c.text,
+          bbox: c.bbox,
+          column_index: c.column_index,
+          header: c.header || ''
+        }))
+      });
     }
   }
 
@@ -175,7 +209,7 @@ export async function extractPDF(data) {
 export function extractStructuredSpecs(extracted) {
   const out = [];
   for (const row of extracted?.specTable || []) {
-    if (!row.attribute || !row.value || !/\d/.test(row.value)) continue;
+    if (!row.attribute || row.ambiguous_value || !row.value || !/\d/.test(row.value)) continue;
     out.push({
       attribute: row.attribute,
       value: row.value,
@@ -185,6 +219,8 @@ export function extractStructuredSpecs(extracted) {
       value_bbox: row.value_bbox,
       table_id: row.table_id,
       row_index: row.row_index,
+      structured_values: row.structured_values || [],
+      relation_context: row.relation_context || [],
       context: `table ${row.table_id}, row ${row.row_index + 1}`
     });
   }
