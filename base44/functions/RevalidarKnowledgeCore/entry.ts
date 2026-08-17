@@ -63,7 +63,12 @@ export default async function (req: Request) {
       const facts = await base44.asServiceRole.entities.DemonstratedFact.filter({ part_id: part.id, evidence_id: ev.id }, 'created_date', 10).catch(() => []);
       for (const fact of facts) {
         const doc = await base44.asServiceRole.entities.Document.get(ev.document_id).catch(() => null);
+        const source = doc?.source_id ? await base44.asServiceRole.entities.Source.get(doc.source_id).catch(() => null) : null;
+        const provenance = await base44.asServiceRole.entities.Provenance.filter({ entity_type: 'part', entity_id: part.id, source_id: source?.id || '' }, 'created_date', 10).catch(() => []);
         const check = partEvidenceIsDemonstrated(part, ev, doc, fact);
+        if (check.ok && !source) { valid = false; reason = 'missing_document_source'; }
+        if (check.ok && source && !provenance.length) { valid = false; reason = 'missing_part_provenance'; }
+        if (!valid && reason !== 'missing_document_source' && reason !== 'missing_part_provenance') { /* preserve detailed evidence failure */ }
         if (check.ok) { valid = true; selected = { evidence_id: ev.id, document_id: ev.document_id, rule_id: ev.rule_id, reason: check.reason }; break; }
         reason = check.reason;
       }
@@ -83,11 +88,16 @@ export default async function (req: Request) {
     if (!ev) reasons.push('missing_evidence');
     if (!doc) reasons.push('missing_document');
     if (!doc?.source_id) reasons.push('missing_document_source_link');
+    if (doc?.source_id && !await base44.asServiceRole.entities.Source.get(doc.source_id).catch(() => null)) reasons.push('document_source_not_found');
     if (!spec.source_id) reasons.push('missing_spec_source');
     if (!ev?.raw_text) reasons.push('missing_evidence_text');
     if (!Number.isFinite(Number(ev?.page)) || Number(ev?.page) < 1) reasons.push('missing_evidence_page');
     if (!ev?.rule_id) reasons.push('missing_evidence_rule');
+    if (ev && ev.specification_id !== spec.id) reasons.push('evidence_specification_link_mismatch');
+    if (ev && ev.part_id !== spec.part_id) reasons.push('evidence_part_link_mismatch');
     if (ev && norm(ev.raw_text).indexOf(norm(spec.original_value)) < 0) reasons.push('value_not_in_evidence');
+    const specProvenance = await base44.asServiceRole.entities.Provenance.filter({ entity_type: 'specification', entity_id: spec.id, source_id: doc?.source_id || '' }, 'created_date', 10).catch(() => []);
+    if (!specProvenance.length) reasons.push('missing_specification_provenance');
     if (!semantic.ok || semantic.role !== 'TECHNICAL_SPECIFICATION') reasons.push(semantic.reason);
     const valid = reasons.length === 0;
     if (valid) specsValid++; else specsInvalid++;
