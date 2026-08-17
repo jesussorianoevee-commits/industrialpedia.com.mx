@@ -5,8 +5,7 @@ import { getDocumentProxy } from 'npm:unpdf';
 
 const Y_TOLERANCE = 3;
 // Minimum horizontal whitespace used to separate PDF text runs into visual cells.
-// Chosen below the documented table-column gap in LM555 (13.44pt) while remaining
-// above normal intra-word spacing; this is geometry-based, not manufacturer-specific.
+// This is a geometry threshold only; it is not tied to a manufacturer or document.
 const MIN_TABLE_GAP = 10;
 
 function cleanText(value) {
