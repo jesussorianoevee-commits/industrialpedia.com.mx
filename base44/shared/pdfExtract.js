@@ -205,12 +205,15 @@ function buildPage(pageNumber, content) {
       if (row.length < 2 || row[0].is_header) continue;
       const attributeCell = row.find((c) => c.header === 'PARAMETER') || row[0];
       const valueCells = row.filter((c) => c !== attributeCell);
-      const unitCell = valueCells.find((c) => c.header === 'UNIT');
+      const unitPattern = /^(?:%|°?c|°?f|v|mv|kv|a|ma|ua|μa|µa|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|μf|µf|nf|pf|h|uh|μh|µh|mh|w|mw|kw|mm|cm|m|um|μm|µm|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|bar|kpa|mpa|psi|rpm|ms|us|μs|µs|ns|s|db|dbm|deg|degree|x)$/i;
+      const scalarPattern = /^[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?$/;
+      const unitCell = valueCells.find((c) => c.header === 'UNIT' || unitPattern.test(c.text));
       const scalarValueCells = valueCells.filter((c) => ['MIN', 'TYP', 'MAX'].includes(c.header));
-      const unheadedValueCells = valueCells.filter((c) => !c.header || c.header === 'DESCRIPTION');
+      const unheadedNumericCells = valueCells.filter((c) => !c.header && scalarPattern.test(c.text));
       const hasStructuredNumericColumns = scalarValueCells.length > 0;
-      const hasSingleUnheadedValue = !hasStructuredNumericColumns && unheadedValueCells.length === 1;
-      const valueCell = hasSingleUnheadedValue ? unheadedValueCells[0] : null;
+      const valueCell = hasStructuredNumericColumns
+        ? (scalarValueCells.length === 1 ? scalarValueCells[0] : null)
+        : (unheadedNumericCells.length === 1 ? unheadedNumericCells[0] : null);
       const structuredValues = scalarValueCells.map((c) => ({
         role: c.header,
         text: c.text,
@@ -218,14 +221,16 @@ function buildPage(pageNumber, content) {
         column_index: c.column_index
       }));
       if (unitCell) structuredValues.push({ role: 'UNIT', text: unitCell.text, bbox: unitCell.bbox, column_index: unitCell.column_index });
+      for (const c of unheadedNumericCells) structuredValues.push({ role: 'VALUE', text: c.text, bbox: c.bbox, column_index: c.column_index });
 
-      // A row with MIN/TYP/MAX columns is represented structurally, but is not
-      // flattened into a fake scalar value. Publication must use an exact value
-      // or remain unverified rather than mixing columns (e.g. "4.5 16 V").
+      // Never concatenate multiple numeric columns. A scalar is exact only when
+      // one numeric value is structurally associated with one unit (or has a
+      // semantic MIN/TYP/MAX header). Otherwise the row remains unverified.
       const exactScalar = valueCell ? valueCell.text : '';
       const exactUnit = unitCell?.text || '';
       const exactValue = exactScalar && exactUnit ? `${exactScalar} ${exactUnit}` : exactScalar;
-      const ambiguous = hasStructuredNumericColumns && scalarValueCells.length !== 1;
+      const ambiguous = (hasStructuredNumericColumns && scalarValueCells.length !== 1)
+        || (!hasStructuredNumericColumns && unheadedNumericCells.length !== 1);
 
       specTable.push({
         attribute: cleanText(attributeCell.text),
