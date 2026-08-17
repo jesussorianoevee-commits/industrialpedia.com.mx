@@ -172,7 +172,7 @@ export default async function (req) {
         // KNOWLEDGE BUILDER: candidatos con contexto + selección por precedencia (MANUAL > INDUCIDO > directo).
         // El GENÉRICO ya NO adjudica part_number: sólo detecta candidatos; el significado lo demuestra
         // una etiqueta positiva en el documento o una grammar activa validada fuera de muestra.
-        const idCandidates = extractCandidates(extracted.text, extracted.pages, extracted.blocks || []);
+        const idCandidates = extractCandidates(extracted.text, extracted.pages, extracted.blocks || [], extracted.tables || []);
         if (!dryRun && idCandidates.length) {
           await base44.asServiceRole.entities.CandidateIdentifier.bulkCreate(
             idCandidates.slice(0, 60).map((c) => ({
@@ -225,6 +225,7 @@ export default async function (req) {
                 evidence_text: partCandidate.context_text || partCandidate.text,
                 page: partCandidate.page,
                 rule_id: sel.reason === 'explicit_part_number_label' ? 'PN.EXPLICIT_LABEL.v1'
+                  : sel.reason === 'explicit_part_number_table_header' ? 'PN.TABLE_HEADER_BINDING.v1'
                   : sel.reason === 'active_grammar' ? 'PN.ACTIVE_GRAMMAR.v1'
                   : sel.reason === 'contextual_identity_corroborrated' ? 'PN.CONTEXTUAL_CORROBORATED.v1'
                   : sel.reason === 'manual_verified_against_document' ? 'PN.MANUAL_VERIFIED.v1'
@@ -287,6 +288,7 @@ export default async function (req) {
           page: Number.isFinite(Number(partCandidate?.page)) ? partCandidate.page : null,
           bbox: partCandidate?.bbox || null,
           rule_id: sel.reason === 'explicit_part_number_label' ? 'PN.EXPLICIT_LABEL.v1'
+            : sel.reason === 'explicit_part_number_table_header' ? 'PN.TABLE_HEADER_BINDING.v1'
             : sel.reason === 'active_grammar' ? 'PN.ACTIVE_GRAMMAR.v1'
             : sel.reason === 'contextual_identity_corroborrated' ? 'PN.CONTEXTUAL_CORROBORATED.v1'
             : sel.reason === 'manual_verified_against_document' ? 'PN.MANUAL_VERIFIED.v1' : ''
