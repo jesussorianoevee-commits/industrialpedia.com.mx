@@ -4,6 +4,7 @@ import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractPDF } from '../../shared/pdfExtract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
+import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 
 // PIPELINE MASIVO DE INGESTA DETERMINÍSTICA (sin IA) desde CrawlDocument.
 // Cola (IngestionTask) -> extraccion PDF/HTML -> estructuracion -> normalizacion ->
@@ -188,12 +189,15 @@ export default async function (req) {
         const specs = rawSpecs.filter((r) => r.attribute && r.value).map((r) => {
           const { value, unit } = splitValueUnit(r.value);
           const page = findPageFor(r.value, extracted.pages);
+          const semantic = isTechnicalSpecification(r.attribute, r.value);
           return {
             attribute_name: r.attribute, attribute_canonical: r.attribute,
             original_value: r.value, normalized_value: value,
             original_unit: unit, normalized_unit: normalizeUnit(unit),
             page,
-            evidence_text: r.attribute + ': ' + r.value
+            evidence_text: r.attribute + ': ' + r.value,
+            semantic_role: semantic.role,
+            semantic_reason: semantic.reason
           };
         });
 
