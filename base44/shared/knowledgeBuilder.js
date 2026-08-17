@@ -6,11 +6,16 @@
 //   DemonstratedFact -> Quality Gateway. Precedencia MANUAL > INDUCIDO > GENÉRICO.
 
 // Diccionario GENÉRICO de etiquetas semánticas (no específico de fabricante).
-const POSITIVE_LABELS = [
+const STRONG_PART_NUMBER_LABELS = [
   'part number', 'part no', 'part no.', 'part #', 'p/n', 'pn', 'ordering number', 'order number', 'order no',
-  'order code', 'model number', 'model no', 'device', 'product number', 'ordering', 'mpn', 'mfr part',
-  'manufacturer part', 'component'
+  'order code', 'model number', 'model no', 'product number', 'ordering', 'mpn', 'mfr part',
+  'manufacturer part'
 ];
+
+// Contextual labels are evidence, not an automatic PART_NUMBER decision.
+// A generic word such as "device" or "component" must be corroborated by document context.
+const CONTEXTUAL_IDENTIFIER_LABELS = ['device', 'component'];
+const POSITIVE_LABELS = [...STRONG_PART_NUMBER_LABELS];
 const NEGATIVE_LABELS = [
   'literature number', 'lit number', 'lit no', 'document number', 'doc number', 'literature', 'revision', 'rev',
   'rev.', 'date', 'family', 'package', 'lot number', 'lot no', 'serial number', 'serial no', 'catalog number',
@@ -31,6 +36,7 @@ export function formatSignature(token) {
 function labelTypeOf(lbl) {
   if (!lbl) return 'none';
   if (POSITIVE_LABELS.includes(lbl)) return 'positive';
+  if (CONTEXTUAL_IDENTIFIER_LABELS.includes(lbl)) return 'contextual';
   if (NEGATIVE_LABELS.includes(lbl)) return 'negative';
   return 'none';
 }
@@ -67,10 +73,12 @@ export function extractCandidates(text, pages) {
         seen.add(tok);
         if (!/\d/.test(tok) || !/[A-Za-z]/.test(tok)) continue;
         const label = findLabel(lines, li);
+        const contextLines = lines.slice(Math.max(0, li - 2), Math.min(lines.length, li + 3));
         out.push({
           text: tok, format_sig: formatSignature(tok),
           page: p + 1, line_index: li,
           label, label_type: labelTypeOf(label),
+          context_text: contextLines.join(' ').replace(/\s+/g, ' ').trim(),
           in_title: (p === 0 && li <= 2)
         });
       }
@@ -150,18 +158,44 @@ export function induceGrammar(docs) {
   };
 }
 
-// 7. SELECCIÓN en ingesta. Precedencia: MANUAL(externa) > INDUCIDO(grammar activa) > directo(etiqueta positiva).
-// Nunca selecciona un candidato con etiqueta negativa. Sin demostración -> no adjudica significado.
+function hasExcludedContext(candidate) {
+  const ctx = String(candidate?.context_text || '').toLowerCase();
+  const token = String(candidate?.text || '').toLowerCase();
+  const voltageToken = /^\d+(?:\.\d+)?\s*(?:v|mv|kv|a|ma|ua|hz|khz|mhz|ohm|kohm|mohm|w|mw)$/i.test(token);
+  const referenceContext = /\b(?:vref|voltage reference|reference voltage|supply voltage|input voltage|output voltage)\b/i.test(ctx);
+  const standardsContext = /\b(?:je[c]?d|standard|jep|jesd|iec|iso|mil[- ]std|military standard)\b/i.test(ctx);
+  const documentMetaContext = /\b(?:literature number|document number|revision|rev\.?|catalog number|page|package|datasheet)\b/i.test(ctx);
+  return voltageToken || referenceContext || standardsContext || documentMetaContext;
+}
+
+function contextualPartCandidate(candidates) {
+  const eligible = candidates.filter((c) => c.label_type === 'contextual' && !hasExcludedContext(c));
+  if (!eligible.length) return null;
+  const byToken = new Map();
+  for (const c of eligible) {
+    const key = c.text;
+    const prev = byToken.get(key) || { candidate: c, count: 0, firstPageCount: 0 };
+    prev.count++;
+    if (c.page === 1) prev.firstPageCount++;
+    byToken.set(key, prev);
+  }
+  // Contextual labels require corroboration: title OR repeated identity on page 1.
+  return [...byToken.values()]
+    .filter((x) => x.candidate.in_title || x.firstPageCount >= 2)
+    .sort((a, b) => (Number(b.candidate.in_title) - Number(a.candidate.in_title)) || (b.firstPageCount - a.firstPageCount) || (a.candidate.text < b.candidate.text ? -1 : 1))[0]?.candidate || null;
+}
+
+// 7. SELECCIÓN en ingesta. Precedencia: MANUAL > INDUCIDO > explícito > contextual corroborado.
+// Un candidato por sí solo nunca adjudica significado; sin demostración se mantiene pendiente.
 export function selectPartNumber(candidates, grammar) {
   if (!candidates || !candidates.length) return { value: '', demonstrated: false, reason: 'no_candidates', candidate: null, grammar_id: '' };
-  // Directo: etiqueta positiva en el documento (el propio documento declara el part number).
-  const positive = candidates.find(c => c.label_type === 'positive');
-  if (positive) return { value: positive.text, demonstrated: true, reason: 'direct_positive_label', candidate: positive, grammar_id: '' };
-  // INDUCIDO: grammar activa validada fuera de muestra.
+  const explicit = candidates.find(c => c.label_type === 'positive' && !hasExcludedContext(c));
+  if (explicit) return { value: explicit.text, demonstrated: true, reason: 'explicit_part_number_label', role: 'PART_NUMBER', candidate: explicit, grammar_id: '' };
   if (grammar && grammar.status === 'active' && grammar.format_sig) {
-    const g = candidates.find(c => c.label_type !== 'negative' && c.format_sig === grammar.format_sig &&
-      !((grammar.negative_formats || []).includes(c.format_sig)));
-    if (g) return { value: g.text, demonstrated: true, reason: 'active_grammar', candidate: g, grammar_id: grammar.id || '' };
+    const g = candidates.find(c => c.label_type !== 'negative' && c.format_sig === grammar.format_sig && !hasExcludedContext(c));
+    if (g) return { value: g.text, demonstrated: true, reason: 'active_grammar', role: 'PART_NUMBER', candidate: g, grammar_id: grammar.id || '' };
   }
-  return { value: '', demonstrated: false, reason: 'not_demonstrated', candidate: null, grammar_id: (grammar && grammar.id) || '' };
+  const contextual = contextualPartCandidate(candidates);
+  if (contextual) return { value: contextual.text, demonstrated: true, reason: 'contextual_identity_corroborrated', role: 'PART_NUMBER', candidate: contextual, grammar_id: '' };
+  return { value: '', demonstrated: false, reason: 'not_demonstrated', role: 'UNKNOWN', candidate: null, grammar_id: (grammar && grammar.id) || '' };
 }
