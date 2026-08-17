@@ -68,9 +68,14 @@ function findLabelEvidence(lines, li) {
 const ID_RE = /\b[A-Z0-9][A-Z0-9._\/-]{2,29}\b/g;
 
 // 1. CANDIDATOS: detectar identificadores con contexto. NO adjudican significado.
-export function extractCandidates(text, pages) {
+export function extractCandidates(text, pages, layoutBlocks = []) {
   const out = [];
   const pagesArr = (Array.isArray(pages) && pages.length) ? pages : [text || ''];
+  const blockByPageText = new Map();
+  for (const b of Array.isArray(layoutBlocks) ? layoutBlocks : []) {
+    const key = `${Number(b.page) || 0}|${String(b.text || '').replace(/\s+/g, ' ').trim()}`;
+    if (key !== '|') blockByPageText.set(key, b);
+  }
   for (let p = 0; p < pagesArr.length; p++) {
     const lines = String(pagesArr[p] || '').split(/\r?\n/);
     for (let li = 0; li < lines.length; li++) {
@@ -94,6 +99,7 @@ export function extractCandidates(text, pages) {
           label_distance: labelEvidence?.distance ?? null,
           label_exclusive: !!labelEvidence?.exclusive,
           context_text: contextLines.join(' ').replace(/\s+/g, ' ').trim(),
+          bbox: blockByPageText.get(`${p + 1}|${String(line || '').replace(/\s+/g, ' ').trim()}`)?.bbox || null,
           in_title: (p === 0 && li <= 2)
         });
       }
