@@ -174,18 +174,26 @@ export default async function (req) {
           );
         }
         const grammar = await loadActiveGrammar(task.source_id, manufacturerName);
-        const sel = manualPN ? { value: manualPN, demonstrated: true, reason: 'manual', candidate: null, grammar_id: '' }
+        const manualCandidate = manualPN
+          ? idCandidates.find((c) => normalizePartNumber(c.text) === normalizePartNumber(manualPN))
+          : null;
+        const sel = manualPN
+          ? (manualCandidate
+            ? { value: manualPN, demonstrated: true, reason: 'manual_verified_against_document', role: 'PART_NUMBER', candidate: manualCandidate, grammar_id: '' }
+            : { value: '', demonstrated: false, reason: 'manual_hint_not_found_in_document', role: 'UNKNOWN', candidate: null, grammar_id: '' })
           : selectPartNumber(idCandidates, grammar);
         const partNumber = sel.value;
         const description = (extracted.title || extracted.text || '').slice(0, 240);
         const rawSpecs = (extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text);
         const specs = rawSpecs.filter((r) => r.attribute && r.value).map((r) => {
           const { value, unit } = splitValueUnit(r.value);
+          const page = findPageFor(r.value, extracted.pages);
           return {
             attribute_name: r.attribute, attribute_canonical: r.attribute,
             original_value: r.value, normalized_value: value,
             original_unit: unit, normalized_unit: normalizeUnit(unit),
-            page: findPageFor(r.value, extracted.pages)
+            page,
+            evidence_text: r.attribute + ': ' + r.value
           };
         });
 
