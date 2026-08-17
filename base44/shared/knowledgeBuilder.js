@@ -43,19 +43,24 @@ function labelTypeOf(lbl) {
   return 'none';
 }
 
-// Etiqueta cercana: línea actual + hasta 2 anteriores (encabezado de tabla o "Label:").
-function findLabel(lines, li) {
-  for (let k = 0; k <= 2; k++) {
-    const idx = li - k;
-    if (idx < 0) break;
-    const ln = String(lines[idx] || '').toLowerCase();
-    for (const lbl of ALL_LABELS) {
-      const escaped = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const re = new RegExp('(?:^|[^a-z0-9])' + escaped + '(?:$|[^a-z0-9])', 'i');
-      if (re.test(ln)) return lbl;
+// Etiqueta estructuralmente segura. Una etiqueta fuerte solo demuestra el rol si:
+// - aparece en la misma línea que el candidato, o
+// - la línea inmediatamente anterior contiene SOLO esa etiqueta.
+// Nunca se hereda una etiqueta desde un encabezado de tabla con varias columnas.
+function findLabelEvidence(lines, li) {
+  const same = String(lines[li] || '');
+  const previous = li > 0 ? String(lines[li - 1] || '') : '';
+  const candidates = [];
+  for (const lbl of ALL_LABELS) {
+    const escaped = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp('(?:^|[^a-z0-9])' + escaped + '(?:$|[^a-z0-9])', 'i');
+    if (re.test(same)) candidates.push({ label: lbl, sameLine: true, distance: 0, exclusive: false });
+    const prevTrim = previous.trim().replace(/[：:]\s*$/, '').trim();
+    if (re.test(previous) && prevTrim.toLowerCase() === lbl.toLowerCase()) {
+      candidates.push({ label: lbl, sameLine: false, distance: 1, exclusive: true });
     }
   }
-  return null;
+  return candidates.sort((a, b) => (Number(b.sameLine) - Number(a.sameLine)) || (Number(b.exclusive) - Number(a.exclusive)) || (b.label.length - a.label.length))[0] || null;
 }
 
 // Conservador con símbolos de ingeniería habituales en MPNs. El resolver semántico
@@ -78,12 +83,16 @@ export function extractCandidates(text, pages) {
         if (seen.has(tok)) continue;
         seen.add(tok);
         if (!/\d/.test(tok) || !/[A-Za-z]/.test(tok)) continue;
-        const label = findLabel(lines, li);
+        const labelEvidence = findLabelEvidence(lines, li);
+        const label = labelEvidence?.label || null;
         const contextLines = lines.slice(Math.max(0, li - 2), Math.min(lines.length, li + 3));
         out.push({
           text: tok, format_sig: formatSignature(tok),
           page: p + 1, line_index: li,
           label, label_type: labelTypeOf(label),
+          label_same_line: !!labelEvidence?.sameLine,
+          label_distance: labelEvidence?.distance ?? null,
+          label_exclusive: !!labelEvidence?.exclusive,
           context_text: contextLines.join(' ').replace(/\s+/g, ' ').trim(),
           in_title: (p === 0 && li <= 2)
         });
