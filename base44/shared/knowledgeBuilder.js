@@ -250,7 +250,10 @@ export function selectPartNumber(candidates, grammar) {
   // 1) Explicit label: the semantic resolver must independently agree that the label
   // denotes PART_NUMBER. This prevents accidental positive-label promotion.
   const explicit = candidates.find((c) => classifyIdentifier(c).role === 'PART_NUMBER' && !hasExcludedContext(c));
-  if (explicit) return { value: explicit.text, demonstrated: true, reason: 'explicit_part_number_label', role: 'PART_NUMBER', candidate: explicit, grammar_id: '' };
+  if (explicit) {
+    const explicitRole = classifyIdentifier(explicit);
+    return { value: explicit.text, demonstrated: true, reason: explicitRole.reason, role: 'PART_NUMBER', candidate: explicit, grammar_id: '' };
+  }
 
   // 2) Active grammar is allowed only after the candidate passes semantic exclusion checks.
   if (grammar && grammar.status === 'active' && grammar.format_sig) {
