@@ -1,3 +1,5 @@
+import { classifyIdentifier } from './semanticResolver.js';
+
 // Manufacturer Knowledge Builder — aprendizaje determinístico de part_number (sin IA/LLM/embeddings).
 // Reutiliza los extractores existentes; NO crea reglas por fabricante.
 //
@@ -21,7 +23,7 @@ const NEGATIVE_LABELS = [
   'rev.', 'date', 'family', 'package', 'lot number', 'lot no', 'serial number', 'serial no', 'catalog number',
   'cat number', 'page', 'version', 'isbn', 'ean', 'upc', 'orderable'
 ];
-const ALL_LABELS = [...POSITIVE_LABELS, ...NEGATIVE_LABELS].sort((a, b) => b.length - a.length);
+const ALL_LABELS = [...POSITIVE_LABELS, ...CONTEXTUAL_IDENTIFIER_LABELS, ...NEGATIVE_LABELS].sort((a, b) => b.length - a.length);
 
 export function formatSignature(token) {
   let sig = '';
@@ -46,15 +48,19 @@ function findLabel(lines, li) {
   for (let k = 0; k <= 2; k++) {
     const idx = li - k;
     if (idx < 0) break;
-    const ln = lines[idx].toLowerCase();
+    const ln = String(lines[idx] || '').toLowerCase();
     for (const lbl of ALL_LABELS) {
-      if (ln.includes(lbl)) return lbl;
+      const escaped = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp('(?:^|[^a-z0-9])' + escaped + '(?:$|[^a-z0-9])', 'i');
+      if (re.test(ln)) return lbl;
     }
   }
   return null;
 }
 
-const ID_RE = /\b[A-Z0-9]{3,20}\b/g;
+// Conservador con símbolos de ingeniería habituales en MPNs. El resolver semántico
+// decide si el candidato es realmente PART_NUMBER; ampliar la captura no autoriza publicación.
+const ID_RE = /\b[A-Z0-9][A-Z0-9._\/-]{2,29}\b/g;
 
 // 1. CANDIDATOS: detectar identificadores con contexto. NO adjudican significado.
 export function extractCandidates(text, pages) {
@@ -159,17 +165,12 @@ export function induceGrammar(docs) {
 }
 
 function hasExcludedContext(candidate) {
-  const ctx = String(candidate?.context_text || '').toLowerCase();
-  const token = String(candidate?.text || '').toLowerCase();
-  const voltageToken = /^\d+(?:\.\d+)?\s*(?:v|mv|kv|a|ma|ua|hz|khz|mhz|ohm|kohm|mohm|w|mw)$/i.test(token);
-  const referenceContext = /\b(?:vref|voltage reference|reference voltage|supply voltage|input voltage|output voltage)\b/i.test(ctx);
-  const standardsContext = /\b(?:je[c]?d|standard|jep|jesd|iec|iso|mil[- ]std|military standard)\b/i.test(ctx);
-  const documentMetaContext = /\b(?:literature number|document number|revision|rev\.?|catalog number|page|package|datasheet)\b/i.test(ctx);
-  return voltageToken || referenceContext || standardsContext || documentMetaContext;
+  const r = classifyIdentifier(candidate);
+  return !r.demonstrated && ['ELECTRICAL_VALUE', 'VOLTAGE_REFERENCE', 'STANDARD_REFERENCE', 'DOCUMENT_REFERENCE', 'REVISION', 'PACKAGE', 'LITERATURE_NUMBER'].includes(r.role);
 }
 
 function contextualPartCandidate(candidates) {
-  const eligible = candidates.filter((c) => c.label_type === 'contextual' && !hasExcludedContext(c));
+  const eligible = candidates.filter((c) => c.label_type === 'contextual' && classifyIdentifier(c).role === 'IDENTIFIER_CANDIDATE');
   if (!eligible.length) return null;
   const byToken = new Map();
   for (const c of eligible) {
@@ -189,13 +190,26 @@ function contextualPartCandidate(candidates) {
 // Un candidato por sí solo nunca adjudica significado; sin demostración se mantiene pendiente.
 export function selectPartNumber(candidates, grammar) {
   if (!candidates || !candidates.length) return { value: '', demonstrated: false, reason: 'no_candidates', candidate: null, grammar_id: '' };
-  const explicit = candidates.find(c => c.label_type === 'positive' && !hasExcludedContext(c));
+
+  // 1) Explicit label: the semantic resolver must independently agree that the label
+  // denotes PART_NUMBER. This prevents accidental positive-label promotion.
+  const explicit = candidates.find((c) => classifyIdentifier(c).role === 'PART_NUMBER' && !hasExcludedContext(c));
   if (explicit) return { value: explicit.text, demonstrated: true, reason: 'explicit_part_number_label', role: 'PART_NUMBER', candidate: explicit, grammar_id: '' };
+
+  // 2) Active grammar is allowed only after the candidate passes semantic exclusion checks.
   if (grammar && grammar.status === 'active' && grammar.format_sig) {
-    const g = candidates.find(c => c.label_type !== 'negative' && c.format_sig === grammar.format_sig && !hasExcludedContext(c));
-    if (g) return { value: g.text, demonstrated: true, reason: 'active_grammar', role: 'PART_NUMBER', candidate: g, grammar_id: grammar.id || '' };
+    const g = candidates.find((c) => c.label_type !== 'negative' && c.format_sig === grammar.format_sig && !hasExcludedContext(c));
+    if (g) {
+      const role = classifyIdentifier(g);
+      if (role.role === 'IDENTIFIER_CANDIDATE' || role.role === 'UNKNOWN') {
+        return { value: g.text, demonstrated: true, reason: 'active_grammar', role: 'PART_NUMBER', candidate: g, grammar_id: grammar.id || '' };
+      }
+    }
   }
+
+  // 3) Contextual identity requires corroboration and is still deterministic.
   const contextual = contextualPartCandidate(candidates);
   if (contextual) return { value: contextual.text, demonstrated: true, reason: 'contextual_identity_corroborrated', role: 'PART_NUMBER', candidate: contextual, grammar_id: '' };
+
   return { value: '', demonstrated: false, reason: 'not_demonstrated', role: 'UNKNOWN', candidate: null, grammar_id: (grammar && grammar.id) || '' };
 }
