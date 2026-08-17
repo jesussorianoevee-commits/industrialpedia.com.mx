@@ -170,7 +170,7 @@ function hasExcludedContext(candidate) {
 }
 
 function contextualPartCandidate(candidates) {
-  const eligible = candidates.filter((c) => c.label_type === 'contextual' && classifyIdentifier(c).role === 'IDENTIFIER_CANDIDATE');
+  const eligible = candidates.filter((c) => c.label_type === 'contextual' && classifyIdentifier(c).role === 'IDENTIFIER_CANDIDATE' && !hasExcludedContext(c));
   if (!eligible.length) return null;
   const byToken = new Map();
   for (const c of eligible) {
