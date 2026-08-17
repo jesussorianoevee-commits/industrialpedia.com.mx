@@ -62,38 +62,117 @@ function groupLines(items) {
     .filter((l) => l.text);
 }
 
+const HEADER_ROLE_PATTERNS = [
+  ['PART_NUMBER', /^(?:part(?:[ ]+number|[ ]+no\.?|[ ]+#)|p\/n|pn|mpn|order(?:ing)?[ ]+(?:number|no\.?|code)|model[ ]+(?:number|no\.?)|product[ ]+number)$/i],
+  ['PARAMETER', /^(?:parameter|param|spec(?:ification)?|characteristic|item)$/i],
+  ['TEST_CONDITION', /^(?:test[ ]+conditions?|conditions?|test)$/i],
+  ['MIN', /^min(?:imum)?$/i],
+  ['TYP', /^(?:typ|typical)$/i],
+  ['MAX', /^max(?:imum)?$/i],
+  ['UNIT', /^(?:unit|units)$/i],
+  ['PACKAGE', /^package(?:[ ]+type)?$/i],
+  ['DESCRIPTION', /^(?:description|feature|features)$/i]
+];
+
+function cellFromItems(items) {
+  return {
+    text: cleanText(items.map((i) => i.str).join(' ')),
+    bbox: mergeBbox(items),
+    item_indexes: items.map((i) => i.item_index)
+  };
+}
+
+function splitLineIntoCells(items) {
+  const sorted = [...items].sort((a, b) => a.bbox.x0 - b.bbox.x0);
+  const cells = [];
+  let current = [];
+  for (const item of sorted) {
+    const prev = current[current.length - 1];
+    const gap = prev ? item.bbox.x0 - prev.bbox.x1 : 0;
+    if (current.length && gap >= MIN_TABLE_GAP) {
+      cells.push(cellFromItems(current));
+      current = [];
+    }
+    current.push(item);
+  }
+  if (current.length) cells.push(cellFromItems(current));
+  return cells.filter((c) => c.text);
+}
+
+function headerRole(text) {
+  const value = cleanText(text);
+  for (const [role, re] of HEADER_ROLE_PATTERNS) if (re.test(value)) return role;
+  return '';
+}
+
+function assignColumnIndexes(rows) {
+  const anchors = [];
+  for (const row of rows) {
+    for (const cell of row) {
+      const x = cell.bbox?.x0;
+      if (!Number.isFinite(x)) continue;
+      let anchor = anchors.find((a) => Math.abs(a.x - x) <= 12);
+      if (!anchor) {
+        anchor = { x, count: 0 };
+        anchors.push(anchor);
+      }
+      anchor.x = (anchor.x * anchor.count + x) / (anchor.count + 1);
+      anchor.count++;
+      cell._anchor = anchor;
+    }
+  }
+  anchors.sort((a, b) => a.x - b.x);
+  const index = new Map(anchors.map((a, i) => [a, i]));
+  return rows.map((row) => row.map((cell) => ({ ...cell, column_index: index.get(cell._anchor) ?? null })));
+}
+
 function detectTables(lines) {
   const tables = [];
   let current = [];
 
   const flush = () => {
-    if (current.length >= 2) {
-      const rows = current.map((line) => line.items.map((item) => ({
-        text: cleanText(item.str), bbox: item.bbox
-      })).filter((c) => c.text));
-      const maxCells = Math.max(...rows.map((r) => r.length));
-      if (maxCells >= 2) tables.push({ rows });
+    if (current.length < 2) {
+      current = [];
+      return;
     }
+    const rows = current.map((line) => splitLineIntoCells(line.items)).filter((r) => r.length >= 2);
+    if (rows.length < 2) {
+      current = [];
+      return;
+    }
+    const indexedRows = assignColumnIndexes(rows);
+    let headerIndex = -1;
+    const headerRoles = [];
+    for (let i = 0; i < Math.min(indexedRows.length, 3); i++) {
+      const roles = indexedRows[i].map((c) => headerRole(c.text));
+      if (roles.filter(Boolean).length >= 2) {
+        headerIndex = i;
+        for (const c of indexedRows[i]) headerRoles[c.column_index] = headerRole(c.text);
+        break;
+      }
+    }
+    const structuredRows = indexedRows.map((row, rowIndex) => row.map((cell) => ({
+      ...cell,
+      row_index: rowIndex,
+      header: headerRoles[cell.column_index] || '',
+      is_header: rowIndex === headerIndex
+    })));
+    tables.push({ rows: structuredRows, header_row_index: headerIndex, header_roles: headerRoles });
     current = [];
   };
 
   for (const line of lines) {
-    const cells = [];
-    for (let i = 0; i < line.items.length; i++) {
-      const item = line.items[i];
-      const next = line.items[i + 1];
-      const gap = next ? next.bbox.x0 - item.bbox.x1 : 0;
-      if (i === 0 || gap >= MIN_TABLE_GAP) cells.push(item);
-    }
-    // A line with multiple separated text runs is a table-row candidate.
-    if (cells.length >= 2) current.push({ ...line, items: cells });
+    const cells = splitLineIntoCells(line.items);
+    if (cells.length >= 2) current.push({ ...line, items: line.items });
     else flush();
   }
   flush();
 
   return tables.map((table, tableIndex) => ({
     id: `table-${tableIndex + 1}`,
-    rows: table.rows.map((row, rowIndex) => row.map((cell, columnIndex) => ({ ...cell, row_index: rowIndex, column_index: columnIndex })))
+    header_row_index: table.header_row_index,
+    header_roles: table.header_roles,
+    rows: table.rows
   }));
 }
 
