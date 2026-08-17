@@ -197,9 +197,23 @@ export default async function (req) {
           };
         });
 
+        const partCandidate = sel.candidate;
         const rec = {
           part_number: partNumber, part_number_normalized: normalizePartNumber(partNumber),
-          manufacturer_name: manufacturerName, description, specs, raw_text: extracted.text
+          manufacturer_name: manufacturerName, description, specs, raw_text: extracted.text,
+          part_demonstration: sel.demonstrated && partCandidate
+            ? {
+                role: sel.role || 'PART_NUMBER',
+                candidate_text: partCandidate.text,
+                evidence_text: partCandidate.context_text || partCandidate.text,
+                page: partCandidate.page,
+                rule_id: sel.reason === 'explicit_part_number_label' ? 'PN.EXPLICIT_LABEL.v1'
+                  : sel.reason === 'active_grammar' ? 'PN.ACTIVE_GRAMMAR.v1'
+                  : sel.reason === 'contextual_identity_corroborrated' ? 'PN.CONTEXTUAL_CORROBORATED.v1'
+                  : sel.reason === 'manual_verified_against_document' ? 'PN.MANUAL_VERIFIED.v1'
+                  : ''
+              }
+            : null
         };
         const gate = gatePart(rec);
 
