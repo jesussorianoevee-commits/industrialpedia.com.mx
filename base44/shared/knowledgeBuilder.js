@@ -226,7 +226,13 @@ function hasExcludedContext(candidate) {
 }
 
 function contextualPartCandidate(candidates) {
-  const eligible = candidates.filter((c) => c.label_type === 'contextual' && classifyIdentifier(c).role === 'IDENTIFIER_CANDIDATE' && !hasExcludedContext(c));
+  const eligible = candidates.filter((c) => {
+    if (c.label_type === 'negative') return false;
+    const role = classifyIdentifier(c).role;
+    if (!['IDENTIFIER_CANDIDATE', 'UNKNOWN'].includes(role)) return false;
+    if (hasExcludedContext(c)) return false;
+    return c.label_type === 'contextual' || /\b(?:device|component|part|product|model|amplifier|sensor|controller|regulator|driver|converter|switch|relay|motor|actuator|valve|module|processor|interface)\b/i.test(String(c.context_text || ''));
+  });
   if (!eligible.length) return null;
   const byToken = new Map();
   for (const c of eligible) {
@@ -238,7 +244,7 @@ function contextualPartCandidate(candidates) {
   }
   // Contextual labels require corroboration: title OR repeated identity on page 1.
   return [...byToken.values()]
-    .filter((x) => x.candidate.in_title || x.firstPageCount >= 2)
+    .filter((x) => x.firstPageCount >= 2 && (x.candidate.in_title || x.count >= 3))
     .sort((a, b) => (Number(b.candidate.in_title) - Number(a.candidate.in_title)) || (b.firstPageCount - a.firstPageCount) || (a.candidate.text < b.candidate.text ? -1 : 1))[0]?.candidate || null;
 }
 
