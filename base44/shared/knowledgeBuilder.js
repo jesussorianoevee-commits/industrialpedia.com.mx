@@ -231,7 +231,7 @@ function contextualPartCandidate(candidates) {
     const role = classifyIdentifier(c).role;
     if (!['IDENTIFIER_CANDIDATE', 'UNKNOWN'].includes(role)) return false;
     if (hasExcludedContext(c)) return false;
-    return c.label_type === 'contextual' || /\b(?:device|component|part|product|model|amplifier|sensor|controller|regulator|driver|converter|switch|relay|motor|actuator|valve|module|processor|interface)\b/i.test(String(c.context_text || ''));
+    return c.label_type === 'contextual' || /\b(?:devices?|components?|parts?|products?|models?|amplifiers?|sensors?|controllers?|regulators?|drivers?|converters?|switches?|relays?|motors?|actuators?|valves?|modules?|processors?|interfaces?)\b/i.test(String(c.context_text || ''));
   });
   if (!eligible.length) return null;
   const byToken = new Map();
