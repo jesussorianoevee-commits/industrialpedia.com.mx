@@ -85,9 +85,17 @@ export async function discoverIndustrialWeb(query) {
   const q = String(query || '').trim();
   if (!q) return { provider: 'none', results: [] };
 
-  // Exact query first: part numbers and manufacturer+family strings are preserved.
-  const exact = await bing(q);
-  if (exact.length) return { provider: 'bing', results: unique(exact).slice(0, MAX_RESULTS) };
+  // Con API de Bing disponible, hacemos varias búsquedas complementarias y
+  // combinamos sus resultados. Esto mejora mucho la cobertura sin depender de
+  // una lista cerrada de fabricantes ni de una sola forma de nombrar la pieza.
+  const bingQueries = [
+    q,
+    `${q} datasheet`,
+    `${q} product catalog`
+  ];
+  const bingBatches = await Promise.all(bingQueries.map((term) => bing(term)));
+  const bingResults = unique(bingBatches.flat());
+  if (bingResults.length) return { provider: 'bing', results: bingResults.slice(0, MAX_RESULTS) };
 
   const ddg = await duckduckgo(q);
   if (ddg.length) return { provider: 'duckduckgo', results: unique(ddg).slice(0, MAX_RESULTS) };
