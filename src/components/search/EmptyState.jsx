@@ -6,9 +6,9 @@ export default function EmptyState({ q, onReset }) {
       <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
         <SearchX className="w-6 h-6 text-white/40" />
       </div>
-      <p className="text-white/60 text-sm mb-2">Sin resultados validados para esta consulta.</p>
+      <p className="text-white/60 text-sm mb-2">No encontramos resultados para esta consulta.</p>
       <p className="text-white/30 text-xs max-w-xs mx-auto leading-relaxed mb-5">
-        El Knowledge Core prioriza conocimiento publicado y trazable. Cuando se ingiera y valide documentación real, los resultados aparecerán aquí con su fuente y evidencia.
+        Prueba con un número de parte, fabricante, familia o descripción técnica diferente.
       </p>
       <button
         onClick={onReset}
