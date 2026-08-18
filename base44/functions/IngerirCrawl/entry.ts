@@ -260,9 +260,16 @@ export default async function (req) {
 
         if (gate.state !== 'published') {
           if (gate.state === 'incomplete') incomplete++; else rejected++;
-          const docRec = await base44.asServiceRole.entities.Document.create({
+          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+          const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
             title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'other', status: gate.state
           });
+          if (existingDoc) {
+            await base44.asServiceRole.entities.Document.update(existingDoc.id, {
+              title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash,
+              document_type: 'other', status: gate.state
+            });
+          }
           await base44.asServiceRole.entities.Provenance.create({ entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '', note: 'causas: ' + gate.causes.join(', ') });
           // Observaciones pendientes: el part_number no pudo demostrarse (sin grammar activa ni etiqueta positiva).
           for (const c of idCandidates) {
@@ -281,13 +288,25 @@ export default async function (req) {
         }
 
         // PUBLICACION en Knowledge Core (cadena PART->SPEC->PROVENANCE->EVIDENCE->DOCUMENT->SOURCE)
-        const docRec = await base44.asServiceRole.entities.Document.create({
+        const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+        const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
           title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'published'
         });
-        const sourceRec = await base44.asServiceRole.entities.Source.create({
+        if (existingDoc) {
+          await base44.asServiceRole.entities.Document.update(existingDoc.id, {
+            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash,
+            document_type: 'datasheet', status: 'published'
+          });
+        }
+        const existingSource = existingDoc?.source_id
+          ? await base44.asServiceRole.entities.Source.get(existingDoc.source_id).catch(() => null)
+          : null;
+        const sourceRec = existingSource || await base44.asServiceRole.entities.Source.create({
           document_id: docRec.id, url: task.url, type: 'datasheet', retrieved_date: new Date().toISOString()
         });
-        await base44.asServiceRole.entities.Document.update(docRec.id, { source_id: sourceRec.id });
+        if (!existingDoc?.source_id || !existingSource) {
+          await base44.asServiceRole.entities.Document.update(docRec.id, { source_id: sourceRec.id });
+        }
         let manufacturerId = '';
         const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, 'updated_date', 1);
         manufacturerId = manuf.length ? manuf[0].id : (await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' })).id;
