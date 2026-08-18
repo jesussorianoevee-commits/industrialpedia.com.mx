@@ -316,11 +316,24 @@ function versionTokens(text) {
   return [...new Set(out)];
 }
 
-function partMarkingMatchesVersion(marking, version) {
+function partMarkingMatchesVersion(marking, version, partNumber = '') {
   const m = String(marking || '').toUpperCase().replace(/\\s+/g, '');
-  if (!m) return false;
-  return new RegExp(`(?:^|[^A-Z0-9])${version}(?:$|[^A-Z0-9])`).test(m)
-    || new RegExp(`${version}$`).test(m);
+  const p = String(partNumber || '').toUpperCase().replace(/\\s+/g, '');
+  if (!m && !p) return false;
+
+  // A marking may carry package/suffix characters after the grade (e.g. LM324BIDR),
+  // so a simple token-boundary test is insufficient. Prefer the explicit Part Number
+  // when available: detect the grade immediately after the alphanumeric family stem.
+  // This is evidence from the orderable row itself, not a manufacturer-specific rule.
+  if (p) {
+    const grade = String(version || '').toUpperCase();
+    const familyStem = p.replace(new RegExp(`${grade}.*$`, 'i'), '');
+    if (familyStem && new RegExp(`${familyStem}${grade}(?:[A-Z0-9._\\/-]*)$`, 'i').test(p)) return true;
+  }
+
+  // Fallback for a marking that explicitly exposes the grade as a separated token.
+  return new RegExp(`(?:^|[^A-Z0-9])${version}(?:$|[^A-Z0-9])`, 'i').test(m)
+    || new RegExp(`${version}$`, 'i').test(m);
 }
 
 // Determina aplicabilidad únicamente cuando el documento aporta una relación explícita:
