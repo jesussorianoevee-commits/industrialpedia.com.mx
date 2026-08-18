@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -20,6 +20,9 @@ export default function Buscar() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const suggestionTimer = useRef(null);
 
   const runSearch = useCallback(async (query, f) => {
     setLoading(true);
@@ -46,10 +49,52 @@ export default function Buscar() {
     runSearch(q, filters);
   }, [q, filters, runSearch]);
 
+  // Autocompletado tipo fabricante: no espera al botón Buscar. Cada término
+  // escrito consulta el mismo motor determinístico y muestra productos/PNs
+  // conocidos antes de ejecutar la búsqueda completa.
+  useEffect(() => {
+    const term = input.trim();
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+    if (term.length < 2 || term === q.trim()) {
+      setSuggestions([]);
+      setSuggestionsLoading(false);
+      return;
+    }
+    suggestionTimer.current = setTimeout(async () => {
+      setSuggestionsLoading(true);
+      try {
+        const validation_states = ['published', 'validated', 'incomplete'];
+        const res = await base44.functions.invoke('Buscar', {
+          q: term,
+          filters: { manufacturers: [], categories: [], has_specification: false, validation_states },
+          limit: 8,
+          autocomplete: true
+        });
+        const items = (res.data?.results || []).slice(0, 8).map((r) => ({
+          id: r.id,
+          title: r.name || r.title || r.part_number || r.candidate_part_number || 'Producto',
+          partNumber: r.part_number || r.candidate_part_number || '',
+          manufacturer: r.manufacturer_name || r.manufacturer || '',
+          image: r.image_url || r.image || '',
+          result: r
+        }));
+        setSuggestions(items);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    }, 280);
+    return () => suggestionTimer.current && clearTimeout(suggestionTimer.current);
+  }, [input, q]);
+
   const submit = (e) => {
     e.preventDefault();
     const next = input.trim();
-    if (next) setParams({ q: next });
+    if (next) {
+      setSuggestions([]);
+      setParams({ q: next });
+    }
   };
 
   const onReset = () => {
