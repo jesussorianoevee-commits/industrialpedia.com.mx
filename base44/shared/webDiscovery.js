@@ -2,7 +2,7 @@
 // Orden: proveedor API configurado -> DuckDuckGo HTML como fallback sin clave.
 
 const TIMEOUT_MS = 9000;
-const MAX_RESULTS = 8;
+const MAX_RESULTS = 50;
 
 function stripHtml(s) {
   return String(s || '')
