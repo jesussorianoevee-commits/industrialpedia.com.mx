@@ -269,7 +269,9 @@ export function selectPartNumbers(candidates, grammar) {
 
   const rows = new Map();
   for (const c of tableCandidates) {
-    const key = `${c.table_id || ''}|${c.row_index ?? c.line_index ?? ''}`;
+    // table_id is scoped to each PDF page because detectTables() runs per page.
+    // Include page so identical table_id/row_index pairs on different pages are distinct rows.
+    const key = `${c.page ?? ''}|${c.table_id || ''}|${c.row_index ?? c.line_index ?? ''}`;
     const row = rows.get(key) || [];
     row.push(c);
     rows.set(key, row);
