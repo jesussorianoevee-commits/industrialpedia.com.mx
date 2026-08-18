@@ -142,13 +142,28 @@ export default async function (req) {
     }
 
     const isPartNo = looksLikePartNumber(q);
+    const queryTokensForDiscovery = tokenize(q);
+    const hasDirectQueryMatch = candidates.some((p) => {
+      const text = [p.part_number, p.part_number_normalized, p.manufacturer_name, p.category, p.subcategory, p.description, p.title]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (isPartNo) {
+        const pn = normalizePartNumber(p.part_number || p.part_number_normalized || '');
+        return pn === normalizePartNumber(q);
+      }
+      return queryTokensForDiscovery.length > 0 && queryTokensForDiscovery.every((token) => text.includes(token));
+    });
 
-    // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene respuesta,
+    // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene una
+    //    coincidencia relevante, BUSCAR puede descubrir una fuente externa.
+    //    Importante: candidates contiene Parts de la base aunque no coincidan con q;
+    //    usar candidates.length aquí bloqueaba este flujo para cualquier búsqueda.
+    //    La condición correcta es ausencia de coincidencia con la consulta.
+
     //    BUSCAR no se queda en cero. Consulta una fuente web externa determinística
     //    (Bing API si está configurada; DuckDuckGo HTML como fallback), sin IA.
     //    El resultado externo se registra en DiscoveryIndex y se muestra como
     //    "encontrado en fuente"; nunca se inventan especificaciones.
-    if (q && candidates.length === 0 && discoveryCandidates.length === 0) {
+    if (q && !hasDirectQueryMatch && discoveryCandidates.length === 0) {
       try {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
