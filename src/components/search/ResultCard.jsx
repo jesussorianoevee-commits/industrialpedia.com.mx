@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { base44 } from '@/api/base44Client';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 
 const STATE_LABELS = {
@@ -10,6 +12,9 @@ const STATE_LABELS = {
 };
 
 export default function ResultCard({ result }) {
+  const navigate = useNavigate();
+  const [materializing, setMaterializing] = useState(false);
+  const [materializeError, setMaterializeError] = useState('');
   const st = result.discovery_state === 'discovered'
     ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
     : result.discovery_state === 'pending_verification'
@@ -27,11 +32,21 @@ export default function ResultCard({ result }) {
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
-      {result.description && (
-        <p className="text-white/45 text-xs leading-relaxed mb-3">{result.description}</p>
+      {(result.description || result.source_title) && (
+        <div className="mb-3">
+          {result.source_title && result.source_title !== result.part_number && (
+            <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
+          )}
+          {result.description && (
+            <p className="text-white/55 text-xs leading-relaxed">{result.description}</p>
+          )}
+        </div>
       )}
       {result.discovery_state === 'discovered' && (
-        <p className="text-white/35 text-[11px] mb-3">Encontrado fuera del Knowledge Core. Aún no tiene ficha técnica validada en Industrialpedia.</p>
+        <p className="text-white/35 text-[11px] mb-3">Fuente encontrada. La ficha técnica se construye directamente desde esta fuente, sin inventar datos.</p>
+      )}
+      {materializeError && (
+        <p className="text-red-300 text-[11px] mb-3">{materializeError}</p>
       )}
 
       {result.top_specs.length > 0 && (
@@ -78,6 +93,30 @@ export default function ResultCard({ result }) {
           >
             Ver componente <ArrowRight className="w-3 h-3" />
           </Link>
+        ) : result.discovery_id ? (
+          <button
+            disabled={materializing}
+            onClick={async () => {
+              setMaterializing(true);
+              setMaterializeError('');
+              try {
+                const res = await base44.functions.invoke('MaterializeDiscovery', {
+                  discovery_id: result.discovery_id,
+                  query: result.part_number || result.title || ''
+                });
+                const partId = res?.data?.part_id;
+                if (!partId) throw new Error('No se pudo crear la ficha desde la fuente encontrada.');
+                navigate(`/parte/${partId}`);
+              } catch (e) {
+                setMaterializeError(e?.message || 'No se pudo crear la ficha.');
+              } finally {
+                setMaterializing(false);
+              }
+            }}
+            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] disabled:opacity-60 text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            {materializing ? 'Creando ficha…' : 'Ver ficha técnica'} <ArrowRight className="w-3 h-3" />
+          </button>
         ) : result.source_url ? (
           <a
             href={result.source_url}
