@@ -3,7 +3,7 @@ import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
+import { extractCandidates, selectPartNumber, selectPartNumbers } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 
@@ -203,11 +203,12 @@ export default async function (req) {
         const manualCandidate = manualPN
           ? idCandidates.find((c) => normalizePartNumber(c.text) === normalizePartNumber(manualPN))
           : null;
+        const tableSelections = !manualPN ? selectPartNumbers(idCandidates, grammar) : [];
         const sel = manualPN
           ? (manualCandidate
             ? { value: manualPN, demonstrated: true, reason: 'manual_verified_against_document', role: 'PART_NUMBER', candidate: manualCandidate, grammar_id: '' }
             : { value: '', demonstrated: false, reason: 'manual_hint_not_found_in_document', role: 'UNKNOWN', candidate: null, grammar_id: '' })
-          : selectPartNumber(idCandidates, grammar);
+          : (tableSelections.length ? tableSelections[0] : selectPartNumber(idCandidates, grammar));
         const partNumber = sel.value;
         const description = (extracted.title || extracted.text || '').slice(0, 240);
         const rawSpecs = isPdf
@@ -250,11 +251,49 @@ export default async function (req) {
             : null
         };
         const gate = gatePart(rec);
+        const multiPartDocument = tableSelections.length > 1;
 
         if (dryRun) {
           processed++;
           if (gate.state === 'published') published++; else if (gate.state === 'incomplete') incomplete++; else rejected++;
-          report.push({ task_id: task.id, url: task.url, status: gate.state, part_number: rec.part_number, manufacturer: rec.manufacturer_name, spec_count: rec.specs.length, causes: gate.causes });
+          report.push({ task_id: task.id, url: task.url, status: multiPartDocument ? 'multi_part_pending_applicability' : gate.state, part_number: rec.part_number, manufacturer: rec.manufacturer_name, spec_count: rec.specs.length, table_part_count: tableSelections.length, table_parts: tableSelections.map((s) => s.value), causes: multiPartDocument ? ['multiple_parts_detected; specification_applicability_not_yet_demonstrated'] : gate.causes });
+          return;
+        }
+
+        if (multiPartDocument) {
+          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+          const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
+            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'incomplete'
+          });
+          if (existingDoc) {
+            await base44.asServiceRole.entities.Document.update(existingDoc.id, {
+              title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash,
+              document_type: 'datasheet', status: 'incomplete'
+            });
+          }
+          await base44.asServiceRole.entities.Provenance.create({
+            entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '',
+            note: 'multiple_parts_detected; specification_applicability_not_yet_demonstrated'
+          });
+          for (const partSel of tableSelections) {
+            await base44.asServiceRole.entities.Provenance.create({
+              entity_type: 'candidate_part', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '',
+              rule_id: 'PN.TABLE_HEADER_BINDING.v1',
+              note: `candidate=${partSel.value}; family member demonstrated by orderable-part table, but specification applicability is not yet demonstrated`
+            });
+          }
+          await base44.asServiceRole.entities.IngestionTask.update(task.id, {
+            state: 'incomplete', document_id: docRec.id,
+            last_error: 'multiple_parts_detected; specification_applicability_not_yet_demonstrated'
+          });
+          await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true }).catch(() => {});
+          incomplete++;
+          processed++;
+          report.push({
+            task_id: task.id, url: task.url, status: 'multi_part_pending_applicability',
+            document_id: docRec.id, part_count: tableSelections.length,
+            parts: tableSelections.map((s) => ({ part_number: s.value, reason: s.reason, page: s.candidate?.page, row_index: s.candidate?.row_index }))
+          });
           return;
         }
 
