@@ -358,7 +358,7 @@ export default async function (req) {
           const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, 'updated_date', 1);
           const manufacturerId = manuf.length ? manuf[0].id : (await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' })).id;
 
-          const createdParts = [];
+                const createdParts = [];
           for (const plan of partPlans) {
             const partCandidate = plan.selection.candidate;
             const partRecData = {
@@ -422,6 +422,7 @@ export default async function (req) {
               });
               specsPublished++;
             }
+            await refreshSearchIndexForPart(base44, partRec.id);
             createdParts.push({ part_id: partRec.id, part_number: partRecData.part_number, specs_published: specsPublished });
           }
 
@@ -541,6 +542,7 @@ export default async function (req) {
             specsPublished++;
           }
         }
+        await refreshSearchIndexForPart(base44, partRec.id);
         await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'published', document_id: docRec.id, part_id: partRec.id, specs_published: specsPublished, last_error: '' });
         await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true, state: 'ingested' }).catch(() => {});
         published++; processed++;
