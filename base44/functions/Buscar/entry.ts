@@ -163,11 +163,16 @@ export default async function (req) {
     //    (Bing API si está configurada; DuckDuckGo HTML como fallback), sin IA.
     //    El resultado externo se registra en DiscoveryIndex y se muestra como
     //    "encontrado en fuente"; nunca se inventan especificaciones.
-    if (q && !hasDirectQueryMatch && discoveryCandidates.length === 0) {
+    if (q && !hasDirectQueryMatch) {
       try {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
-        const industrial = web.results.filter(isLikelyIndustrialResult).slice(0, 8);
+        // Nunca convertir una búsqueda válida en cero solo porque el clasificador
+        // de dominios no reconoció el sitio. Primero preferimos resultados industriales;
+        // si el buscador externo devolvió resultados pero ninguno pasó el filtro,
+        // mostramos los resultados devueltos y conservamos la fuente explícita.
+        const industrialMatches = web.results.filter(isLikelyIndustrialResult);
+        const industrial = (industrialMatches.length ? industrialMatches : web.results).slice(0, 8);
         for (const r of industrial) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
