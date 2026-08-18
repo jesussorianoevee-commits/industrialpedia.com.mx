@@ -65,11 +65,14 @@ export function scorePart(part, q, specs) {
     if (mfHits > 0) bump(200 + mfHits, 'manufacturer_token');
 
     if (Array.isArray(specs)) {
-      const specHit = specs.some((s) => {
-        const nv = String(s.normalized_value || '').toLowerCase();
-        return tokens.some((t) => nv === t || nv === t.replace(/v$/, ''));
-      });
-      if (specHit) bump(400, 'spec_value');
+      const specHits = specs.reduce((count, s) => {
+        const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
+        const value = String(s.normalized_value || s.original_value || '').toLowerCase();
+        const unit = String(s.normalized_unit || s.original_unit || '').toLowerCase();
+        const text = `${attr} ${value} ${unit}`;
+        return count + (tokens.some((t) => text.includes(t)) ? 1 : 0);
+      }, 0);
+      if (specHits > 0) bump(400 + Math.min(specHits, 10), 'specification_text');
     }
   }
   return best;
