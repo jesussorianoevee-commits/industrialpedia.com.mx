@@ -44,6 +44,7 @@ export default async function (req) {
     }
 
     let candidates = [];
+    let discoveryCandidates = [];
     if (orClauses.length) {
       try {
         candidates = await base44.asServiceRole.entities.SearchIndex.filter(
@@ -52,7 +53,37 @@ export default async function (req) {
       } catch (e) { candidates = []; }
     }
 
-    // 2) Para texto libre (no número de parte), scan acotado + filtro en código
+    // 2) Discovery Index: permite encontrar candidatos aún no publicados/validados.
+    //    No ejecuta el crawler; consulta únicamente el índice persistido.
+    const discoveryBase = {
+      discovery_state: { $in: ['discovered', 'pending_verification', 'verified'] }
+    };
+    if (filters.manufacturers?.length) discoveryBase.manufacturer_name = { $in: filters.manufacturers };
+    if (q) {
+      const dqNorm = normalizePartNumber(q);
+      const discoveryOr = [
+        { candidate_part_number: q },
+        ...(dqNorm ? [{ candidate_part_number_normalized: dqNorm }] : []),
+        { manufacturer_name: q },
+        { title: q }
+      ];
+      try {
+        discoveryCandidates = await base44.asServiceRole.entities.DiscoveryIndex.filter(
+          { ...discoveryBase, $or: discoveryOr }, '-updated_date', 5000
+        );
+      } catch (e) { discoveryCandidates = []; }
+      const discoveryScan = await base44.asServiceRole.entities.DiscoveryIndex.filter(discoveryBase, '-updated_date', 5000).catch(() => []);
+      const dqTokens = tokenize(q);
+      const seenDiscovery = new Set(discoveryCandidates.map((d) => d.id));
+      for (const d of discoveryScan) {
+        const text = `${d.candidate_part_number || ''} ${d.manufacturer_name || ''} ${d.title || ''} ${d.description || ''}`.toLowerCase();
+        if (dqTokens.length && dqTokens.some((t) => text.includes(t)) && !seenDiscovery.has(d.id)) {
+          discoveryCandidates.push(d); seenDiscovery.add(d.id);
+        }
+      }
+    }
+
+    // 3) Para texto libre (no número de parte), scan acotado + filtro en código
     //    (la plataforma no expone $regex; este scan está limitado y respeta filtros).
     const isPartNo = looksLikePartNumber(q);
     const tokens = tokenize(q);
@@ -66,14 +97,14 @@ export default async function (req) {
       } catch (e) { /* sin candidatos adicionales */ }
     }
 
-    // 3) Modo exploración: solo filtros, sin texto.
+    // 4) Modo exploración: solo filtros, sin texto.
     if (!q && ((filters.manufacturers && filters.manufacturers.length) || (filters.categories && filters.categories.length))) {
       try {
         candidates = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', 5000);
       } catch (e) { candidates = []; }
     }
 
-    // 4) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
+    // 5) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
     // SearchIndex.id identifies the index row; part_id identifies the Knowledge Core Part.
     const ids = [...new Set(candidates.map((c) => c.part_id).filter(Boolean))];
     const specsByPart = {};
@@ -106,7 +137,7 @@ export default async function (req) {
       } catch (e) { /* sin evidencia */ }
     }
 
-    // 5) Scoring + filtros derivados de specs.
+    // 6) Scoring + filtros derivados de specs.
     let scored = candidates.map((p) => {
       const specs = specsByPart[p.id] || [];
       const { score, match } = scorePart(p, q, specs);
@@ -129,7 +160,7 @@ export default async function (req) {
     const total = scored.length;
     const page = scored.slice(offset, offset + limit);
 
-    // 6) Facetas desde el conjunto completo (pre-paginación).
+    // 7) Facetas desde el conjunto completo (pre-paginación).
     const mfCounts = {};
     const catCounts = {};
     scored.forEach((r) => {

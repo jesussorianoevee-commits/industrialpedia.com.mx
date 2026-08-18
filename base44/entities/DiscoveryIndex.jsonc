@@ -1,0 +1,66 @@
+{
+  "name": "DiscoveryIndex",
+  "type": "object",
+  "properties": {
+    "candidate_part_number": {
+      "type": "string"
+    },
+    "candidate_part_number_normalized": {
+      "type": "string"
+    },
+    "manufacturer_name": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "document_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "catalog",
+        "datasheet",
+        "website",
+        "manual",
+        "other"
+      ],
+      "default": "other"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "discovery_state": {
+      "type": "string",
+      "enum": [
+        "discovered",
+        "pending_verification",
+        "verified",
+        "rejected"
+      ],
+      "default": "discovered"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "part_id": {
+      "type": "string"
+    },
+    "document_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "candidate_part_number",
+    "candidate_part_number_normalized",
+    "discovery_state"
+  ]
+}
