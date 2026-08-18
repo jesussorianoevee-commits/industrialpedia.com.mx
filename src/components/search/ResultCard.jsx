@@ -43,7 +43,11 @@ export default function ResultCard({ result }) {
         </div>
       )}
       {result.discovery_state === 'discovered' && (
-        <p className="text-white/35 text-[11px] mb-3">Fuente encontrada. La ficha técnica se construye directamente desde esta fuente, sin inventar datos.</p>
+        <p className="text-white/35 text-[11px] mb-3">
+          {result.part_number
+            ? 'Fuente encontrada. La ficha técnica se construye directamente desde esta fuente, sin inventar datos.'
+            : 'Fuente encontrada. Esta consulta aún no identifica un número de parte concreto; revisa la fuente para ver los productos disponibles.'}
+        </p>
       )}
       {materializeError && (
         <p className="text-red-300 text-[11px] mb-3">{materializeError}</p>
@@ -93,7 +97,7 @@ export default function ResultCard({ result }) {
           >
             Ver componente <ArrowRight className="w-3 h-3" />
           </Link>
-        ) : result.discovery_id ? (
+        ) : result.discovery_id && result.part_number ? (
           <button
             disabled={materializing}
             onClick={async () => {
