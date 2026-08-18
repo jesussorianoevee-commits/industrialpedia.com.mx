@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string"
+    },
+    "result_count": {
+      "type": "number"
+    },
+    "duration_ms": {
+      "type": "number"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "query",
+    "result_count"
+  ],
+  "name": "SearchQueryLog"
+}

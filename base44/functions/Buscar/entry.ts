@@ -51,12 +51,35 @@ export default async function (req) {
 
     let candidates = [];
     let discoveryCandidates = [];
+
+    // Fuente primaria de recuperación: Part + SearchIndex. SearchIndex acelera,
+    // pero BUSCAR nunca depende de que el índice esté perfecto para funcionar.
+    // Esto permite buscar fichas reales aunque el índice haya quedado desactualizado.
+    try {
+      const directParts = await base44.asServiceRole.entities.Part.list('-updated_date', SCAN_LIMIT);
+      const allowed = new Set(states);
+      const direct = directParts.filter((p) => allowed.has(p.validation_state || 'processed'));
+      const byId = new Map();
+      for (const p of direct) {
+        byId.set(p.id, {
+          ...p,
+          part_id: p.id,
+          part_number_normalized: p.part_number_normalized || normalizePartNumber(p.part_number || ''),
+          search_text: [p.part_number, p.part_number_normalized, p.manufacturer_name, p.category, p.subcategory, p.description].filter(Boolean).join(' ')
+        });
+      }
+      candidates = [...byId.values()];
+    } catch (e) { candidates = []; }
+
     if (orClauses.length) {
       try {
-        candidates = await base44.asServiceRole.entities.SearchIndex.filter(
+        const indexed = await base44.asServiceRole.entities.SearchIndex.filter(
           { ...base, $or: orClauses }, '-updated_date', 5000
         );
-      } catch (e) { candidates = []; }
+        const merged = new Map(candidates.map((c) => [c.part_id || c.id, c]));
+        for (const p of indexed) merged.set(p.part_id || p.id, { ...merged.get(p.part_id || p.id), ...p, part_id: p.part_id || p.id });
+        candidates = [...merged.values()];
+      } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
 
     // 2) Discovery Index: permite encontrar candidatos aún no publicados/validados.
@@ -94,13 +117,16 @@ export default async function (req) {
     const isPartNo = looksLikePartNumber(q);
     const tokens = tokenize(q);
     if (q && !isPartNo && tokens.length) {
+      // Los Parts ya fueron cargados directamente arriba. SearchIndex solo aporta
+      // aceleración/metadata; no puede ocultar una ficha existente.
       try {
         const scan = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', SCAN_LIMIT);
-        const seen = new Set(candidates.map((c) => c.id));
+        const seen = new Set(candidates.map((c) => c.part_id || c.id));
         for (const p of scan) {
-          if (!seen.has(p.id)) { candidates.push(p); seen.add(p.id); }
+          const key = p.part_id || p.id;
+          if (!seen.has(key)) { candidates.push({ ...p, part_id: p.part_id || p.id }); seen.add(key); }
         }
-      } catch (e) { /* sin candidatos adicionales */ }
+      } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
 
     // 4) Modo exploración: solo filtros, sin texto.
@@ -112,7 +138,7 @@ export default async function (req) {
 
     // 5) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
     // SearchIndex.id identifies the index row; part_id identifies the Knowledge Core Part.
-    const ids = [...new Set(candidates.map((c) => c.part_id).filter(Boolean))];
+    const ids = [...new Set(candidates.map((c) => c.part_id || c.id).filter(Boolean))];
     const specsByPart = {};
     const evidenceByPart = {};
     if (ids.length) {
@@ -145,9 +171,9 @@ export default async function (req) {
 
     // 6) Scoring + filtros derivados de specs.
     let scored = candidates.map((p) => {
-      const specs = specsByPart[p.part_id] || [];
+      const specs = specsByPart[p.part_id || p.id] || [];
       const { score, match } = scorePart(p, q, specs);
-      return { part: p, specs, evidence: evidenceByPart[p.part_id] || [], score, match, discovery: null };
+      return { part: p, specs, evidence: evidenceByPart[p.part_id || p.id] || [], score, match, discovery: null };
     });
 
     // Discovery results are intentionally separate from verified Knowledge Core results.
