@@ -348,7 +348,7 @@ export function selectSpecificationsForPart(specs, partCandidate) {
     if (partNumber && normalizePartKey(corpus).includes(partNumber)) return true;
     const versions = versionTokens(corpus);
     if (!versions.length || !marking) return false;
-    return versions.some((v) => partMarkingMatchesVersion(marking, v));
+    return versions.some((v) => partMarkingMatchesVersion(marking, v, partNumber));
   });
 }
 
