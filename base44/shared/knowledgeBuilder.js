@@ -347,7 +347,7 @@ export function selectSpecificationsForPart(specs, partCandidate) {
     const corpus = `${spec.attribute_name || ''} ${spec.original_value || ''} ${spec.evidence_context || ''}`;
     if (partNumber && normalizePartKey(corpus).includes(partNumber)) return true;
     const versions = versionTokens(corpus);
-    if (!versions.length || !marking) return false;
+    if (!versions.length) return false;
     return versions.some((v) => partMarkingMatchesVersion(marking, v, partNumber));
   });
 }
