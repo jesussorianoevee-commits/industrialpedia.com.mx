@@ -91,6 +91,7 @@ function extractTableBoundCandidates(tables = []) {
           label_exclusive: false,
           label_relation: 'table_header',
           context_text: contextText,
+          part_marking: String(row.find((c) => c?.header === 'PART_MARKING')?.text || '').trim(),
           bbox: partCell.bbox || null,
           in_title: false,
           table_id: table.id || '',
@@ -303,6 +304,37 @@ export function selectPartNumbers(candidates, grammar) {
 
 function normalizePartKey(value) {
   return String(value || '').trim().toUpperCase().replace(/\\s+/g, '');
+}
+
+function versionTokens(text) {
+  const out = [];
+  const re = /\\b(BA|KA|B|A|K)\\s+versions?\\b/gi;
+  let m;
+  while ((m = re.exec(String(text || '')))) out.push(m[1].toUpperCase());
+  return [...new Set(out)];
+}
+
+function partMarkingMatchesVersion(marking, version) {
+  const m = String(marking || '').toUpperCase().replace(/\\s+/g, '');
+  if (!m) return false;
+  return new RegExp(`(?:^|[^A-Z0-9])${version}(?:$|[^A-Z0-9])`).test(m)
+    || new RegExp(`${version}$`).test(m);
+}
+
+// Determina aplicabilidad únicamente cuando el documento aporta una relación explícita:
+// 1) la spec menciona directamente el Part Number, o
+// 2) la spec declara una versión (B/BA/K/KA/A) y la fila de ordering aporta Part marking
+//    que demuestra ese mismo grado. Sin evidencia explícita, la spec NO se copia a un Part.
+export function selectSpecificationsForPart(specs, partCandidate) {
+  const partNumber = normalizePartKey(partCandidate?.text);
+  const marking = String(partCandidate?.part_marking || '').trim();
+  return (specs || []).filter((spec) => {
+    const corpus = `${spec.attribute_name || ''} ${spec.original_value || ''} ${spec.evidence_context || ''}`;
+    if (partNumber && normalizePartKey(corpus).includes(partNumber)) return true;
+    const versions = versionTokens(corpus);
+    if (!versions.length || !marking) return false;
+    return versions.some((v) => partMarkingMatchesVersion(marking, v));
+  });
 }
 
 // 7. SELECCIÓN en ingesta. Precedencia: MANUAL > INDUCIDO > explícito > contextual corroborado.
