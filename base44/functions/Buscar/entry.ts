@@ -99,8 +99,28 @@ export default async function (req) {
         { candidate_part_number: q },
         ...(dqNorm ? [{ candidate_part_number_normalized: dqNorm }] : []),
         { manufacturer_name: q },
-        { title: q }
+        { title: q },
+        { search_text: q }
       ];
+      // Si la consulta contiene un fabricante conocido, recuperamos todo su
+      // universo descubierto sin depender del límite del scan de texto libre.
+      try {
+        const manufacturers = await base44.asServiceRole.entities.Manufacturer.list('-updated_date', 500);
+        const qLower = q.toLowerCase();
+        const manufacturerNames = manufacturers
+          .map((m) => m.name)
+          .filter(Boolean)
+          .filter((name) => qLower.includes(String(name).toLowerCase()));
+        for (const name of manufacturerNames) {
+          const byManufacturer = await base44.asServiceRole.entities.DiscoveryIndex.filter(
+            { ...discoveryBase, manufacturer_name: name }, '-updated_date', 5000
+          ).catch(() => []);
+          const seen = new Set(discoveryCandidates.map((d) => d.id));
+          for (const d of byManufacturer) {
+            if (!seen.has(d.id)) { discoveryCandidates.push(d); seen.add(d.id); }
+          }
+        }
+      } catch (e) { /* búsqueda exacta sigue disponible */ }
       try {
         discoveryCandidates = await base44.asServiceRole.entities.DiscoveryIndex.filter(
           { ...discoveryBase, $or: discoveryOr }, '-updated_date', 5000
