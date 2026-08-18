@@ -213,8 +213,7 @@ export default async function (req) {
         // antes de que Quality Gateway haya demostrado todas sus especificaciones.
         if (!dryRun && idCandidates.length) {
           const discoveryCandidates = idCandidates
-            .filter((c) => /^[A-Za-z0-9][A-Za-z0-9/_.-]{1,39}$/.test(String(c.text || '').trim()))
-            .slice(0, 200);
+            .filter((c) => /^[A-Za-z0-9][A-Za-z0-9/_.-]{1,39}$/.test(String(c.text || '').trim()));
           for (const c of discoveryCandidates) {
             const pn = String(c.text || '').trim();
             const pnNorm = normalizePartNumber(pn);
