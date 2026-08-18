@@ -115,6 +115,12 @@ export async function discoverIndustrialWeb(query) {
   const googleResults = unique(googleBatches.flat());
   if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS) };
 
+  // Si la consulta literal no encontró nada, hacemos una segunda pasada orientada
+  // a documentación industrial. Esto evita contaminar las búsquedas exactas de PN.
+  const googleFallbackQueries = [`${q} datasheet`, `${q} product catalog`];
+  const googleFallback = unique((await Promise.all(googleFallbackQueries.map((term) => googleCustomSearch(term)))).flat());
+  if (googleFallback.length) return { provider: 'google', results: googleFallback.slice(0, MAX_RESULTS) };
+
   // Bing queda como segundo proveedor si Google no está configurado o no devuelve
   // resultados útiles; DuckDuckGo permanece como último fallback.
   const bingBatches = await Promise.all(searchQueries.map((term) => bing(term)));
