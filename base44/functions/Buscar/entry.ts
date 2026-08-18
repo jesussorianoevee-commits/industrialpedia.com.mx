@@ -141,6 +141,8 @@ export default async function (req) {
       }
     }
 
+    const isPartNo = looksLikePartNumber(q);
+
     // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene respuesta,
     //    BUSCAR no se queda en cero. Consulta una fuente web externa determinística
     //    (Bing API si está configurada; DuckDuckGo HTML como fallback), sin IA.
@@ -179,7 +181,6 @@ export default async function (req) {
 
     // 4) Para texto libre (no número de parte), scan acotado + filtro en código
     //    (la plataforma no expone $regex; este scan está limitado y respeta filtros).
-    const isPartNo = looksLikePartNumber(q);
     const tokens = tokenize(q);
     if (q && !isPartNo && tokens.length) {
       // Los Parts ya fueron cargados directamente arriba. SearchIndex solo aporta
