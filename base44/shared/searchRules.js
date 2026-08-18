@@ -78,8 +78,12 @@ export function scorePart(part, q, specs) {
   return best;
 }
 
-// Comparador reproducible: score desc, luego part_number asc.
+// Comparador reproducible: relevancia desc, luego confianza del estado, luego part_number.
 export function rankComparator(a, b) {
   if (b.score !== a.score) return b.score - a.score;
+  const stateRank = { published: 3, validated: 2, incomplete: 1, processed: 0, rejected: -1 };
+  const sa = stateRank[a.part.validation_state] ?? 0;
+  const sb = stateRank[b.part.validation_state] ?? 0;
+  if (sb !== sa) return sb - sa;
   return String(a.part.part_number || '').localeCompare(String(b.part.part_number || ''));
 }
