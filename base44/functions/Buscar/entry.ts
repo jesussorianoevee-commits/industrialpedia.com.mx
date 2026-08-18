@@ -1,7 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
 
-const DEFAULT_STATES = ['published'];
+// TEMP: mientras el Knowledge Core no tenga ningun Part en estado
+// 'published' (revalidacion en curso), se incluye 'incomplete' para que
+// BUSCAR muestre resultados reales en vez de una lista vacia. Los
+// resultados incompletos se marcan explicitamente como tal (validation_state)
+// y el frontend no debe presentarlos como verificados. Revertir a solo
+// ['published'] cuando el pipeline vuelva a publicar Parts reales.
+const DEFAULT_STATES = ['published', 'incomplete'];
 const ALLOWED_STATES = ['published', 'validated', 'incomplete'];
 const SCAN_LIMIT = 5000;
 
