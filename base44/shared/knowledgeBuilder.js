@@ -259,6 +259,52 @@ function contextualPartCandidate(candidates) {
     .sort((a, b) => (Number(b.candidate.in_title) - Number(a.candidate.in_title)) || (b.firstPageCount - a.firstPageCount) || (a.candidate.text < b.candidate.text ? -1 : 1))[0]?.candidate || null;
 }
 
+// Selección multi-Part para tablas de ordenamiento.
+// Una fila de una tabla con header PART_NUMBER representa un SKU/Part distinto.
+// No usa frecuencia ni popularidad y no altera el selector legado de documentos monocomponente.
+export function selectPartNumbers(candidates, grammar) {
+  const tableCandidates = (candidates || []).filter((c) => c.label_relation === 'table_header');
+  if (!tableCandidates.length) return [];
+
+  const rows = new Map();
+  for (const c of tableCandidates) {
+    const key = `${c.table_id || ''}|${c.row_index ?? c.line_index ?? ''}`;
+    const row = rows.get(key) || [];
+    row.push(c);
+    rows.set(key, row);
+  }
+
+  const selected = [];
+  for (const rowCandidates of rows.values()) {
+    const unique = [...new Map(rowCandidates.map((c) => [normalizePartKey(c.text), c])).values()];
+    if (unique.length !== 1) continue; // fila ambigua: no adjudicar un SKU por azar.
+    const candidate = unique[0];
+    const semantic = classifyIdentifier(candidate);
+    if (semantic.role === 'PART_NUMBER' || (candidate.label_type === 'positive' && candidate.label_relation === 'table_header')) {
+      selected.push({
+        value: candidate.text,
+        demonstrated: true,
+        reason: 'explicit_part_number_table_header',
+        role: 'PART_NUMBER',
+        candidate,
+        grammar_id: ''
+      });
+    }
+  }
+
+  const seen = new Set();
+  return selected.filter((s) => {
+    const key = normalizePartKey(s.value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function normalizePartKey(value) {
+  return String(value || '').trim().toUpperCase().replace(/\\s+/g, '');
+}
+
 // 7. SELECCIÓN en ingesta. Precedencia: MANUAL > INDUCIDO > explícito > contextual corroborado.
 // Un candidato por sí solo nunca adjudica significado; sin demostración se mantiene pendiente.
 export function selectPartNumber(candidates, grammar) {
