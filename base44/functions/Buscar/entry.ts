@@ -150,7 +150,8 @@ export default async function (req) {
     //    "encontrado en fuente"; nunca se inventan especificaciones.
     if (q && candidates.length === 0 && discoveryCandidates.length === 0) {
       try {
-        const web = await discoverIndustrialWeb(q);
+        const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
+        const web = await discoverIndustrialWeb(webQuery);
         const industrial = web.results.filter(isLikelyIndustrialResult).slice(0, 8);
         for (const r of industrial) {
           let host = '';
@@ -279,7 +280,12 @@ export default async function (req) {
         description: [d.title || '', d.description || '', q].filter(Boolean).join(' '),
         title: d.title || ''
       };
-      const { score, match } = scorePart(pseudoPart, q, []);
+      const { score: rankedScore, match: rankedMatch } = scorePart(pseudoPart, q, []);
+      const discoveryText = `${d.candidate_part_number || ''} ${d.manufacturer_name || ''} ${d.title || ''} ${d.description || ''} ${d.source_url || ''}`.toLowerCase();
+      const queryTokens = tokenize(q);
+      const discoveryHits = queryTokens.filter((t) => discoveryText.includes(t)).length;
+      const score = rankedScore > 0 ? rankedScore : (discoveryHits > 0 ? 250 + discoveryHits * 20 : 0);
+      const match = rankedScore > 0 ? rankedMatch : (discoveryHits > 0 ? 'web_discovery_match' : 'none');
       if (score > 0) scored.push({
         part: { ...pseudoPart, part_id: d.part_id || null, validation_state: d.discovery_state === 'verified' ? 'validated' : 'incomplete',
           source_url: d.source_url, document_url: d.document_url },
