@@ -10,7 +10,13 @@ const STATE_LABELS = {
 };
 
 export default function ResultCard({ result }) {
-  const st = STATE_LABELS[result.validation_state] || STATE_LABELS.processed;
+  const st = result.discovery_state === 'discovered'
+    ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
+    : result.discovery_state === 'pending_verification'
+      ? { label: 'Pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
+      : result.discovery_state === 'verified'
+        ? { label: 'Encontrado · verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
+        : (STATE_LABELS[result.validation_state] || STATE_LABELS.processed);
   return (
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -55,16 +61,30 @@ export default function ResultCard({ result }) {
             <FileText className="w-3.5 h-3.5" /> {result.source_ids.length} fuente(s)
           </span>
         )}
+        {result.source_url && (
+          <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline">Ver fuente</a>
+        )}
         <span className="text-white/30 ml-auto capitalize">{result.match.replace(/_/g, ' ')}</span>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Link
-          to={`/parte/${result.id}`}
-          className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-        >
-          Ver componente <ArrowRight className="w-3 h-3" />
-        </Link>
+        {result.id ? (
+          <Link
+            to={`/parte/${result.id}`}
+            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Ver componente <ArrowRight className="w-3 h-3" />
+          </Link>
+        ) : result.source_url ? (
+          <a
+            href={result.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Abrir fuente <ArrowRight className="w-3 h-3" />
+          </a>
+        ) : null}
         <button
           disabled
           title="Pilar ENCONTRAR — próxima iteración"
