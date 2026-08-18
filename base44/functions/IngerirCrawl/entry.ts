@@ -231,6 +231,7 @@ export default async function (req) {
               source_type: isPdf ? 'datasheet' : 'website',
               title: extracted.title || '',
               description: (extracted.title || extracted.text || '').slice(0, 240),
+              search_text: [pn, manufacturerName, extracted.title || '', (extracted.text || '').slice(0, 1200)].filter(Boolean).join(' '),
               discovery_state: 'discovered',
               confidence,
               last_seen: new Date().toISOString(),
