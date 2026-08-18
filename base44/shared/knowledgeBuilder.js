@@ -237,14 +237,25 @@ function contextualPartCandidate(candidates) {
   const byToken = new Map();
   for (const c of eligible) {
     const key = c.text;
-    const prev = byToken.get(key) || { candidate: c, count: 0, firstPageCount: 0 };
-    prev.count++;
+    const prev = byToken.get(key) || { candidate: c, firstPageCount: 0 };
     if (c.page === 1) prev.firstPageCount++;
     byToken.set(key, prev);
   }
-  // Contextual labels require corroboration: title OR repeated identity on page 1.
-  return [...byToken.values()]
-    .filter((x) => x.firstPageCount >= 2 && (x.candidate.in_title || x.count >= 2))
+  // Contextual labels require corroboration from independent document regions:
+  // at least two eligible occurrences on page 1 plus either a title occurrence
+  // or a non-excluded occurrence of the same token outside page 1.
+  const documentOccurrences = new Map();
+  for (const c of candidates) {
+    const role = classifyIdentifier(c).role;
+    if (['ELECTRICAL_VALUE', 'VOLTAGE_REFERENCE', 'STANDARD_REFERENCE', 'DOCUMENT_REFERENCE', 'REVISION', 'PACKAGE', 'LITERATURE_NUMBER'].includes(role)) continue;
+    const key = c.text;
+    const pages = documentOccurrences.get(key) || new Set();
+    if (c.page && c.page !== 1) pages.add(c.page);
+    documentOccurrences.set(key, pages);
+  }
+  return [...byToken.entries()]
+    .map(([key, x]) => ({ ...x, outsidePageCount: documentOccurrences.get(key)?.size || 0 }))
+    .filter((x) => x.firstPageCount >= 2 && (x.candidate.in_title || x.outsidePageCount >= 1))
     .sort((a, b) => (Number(b.candidate.in_title) - Number(a.candidate.in_title)) || (b.firstPageCount - a.firstPageCount) || (a.candidate.text < b.candidate.text ? -1 : 1))[0]?.candidate || null;
 }
 

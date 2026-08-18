@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "noop": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "_noop_validation_2"
+}
