@@ -254,9 +254,47 @@ export default async function (req) {
         const multiPartDocument = tableSelections.length > 1;
 
         if (dryRun) {
+          // En multi-Part, el dry-run debe validar la misma relación Part -> Specification
+          // que usaría apply, pero exclusivamente en memoria. Esto permite auditar la
+          // aplicabilidad real antes de cualquier escritura.
+          const partPlans = multiPartDocument
+            ? tableSelections.map((partSel) => ({
+                selection: partSel,
+                applicableSpecs: selectSpecificationsForPart(rec.specs, partSel.candidate)
+              }))
+            : [];
+          const applicabilityMissing = partPlans.filter((p) => p.applicableSpecs.length === 0);
+
           processed++;
+          if (multiPartDocument) {
+            if (applicabilityMissing.length) incomplete++; else published++;
+            report.push({
+              task_id: task.id,
+              url: task.url,
+              status: applicabilityMissing.length ? 'multi_part_pending_applicability' : 'multi_part_ready',
+              manufacturer: rec.manufacturer_name,
+              extracted_spec_count: rec.specs.length,
+              table_part_count: tableSelections.length,
+              parts: partPlans.map((p) => ({
+                part_number: p.selection.value,
+                part_marking: p.selection.candidate?.part_marking || '',
+                page: p.selection.candidate?.page || null,
+                row_index: p.selection.candidate?.row_index ?? null,
+                applicable_spec_count: p.applicableSpecs.length,
+                applicable_specs: p.applicableSpecs.map((s) => ({
+                  attribute_name: s.attribute_name,
+                  original_value: s.original_value,
+                  page: s.page || null
+                }))
+              })),
+              missing_applicability_parts: applicabilityMissing.map((p) => p.selection.value),
+              causes: applicabilityMissing.length ? ['family_part_applicability_incomplete'] : []
+            });
+            return;
+          }
+
           if (gate.state === 'published') published++; else if (gate.state === 'incomplete') incomplete++; else rejected++;
-          report.push({ task_id: task.id, url: task.url, status: multiPartDocument ? 'multi_part_pending_applicability' : gate.state, part_number: rec.part_number, manufacturer: rec.manufacturer_name, spec_count: rec.specs.length, table_part_count: tableSelections.length, table_parts: tableSelections.map((s) => s.value), causes: multiPartDocument ? ['multiple_parts_detected; specification_applicability_not_yet_demonstrated'] : gate.causes });
+          report.push({ task_id: task.id, url: task.url, status: gate.state, part_number: rec.part_number, manufacturer: rec.manufacturer_name, spec_count: rec.specs.length, table_part_count: tableSelections.length, table_parts: tableSelections.map((s) => s.value), causes: gate.causes });
           return;
         }
 
