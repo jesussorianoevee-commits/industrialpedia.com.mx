@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
-import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
+import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults, manufacturerTokensFromQuery } from '../../shared/webDiscovery.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
 // 'published' (revalidacion en curso), se incluye 'incomplete' para que
@@ -190,8 +190,10 @@ export default async function (req) {
           // Si aún no conocemos la marca en la base, usamos el primer token de la
           // consulta como candidato de marca para reconocer su dominio oficial.
           if (!manufacturerNames.length) {
-            const firstToken = tokenize(q)[0] || '';
-            if (firstToken.length >= 3 && !looksLikePartNumber(firstToken)) manufacturerNames = [firstToken];
+            manufacturerNames = manufacturerTokensFromQuery(q, looksLikePartNumber);
+          } else {
+            const queryBrandTokens = manufacturerTokensFromQuery(q, looksLikePartNumber);
+            manufacturerNames = [...new Set([...manufacturerNames, ...queryBrandTokens])];
           }
         } catch (e) { /* los distribuidores conocidos siguen disponibles */ }
 
@@ -205,7 +207,7 @@ export default async function (req) {
           const payload = {
             candidate_part_number: candidatePn,
             candidate_part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '',
-            manufacturer_name: '',
+            manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : (manufacturerNames.find((name) => String(r.title || '').toLowerCase().includes(String(name).toLowerCase())) || ''),
             source_url: r.url,
             document_url: r.url,
             source_type: 'website',
