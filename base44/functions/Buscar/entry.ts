@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
-import { discoverIndustrialWeb, isLikelyIndustrialResult } from '../../shared/webDiscovery.js';
+import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
 // 'published' (revalidacion en curso), se incluye 'incomplete' para que
@@ -167,12 +167,37 @@ export default async function (req) {
       try {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
-        // Nunca convertir una búsqueda válida en cero solo porque el clasificador
-        // de dominios no reconoció el sitio. Primero preferimos resultados industriales;
-        // si el buscador externo devolvió resultados pero ninguno pasó el filtro,
-        // mostramos los resultados devueltos y conservamos la fuente explícita.
+
+        // Solo aceptamos fuentes de confianza para el buscador industrial:
+        // 1) dominio oficial conocido del fabricante;
+        // 2) dominio que coincide con el nombre del fabricante;
+        // 3) distribuidor industrial explícitamente permitido.
+        // Una página que solo contiene la palabra "Balluff" (por ejemplo un sitio
+        // de reparación, blog, marketplace o revendedor no reconocido) NO entra.
+        let manufacturerNames = [];
+        let trustedOfficialDomains = [];
+        try {
+          const manufacturers = await base44.asServiceRole.entities.Manufacturer.list('-updated_date', 1000);
+          const qLower = q.toLowerCase();
+          const matched = manufacturers.filter((m) => {
+            const name = String(m.name || '').toLowerCase();
+            return name && qLower.includes(name);
+          });
+          manufacturerNames = matched.map((m) => m.name).filter(Boolean);
+          trustedOfficialDomains = matched.map((m) => {
+            try { return new URL(m.website).hostname; } catch { return ''; }
+          }).filter(Boolean);
+          // Si aún no conocemos la marca en la base, usamos el primer token de la
+          // consulta como candidato de marca para reconocer su dominio oficial.
+          if (!manufacturerNames.length) {
+            const firstToken = tokenize(q)[0] || '';
+            if (firstToken.length >= 3 && !looksLikePartNumber(firstToken)) manufacturerNames = [firstToken];
+          }
+        } catch (e) { /* los distribuidores conocidos siguen disponibles */ }
+
         const industrialMatches = web.results.filter(isLikelyIndustrialResult);
-        const industrial = (industrialMatches.length ? industrialMatches : web.results).slice(0, 50);
+        const candidateResults = industrialMatches.length ? industrialMatches : web.results;
+        const industrial = filterTrustedIndustrialResults(candidateResults, manufacturerNames, trustedOfficialDomains).slice(0, 50);
         for (const r of industrial) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
@@ -190,7 +215,8 @@ export default async function (req) {
             discovery_state: 'discovered',
             confidence: 0.5,
             last_seen: new Date().toISOString(),
-            document_id: ''
+            document_id: '',
+            source_trust: r.source_type
           };
           const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
           let discoveryId = existing[0]?.id || null;
