@@ -162,7 +162,7 @@ export default async function (req) {
             manufacturer_name: '',
             source_url: r.url,
             document_url: r.url,
-            source_type: 'web_discovery',
+            source_type: 'website',
             title: r.title || host,
             description: r.snippet || r.title || '',
             search_text: [q, r.title, r.snippet, host].filter(Boolean).join(' '),
@@ -174,7 +174,30 @@ export default async function (req) {
           const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
           if (existing.length) await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
           else await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
-          discoveryCandidates.push({ ...payload, id: existing[0]?.id || null });
+          let discoveryId = existing[0]?.id || null;
+          if (!discoveryId) {
+            const created = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
+            discoveryId = created[0]?.id || null;
+          }
+
+          // Si la consulta parece un Part Number, no dejamos el resultado como simple enlace:
+          // materializamos la fuente encontrada en Knowledge Core antes de responder.
+          // Para búsquedas de familia/texto libre, el descubrimiento permanece ligero.
+          let materializedPartId = null;
+          if (isPartNo && discoveryId) {
+            try {
+              const materialized = await base44.asServiceRole.functions.invoke('MaterializeDiscovery', {
+                discovery_id: discoveryId,
+                query: q
+              });
+              materializedPartId = materialized?.data?.part_id || null;
+            } catch (e) { /* el resultado web sigue siendo visible aunque la materialización falle */ }
+          }
+          if (materializedPartId) {
+            const materializedPart = await base44.asServiceRole.entities.Part.get(materializedPartId).catch(() => null);
+            if (materializedPart) candidates.push({ ...materializedPart, part_id: materializedPart.id, part_number_normalized: materializedPart.part_number_normalized || normalizePartNumber(materializedPart.part_number || '') });
+          }
+          discoveryCandidates.push({ ...payload, id: discoveryId, part_id: materializedPartId });
         }
       } catch (e) { /* Knowledge Core sigue siendo la fuente primaria */ }
     }
