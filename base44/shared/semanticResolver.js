@@ -34,7 +34,7 @@ const EXCLUDED_PART_CONTEXT = [
   /\b(?:typical\s+characteristics|electrical\s+characteristics)\b/i,
   /\b(?:literature|document)\s+(?:number|no|#)\b/i,
   /\b(?:revision|rev\.?|package|catalog)\b/i,
-  /\b(?:standard|jep|jesd|iec|iso|mil[- ]std)\b/i
+  /\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)\b/i
 ];
 
 function normalized(value) {
