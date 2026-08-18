@@ -61,6 +61,32 @@ export default function Buscar() {
   const facets = data?.facets || { manufacturers: [], categories: [] };
   const results = data?.results || [];
 
+  // Google Programmable Search: usa el motor industrial configurado por el usuario
+  // como capa de descubrimiento web, sin IA. Solo se muestra cuando Knowledge Core
+  // no tiene resultados internos; la ficha Industrialpedia sigue dependiendo de
+  // una fuente aceptada y evidencia real.
+  useEffect(() => {
+    if (!q || results.length > 0) return;
+    const scriptId = 'industrialpedia-google-cse';
+    const run = () => {
+      const google = window.google;
+      const element = google?.search?.cse?.element?.getElement?.('industrialpedia-cse');
+      if (element) {
+        try { element.execute(q); } catch {}
+      }
+    };
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.async = true;
+      script.src = 'https://cse.google.com/cse.js?cx=2725a736ccf564979';
+      script.onload = run;
+      document.head.appendChild(script);
+    } else {
+      setTimeout(run, 100);
+    }
+  }, [q, results.length]);
+
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
@@ -111,7 +137,21 @@ export default function Buscar() {
         ) : loading ? (
           <div className="text-white/40 text-sm">Cargando…</div>
         ) : results.length === 0 ? (
-          <EmptyState q={q} onReset={onReset} />
+          <>
+            <EmptyState q={q} onReset={onReset} />
+            {q && (
+              <section className="mt-6 rounded-2xl border border-white/10 bg-[#11161c] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-white">Descubrimiento web</div>
+                    <div className="text-xs text-white/40 mt-0.5">Resultados del buscador industrial configurado</div>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/35">Google</span>
+                </div>
+                <div className="gcse-searchresults-only" data-gname="industrialpedia-cse"></div>
+              </section>
+            )}
+          </>
         ) : (
           <div className="space-y-3">
             {results.map((r) => (
