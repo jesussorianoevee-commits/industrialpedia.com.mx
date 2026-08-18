@@ -22,6 +22,7 @@ import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 //   max_attempts?: number,   // reintentos por documento (default 3)
 //   backoff_ms?: number,     // backoff base entre reintentos (default 5000)
 //   dry_run?: boolean,
+//   rebuild?: boolean,         // true: reprocesar tareas históricas cuyo Document ya no está publicado
 //   manufacturer_hint?: string  // pista MANUAL (precedencia MANUAL > INDUCIDO > GENERICO)
 // }
 
@@ -44,6 +45,7 @@ export default async function (req) {
 
     const body = await req.json().catch(() => ({}));
     const dryRun = !!body.dry_run;
+    const rebuild = !!body.rebuild;
     const enqueue = body.enqueue !== false;
     const limit = Math.max(1, Math.min(100, Number(body.limit) || LIMIT_DEFAULT));
     const concurrency = Math.max(1, Math.min(8, Number(body.concurrency) || CONC_DEFAULT));
@@ -76,9 +78,13 @@ export default async function (req) {
       }
     }
 
-    // 2. Seleccion de tareas: queued, failed con reintentos restantes (respetando backoff), o processing stale.
+    // 2. Seleccion de tareas: cola normal + reconstrucción explícita de tareas históricas.
     const now = Date.now();
     const candidates = await base44.asServiceRole.entities.IngestionTask.list('created_date', 500);
+    const candidateDocuments = rebuild
+      ? await base44.asServiceRole.entities.Document.filter({ id: { $in: candidates.map((t) => t.document_id).filter(Boolean) } }, 'updated_date', 500).catch(() => [])
+      : [];
+    const documentById = new Map(candidateDocuments.map((d) => [d.id, d]));
     const eligible = candidates.filter((t) => {
       if (t.state === 'queued') return true;
       if (t.state === 'failed' && (t.attempts || 0) < (t.max_attempts || maxAttempts)) {
@@ -88,6 +94,10 @@ export default async function (req) {
       if (t.state === 'processing') {
         const last = t.last_attempt_date ? Date.parse(t.last_attempt_date) : 0;
         return (now - last) >= STALE_MS;
+      }
+      if (rebuild && t.document_id) {
+        const d = documentById.get(t.document_id);
+        return !!d && d.status !== 'published';
       }
       return false;
     }).slice(0, limit);
@@ -121,11 +131,13 @@ export default async function (req) {
       grammarCache.set(key, g); return g;
     }
 
-    // idempotencia: Document ya publicado con el mismo hash -> skip.
+    // Idempotencia: solo un Document realmente publicado bloquea una reconstrucción.
+    // Los Documents incompletos/rechazados son históricos y deben poder reconstruirse
+    // desde su documento original cuando rebuild=true.
     const hashes = eligible.map((t) => t.content_hash).filter(Boolean);
     const publishedHashes = new Set();
     if (hashes.length) {
-      const dup = await base44.asServiceRole.entities.Document.filter({ content_hash: { $in: hashes } }, 'updated_date', 500);
+      const dup = await base44.asServiceRole.entities.Document.filter({ content_hash: { $in: hashes }, status: 'published' }, 'updated_date', 500);
       dup.forEach((d) => publishedHashes.add(d.content_hash));
     }
 
@@ -133,7 +145,7 @@ export default async function (req) {
     const report = [];
 
     async function processTask(task) {
-      if (task.content_hash && publishedHashes.has(task.content_hash)) {
+      if (task.content_hash && publishedHashes.has(task.content_hash) && !rebuild) {
         if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'skipped' });
         report.push({ task_id: task.id, url: task.url, status: 'skipped_duplicate_hash' }); processed++; return;
       }
