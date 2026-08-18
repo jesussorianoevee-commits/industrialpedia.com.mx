@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, AlertCircle, FileText, Link2 } from 'lucide-react';
+import { ShieldCheck, AlertCircle, FileText, Link2 } from 'lucide-react';
 
 function SpecRow({ spec, evidence, provenance }) {
   const hasEvidence = evidence.length > 0;
