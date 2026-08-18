@@ -74,7 +74,8 @@ export default async function (req) {
     }
 
     // 4) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
-    const ids = candidates.map((c) => c.id);
+    // SearchIndex.id identifies the index row; part_id identifies the Knowledge Core Part.
+    const ids = [...new Set(candidates.map((c) => c.part_id).filter(Boolean))];
     const specsByPart = {};
     const evidenceByPart = {};
     if (ids.length) {
@@ -138,7 +139,7 @@ export default async function (req) {
 
     const unique = (arr) => [...new Set(arr.filter(Boolean))];
     const results = page.map((r) => ({
-      id: r.part.id,
+      id: r.part.part_id,
       part_number: r.part.part_number,
       manufacturer_name: r.part.manufacturer_name,
       category: r.part.category,
