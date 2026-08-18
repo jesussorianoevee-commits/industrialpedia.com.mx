@@ -3,7 +3,7 @@ import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractCandidates, selectPartNumber, selectPartNumbers } from '../../shared/knowledgeBuilder.js';
+import { extractCandidates, selectPartNumber, selectPartNumbers, selectSpecificationsForPart } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 
