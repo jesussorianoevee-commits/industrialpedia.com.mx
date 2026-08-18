@@ -308,7 +308,7 @@ function normalizePartKey(value) {
 
 function versionTokens(text) {
   const out = [];
-  const re = /\\b((?:BA|KA|B|A|K)(?:\\s*,\\s*(?:BA|KA|B|A|K))*)\\s+versions?\\b/gi;
+  const re = /\b((?:BA|KA|B|A|K)(?:\s*,\s*(?:BA|KA|B|A|K))*)\s+versions?\b/gi;
   let m;
   while ((m = re.exec(String(text || '')))) {
     for (const token of m[1].split(',')) out.push(token.trim().toUpperCase());
