@@ -67,23 +67,67 @@ export default function Buscar() {
   // una fuente aceptada y evidencia real.
   useEffect(() => {
     if (!q || results.length > 0) return;
+
     const scriptId = 'industrialpedia-google-cse';
-    const run = () => {
+    const gname = 'industrialpedia-cse';
+    const renderAndSearch = () => {
       const google = window.google;
-      const element = google?.search?.cse?.element?.getElement?.('industrialpedia-cse');
-      if (element) {
-        try { element.execute(q); } catch {}
+      const api = google?.search?.cse?.element;
+      const container = document.getElementById('industrialpedia-cse-results');
+      if (!api || !container) return false;
+
+      // El elemento se crea explícitamente. El markup gcse-searchresults-only
+      // por sí solo no era suficiente en este montaje dinámico de React y podía
+      // dejar el panel vacío aunque Google sí estuviera disponible.
+      try {
+        const existing = api.getElement?.(gname);
+        if (!existing) {
+          api.render({
+            div: 'industrialpedia-cse-results',
+            tag: 'searchresults-only',
+            gname,
+            attributes: {
+              resultSetSize: 'large',
+              safeSearch: 'active',
+              linkTarget: '_blank'
+            }
+          });
+        }
+        const element = api.getElement?.(gname);
+        if (element) {
+          element.execute(q);
+          return true;
+        }
+      } catch (e) {
+        console.warn('Industrialpedia Google CSE:', e);
       }
+      return false;
     };
-    if (!document.getElementById(scriptId)) {
+
+    const existingScript = document.getElementById(scriptId);
+    if (!existingScript) {
       const script = document.createElement('script');
       script.id = scriptId;
       script.async = true;
       script.src = 'https://cse.google.com/cse.js?cx=2725a736ccf564979';
-      script.onload = run;
+      script.onload = () => {
+        // Google inicializa sus objetos de forma asíncrona incluso después de
+        // onload; damos una pequeña ventana y reintentamos solo unas veces.
+        let attempts = 0;
+        const retry = () => {
+          if (renderAndSearch() || ++attempts >= 20) return;
+          setTimeout(retry, 150);
+        };
+        retry();
+      };
       document.head.appendChild(script);
     } else {
-      setTimeout(run, 100);
+      let attempts = 0;
+      const retry = () => {
+        if (renderAndSearch() || ++attempts >= 20) return;
+        setTimeout(retry, 150);
+      };
+      retry();
     }
   }, [q, results.length]);
 
@@ -148,7 +192,7 @@ export default function Buscar() {
                   </div>
                   <span className="text-[10px] uppercase tracking-wider text-white/35">Google</span>
                 </div>
-                <div className="gcse-searchresults-only" data-gname="industrialpedia-cse"></div>
+                <div id="industrialpedia-cse-results" className="min-h-[120px]"></div>
               </section>
             )}
           </>
