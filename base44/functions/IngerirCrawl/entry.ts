@@ -97,7 +97,11 @@ export default async function (req) {
       }
       if (rebuild && t.document_id) {
         const d = documentById.get(t.document_id);
-        return !!d && d.status !== 'published';
+        // rebuild es una operación explícita de reconstrucción: permite reprocesar
+        // documentos históricos incluso si quedaron published con datos de una versión
+        // anterior del pipeline. La idempotencia normal permanece intacta cuando
+        // rebuild=false.
+        return !!d;
       }
       return false;
     }).slice(0, limit);
@@ -145,7 +149,7 @@ export default async function (req) {
     const report = [];
 
     async function processTask(task) {
-      if (task.content_hash && publishedHashes.has(task.content_hash)) {
+      if (!rebuild && task.content_hash && publishedHashes.has(task.content_hash)) {
         if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'skipped' });
         report.push({ task_id: task.id, url: task.url, status: 'skipped_duplicate_hash' }); processed++; return;
       }
