@@ -42,9 +42,27 @@ function normalized(value) {
   return String(value || '').toLowerCase().replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
 }
 
+// Section headings are document structure, not identity evidence. They may appear
+// adjacent to a real device identifier in extracted page context and must not
+// invalidate that identifier by themselves.
+const DOCUMENT_SECTION_HEADINGS = [
+  /\btypical\s+characteristics\b/gi,
+  /\belectrical\s+characteristics\b/gi,
+  /\babsolute\s+maximum\s+ratings?\b/gi,
+  /\brecommended\s+operating\s+conditions?\b/gi,
+  /\bapplication(?:s)?\s+information\b/gi,
+  /\bfunctional\s+description\b/gi
+];
+
+function semanticIdentityContext(value) {
+  let context = normalized(value);
+  for (const re of DOCUMENT_SECTION_HEADINGS) context = context.replace(re, ' ');
+  return normalized(context);
+}
+
 export function classifyIdentifier(candidate) {
   const label = normalized(candidate?.label);
-  const context = normalized(candidate?.context_text);
+  const context = semanticIdentityContext(candidate?.context_text);
   const text = normalized(candidate?.text);
 
   if (PART_LABELS.has(label)) {
