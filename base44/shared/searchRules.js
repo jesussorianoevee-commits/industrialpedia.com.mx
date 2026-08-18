@@ -55,9 +55,16 @@ export function scorePart(part, q, specs) {
 
   const tokens = tokenize(raw);
   if (tokens.length) {
+    const pnTokenHits = tokens.filter((t) => pn.toLowerCase().includes(t) || pnn.includes(normalizePartNumber(t))).length;
     const descHits = tokens.filter((t) => desc.includes(t)).length;
     const catHits = tokens.filter((t) => cat.includes(t)).length;
     const mfHits = tokens.filter((t) => mf.includes(t)).length;
+    const fieldHits = tokens.filter((t) =>
+      pn.toLowerCase().includes(t) || pnn.includes(normalizePartNumber(t)) ||
+      mf.includes(t) || cat.includes(t) || desc.includes(t)
+    ).length;
+    if (fieldHits === tokens.length) bump(650 + tokens.length * 5, 'all_query_tokens');
+    else if (pnTokenHits > 0) bump(550 + pnTokenHits * 10, 'part_number_token');
     if (descHits === tokens.length) bump(500 + tokens.length, 'description_all_tokens');
     else if (descHits > 0) bump(300 + descHits, 'description_partial');
     if (catHits === tokens.length) bump(450, 'category_all_tokens');
