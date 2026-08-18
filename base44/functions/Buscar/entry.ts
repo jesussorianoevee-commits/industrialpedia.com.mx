@@ -122,10 +122,13 @@ export default async function (req) {
         }
       } catch (e) { /* búsqueda exacta sigue disponible */ }
       try {
-        discoveryCandidates = await base44.asServiceRole.entities.DiscoveryIndex.filter(
+        const directDiscovery = await base44.asServiceRole.entities.DiscoveryIndex.filter(
           { ...discoveryBase, $or: discoveryOr }, '-updated_date', 5000
         );
-      } catch (e) { discoveryCandidates = []; }
+        const mergedDiscovery = new Map(discoveryCandidates.map((d) => [d.id, d]));
+        for (const d of directDiscovery) mergedDiscovery.set(d.id, d);
+        discoveryCandidates = [...mergedDiscovery.values()];
+      } catch (e) { /* keep manufacturer discovery candidates */ }
       const discoveryScan = await base44.asServiceRole.entities.DiscoveryIndex.filter(discoveryBase, '-updated_date', 5000).catch(() => []);
       const dqTokens = tokenize(q);
       const seenDiscovery = new Set(discoveryCandidates.map((d) => d.id));
