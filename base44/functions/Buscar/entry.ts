@@ -187,8 +187,8 @@ export default async function (req) {
           trustedOfficialDomains = matched.map((m) => {
             try { return new URL(m.website).hostname; } catch { return ''; }
           }).filter(Boolean);
-          // Si aún no conocemos la marca en la base, usamos el primer token de la
-          // consulta como candidato de marca para reconocer su dominio oficial.
+          // Si aún no conocemos la marca en la base, derivamos candidatos de marca
+          // desde todos los tokens de la consulta, excluyendo términos técnicos y PNs.
           if (!manufacturerNames.length) {
             manufacturerNames = manufacturerTokensFromQuery(q, looksLikePartNumber);
           } else {
