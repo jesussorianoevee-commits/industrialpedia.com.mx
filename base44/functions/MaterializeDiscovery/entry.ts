@@ -79,6 +79,23 @@ export default async function (req) {
       const sel = selectPartNumber(candidates, null);
       if (sel.demonstrated) selected = sel.candidate;
     }
+    // Para una búsqueda exacta de Part Number, la propia consulta puede demostrar
+    // identidad únicamente si la fuente encontrada contiene ese PN de forma literal.
+    // Esto evita rechazar páginas de producto cuyo extractor HTML no haya creado
+    // un candidato estructurado, sin adjudicar un PN diferente por frecuencia.
+    if (!selected && discovery.candidate_part_number_normalized) {
+      const wanted = normalizePartNumber(discovery.candidate_part_number_normalized);
+      const corpus = `${extracted.title || ''} ${extracted.text || ''}`;
+      if (normalizePartNumber(corpus).includes(wanted)) {
+        selected = {
+          text: discovery.candidate_part_number || query,
+          context_text: extracted.title || query,
+          page: 1,
+          bbox: null,
+          label_relation: 'source_literal'
+        };
+      }
+    }
     if (!selected) throw new Error('part_number_not_demonstrated_in_source');
 
     const partNumber = selected.text.trim();
