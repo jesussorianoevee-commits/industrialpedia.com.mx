@@ -21,14 +21,17 @@ export default function ResultCard({ result }) {
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0">
-          <div className="text-white font-semibold text-sm truncate">{result.part_number}</div>
-          <div className="text-white/50 text-xs">{result.manufacturer_name}{result.category ? ` · ${result.category}` : ''}</div>
+          <div className="text-white font-semibold text-sm truncate">{result.part_number || result.title || 'Resultado encontrado'}</div>
+          <div className="text-white/50 text-xs">{result.manufacturer_name || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}{result.category ? ` · ${result.category}` : ''}</div>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
       {result.description && (
         <p className="text-white/45 text-xs leading-relaxed mb-3">{result.description}</p>
+      )}
+      {result.discovery_state === 'discovered' && (
+        <p className="text-white/35 text-[11px] mb-3">Encontrado fuera del Knowledge Core. Aún no tiene ficha técnica validada en Industrialpedia.</p>
       )}
 
       {result.top_specs.length > 0 && (
