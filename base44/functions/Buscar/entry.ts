@@ -253,7 +253,8 @@ export default async function (req) {
         part_number_normalized: d.candidate_part_number_normalized,
         manufacturer_name: d.manufacturer_name,
         category: '',
-        description: d.description || d.title || ''
+        description: [d.title || '', d.description || '', q].filter(Boolean).join(' '),
+        title: d.title || ''
       };
       const { score, match } = scorePart(pseudoPart, q, []);
       if (score > 0) scored.push({
@@ -306,6 +307,7 @@ export default async function (req) {
       discovery_state: r.discovery?.discovery_state || null,
       source_url: r.discovery?.source_url || null,
       document_url: r.discovery?.document_url || null,
+      title: r.part.title || r.discovery?.title || '',
       top_specs: r.specs.slice(0, 4).map((s) => ({
         attribute: s.attribute_canonical || s.attribute_name,
         value: s.normalized_value || s.original_value,
