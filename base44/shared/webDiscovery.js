@@ -95,7 +95,54 @@ export async function discoverIndustrialWeb(query) {
   return { provider: 'none', results: [] };
 }
 
+const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
+  'mouser.com', 'digikey.com', 'newark.com', 'element14.com', 'farnell.com',
+  'rs-online.com', 'automationdirect.com', 'grainger.com', 'misumi.com',
+  'mcmaster.com', 'tme.eu', 'radwell.com', 'galco.com', 'alliedelec.com',
+  'arrow.com', 'avnet.com', 'octopart.com'
+]);
+
+const SUSPICIOUS_HOST_TERMS = /(^|[.-])(repair|repairs|used|surplus|salvage|auction|classifieds|marketplace|forum|forums|blog|review|reviews)([.-]|$)/i;
+
+function hostOf(url) {
+  try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; }
+}
+
+function registrableHost(host) {
+  const parts = host.split('.').filter(Boolean);
+  return parts.length >= 2 ? parts.slice(-2).join('.') : host;
+}
+
+function domainMatches(host, domain) {
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
+function brandHostMatches(host, manufacturerNames = []) {
+  const base = registrableHost(host).split('.')[0].replace(/[^a-z0-9]/g, '');
+  if (!base || SUSPICIOUS_HOST_TERMS.test(host)) return false;
+  return manufacturerNames.some((name) => {
+    const token = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!token || token.length < 3) return false;
+    return base === token || base.startsWith(token) || token.startsWith(base);
+  });
+}
+
+export function classifyIndustrialSource(r, manufacturerNames = [], trustedOfficialDomains = []) {
+  const host = hostOf(r.url);
+  if (!host || SUSPICIOUS_HOST_TERMS.test(host)) return 'untrusted';
+  if (trustedOfficialDomains.some((d) => d && domainMatches(host, String(d).toLowerCase().replace(/^www\./, '')))) return 'official';
+  if ([...TRUSTED_DISTRIBUTOR_DOMAINS].some((d) => domainMatches(host, d))) return 'distributor';
+  if (brandHostMatches(host, manufacturerNames)) return 'official';
+  return 'untrusted';
+}
+
 export function isLikelyIndustrialResult(r) {
   const text = `${r.title || ''} ${r.snippet || ''} ${r.url || ''}`.toLowerCase();
   return /datasheet|data.?sheet|catalog|product|part number|order(ing)? information|specification|manual|automation|industrial|sensor|valve|actuator|pneumatic|electrical|bearing|motor|plc|drive/.test(text);
+}
+
+export function filterTrustedIndustrialResults(results, manufacturerNames = [], trustedOfficialDomains = []) {
+  return results
+    .map((r) => ({ ...r, source_type: classifyIndustrialSource(r, manufacturerNames, trustedOfficialDomains) }))
+    .filter((r) => r.source_type === 'official' || r.source_type === 'distributor');
 }
