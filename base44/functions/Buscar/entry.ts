@@ -85,7 +85,6 @@ export default async function (req) {
         // Knowledge Core search: include the technical attribute/value text in scoring.
         // This is deterministic and uses only structured Specification records; no AI.
         if (q && !isPartNo && tokens.length) {
-          const queryTokens = new Set(tokens);
           for (const s of specs) {
             const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
             const value = String(s.normalized_value || s.original_value || '').toLowerCase();
