@@ -414,7 +414,7 @@ export default async function (req) {
       const score = rankedScore > 0 ? rankedScore : (hits ? 220 + hits * 25 : 0);
       if (score > 0) {
         scored.push({
-          part: { ...pseudoPart, part_id: `catalog:${c.id}`, validation_state: 'incomplete', source_url: c.product_url, document_url: c.datasheet_url || c.product_url },
+          part: { ...pseudoPart, part_id: null, catalog_id: c.id, validation_state: 'incomplete', source_url: c.product_url, document_url: c.datasheet_url || c.product_url },
           specs: [], evidence: [], score, match: rankedScore > 0 ? rankedMatch : 'catalog_match',
           discovery: { id: c.discovery_id || null, source_url: c.product_url, document_url: c.datasheet_url || c.product_url, title: c.name, discovery_state: c.catalog_state, manufacturer_name: c.manufacturer_name }
         });
@@ -447,7 +447,8 @@ export default async function (req) {
 
     const unique = (arr) => [...new Set(arr.filter(Boolean))];
     const results = page.map((r) => ({
-      id: r.part.part_id,
+      id: r.part.part_id || null,
+      catalog_id: r.part.catalog_id || null,
       discovery_id: r.discovery?.id || null,
       part_number: r.part.part_number,
       manufacturer_name: r.part.manufacturer_name,
