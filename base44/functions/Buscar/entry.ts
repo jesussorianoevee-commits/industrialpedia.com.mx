@@ -82,6 +82,20 @@ export default async function (req) {
           { part_id: { $in: ids } }, '-updated_date', 2000
         );
         specs.forEach((s) => pushGrp(specsByPart, s.part_id, s));
+        // Knowledge Core search: include the technical attribute/value text in scoring.
+        // This is deterministic and uses only structured Specification records; no AI.
+        if (q && !isPartNo && tokens.length) {
+          const queryTokens = new Set(tokens);
+          for (const s of specs) {
+            const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
+            const value = String(s.normalized_value || s.original_value || '').toLowerCase();
+            const unit = String(s.normalized_unit || s.original_unit || '').toLowerCase();
+            const haystack = `${attr} ${value} ${unit}`;
+            if (tokens.some((t) => haystack.includes(t))) {
+              s.__search_text_match = true;
+            }
+          }
+        }
       } catch (e) { /* sin specs */ }
       try {
         const ev = await base44.asServiceRole.entities.Evidence.filter(
@@ -107,7 +121,7 @@ export default async function (req) {
           String(s.normalized_value) === String(f.value))
       ));
     }
-    if (q) scored = scored.filter((r) => r.score > 0);
+    if (q) scored = scored.filter((r) => r.score > 0 || r.specs.some((s) => s.__search_text_match));
 
     scored.sort(rankComparator);
 
