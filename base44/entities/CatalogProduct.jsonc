@@ -1,0 +1,80 @@
+{
+  "name": "CatalogProduct",
+  "type": "object",
+  "properties": {
+    "manufacturer_name": {
+      "type": "string"
+    },
+    "part_number": {
+      "type": "string"
+    },
+    "part_number_normalized": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "product_url": {
+      "type": "string"
+    },
+    "datasheet_url": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "official",
+        "distributor"
+      ]
+    },
+    "source_domain": {
+      "type": "string"
+    },
+    "source_provider": {
+      "type": "string",
+      "enum": [
+        "google",
+        "bing",
+        "duckduckgo",
+        "knowledge_core"
+      ]
+    },
+    "catalog_state": {
+      "type": "string",
+      "enum": [
+        "discovered",
+        "identified",
+        "materialized",
+        "rejected"
+      ],
+      "default": "discovered"
+    },
+    "search_text": {
+      "type": "string"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "discovery_id": {
+      "type": "string"
+    },
+    "part_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "product_url",
+    "catalog_state"
+  ]
+}

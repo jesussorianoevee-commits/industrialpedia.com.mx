@@ -52,6 +52,7 @@ export default async function (req) {
 
     let candidates = [];
     let discoveryCandidates = [];
+    let catalogCandidates = [];
 
     // Fuente primaria de recuperación: Part + SearchIndex. SearchIndex acelera,
     // pero BUSCAR nunca depende de que el índice esté perfecto para funcionar.
@@ -246,6 +247,40 @@ export default async function (req) {
             const materializedPart = await base44.asServiceRole.entities.Part.get(materializedPartId).catch(() => null);
             if (materializedPart) candidates.push({ ...materializedPart, part_id: materializedPart.id, part_number_normalized: materializedPart.part_number_normalized || normalizePartNumber(materializedPart.part_number || '') });
           }
+
+          // Catálogo propio: cada resultado industrial aceptado se conserva como
+          // producto de catálogo. No sustituye la ficha técnica: es el inventario
+          // de productos que BUSCAR ya encontró y que puede reutilizar después.
+          try {
+            const catalogPayload = {
+              manufacturer_name: payload.manufacturer_name,
+              part_number: candidatePn,
+              part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '',
+              name: r.title || host,
+              description: r.snippet || r.title || '',
+              category: '',
+              image_url: '',
+              product_url: r.url,
+              datasheet_url: /datasheet|data.?sheet/i.test(`${r.title} ${r.url} ${r.snippet}`) ? r.url : '',
+              source_type: r.source_type,
+              source_domain: host,
+              source_provider: web.provider,
+              catalog_state: candidatePn ? 'identified' : 'discovered',
+              search_text: [q, r.title, r.snippet, host, payload.manufacturer_name, candidatePn].filter(Boolean).join(' '),
+              last_seen: new Date().toISOString(),
+              discovery_id: discoveryId || '',
+              part_id: materializedPartId || ''
+            };
+            const existingCatalog = await base44.asServiceRole.entities.CatalogProduct.filter({ product_url: r.url }, 'updated_date', 1).catch(() => []);
+            if (existingCatalog.length) {
+              await base44.asServiceRole.entities.CatalogProduct.update(existingCatalog[0].id, catalogPayload).catch(() => {});
+              catalogCandidates.push({ ...existingCatalog[0], ...catalogPayload, id: existingCatalog[0].id });
+            } else {
+              const createdCatalog = await base44.asServiceRole.entities.CatalogProduct.create(catalogPayload).catch(() => null);
+              if (createdCatalog) catalogCandidates.push(createdCatalog);
+            }
+          } catch (e) { /* DiscoveryIndex sigue siendo suficiente si el catálogo falla */ }
+
           discoveryCandidates.push({ ...payload, id: discoveryId, part_id: materializedPartId });
         }
       } catch (e) { /* Knowledge Core sigue siendo la fuente primaria */ }
@@ -267,14 +302,34 @@ export default async function (req) {
       } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
 
-    // 5) Modo exploración: solo filtros, sin texto.
+    // 5) Recuperar productos ya almacenados en nuestro catálogo propio.
+    //    Las coincidencias exactas de PN/marca se recuperan sin volver a consultar la web.
+    if (q) {
+      try {
+        const catalogOr = [
+          { part_number: q },
+          { part_number_normalized: normalizePartNumber(q) },
+          { manufacturer_name: q }
+        ];
+        const stored = await base44.asServiceRole.entities.CatalogProduct.filter(
+          { catalog_state: { $in: ['discovered', 'identified', 'materialized'] }, $or: catalogOr },
+          '-updated_date', 500
+        );
+        const seen = new Set(catalogCandidates.map((c) => c.id));
+        for (const c of stored) {
+          if (!seen.has(c.id)) { catalogCandidates.push(c); seen.add(c.id); }
+        }
+      } catch (e) { /* catálogo aún vacío */ }
+    }
+
+    // 6) Modo exploración: solo filtros, sin texto.
     if (!q && ((filters.manufacturers && filters.manufacturers.length) || (filters.categories && filters.categories.length))) {
       try {
         candidates = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', 5000);
       } catch (e) { candidates = []; }
     }
 
-    // 6) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
+    // 7) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
     // SearchIndex.id identifies the index row; part_id identifies the Knowledge Core Part.
     const ids = [...new Set(candidates.map((c) => c.part_id || c.id).filter(Boolean))];
     const specsByPart = {};
@@ -307,7 +362,7 @@ export default async function (req) {
       } catch (e) { /* sin evidencia */ }
     }
 
-    // 7) Scoring + filtros derivados de specs.
+    // 8) Scoring + filtros derivados de specs.
     let scored = candidates.map((p) => {
       const specs = specsByPart[p.part_id || p.id] || [];
       const { score, match } = scorePart(p, q, specs);
@@ -339,6 +394,31 @@ export default async function (req) {
           source_url: d.source_url, document_url: d.document_url },
         specs: [], evidence: [], score, match, discovery: d
       });
+    }
+
+    // Productos del catálogo propio: son descubrimientos persistidos, no fichas verificadas.
+    for (const c of catalogCandidates) {
+      const pseudoPart = {
+        part_number: c.part_number || '',
+        part_number_normalized: c.part_number_normalized || '',
+        manufacturer_name: c.manufacturer_name || '',
+        category: c.category || '',
+        description: c.description || '',
+        title: c.name || '',
+        image_url: c.image_url || ''
+      };
+      const { score: rankedScore, match: rankedMatch } = scorePart(pseudoPart, q, []);
+      const catalogText = `${c.part_number || ''} ${c.manufacturer_name || ''} ${c.name || ''} ${c.description || ''} ${c.search_text || ''}`.toLowerCase();
+      const catalogTokens = tokenize(q);
+      const hits = catalogTokens.filter((t) => catalogText.includes(t)).length;
+      const score = rankedScore > 0 ? rankedScore : (hits ? 220 + hits * 25 : 0);
+      if (score > 0) {
+        scored.push({
+          part: { ...pseudoPart, part_id: `catalog:${c.id}`, validation_state: 'incomplete', source_url: c.product_url, document_url: c.datasheet_url || c.product_url },
+          specs: [], evidence: [], score, match: rankedScore > 0 ? rankedMatch : 'catalog_match',
+          discovery: { id: c.discovery_id || null, source_url: c.product_url, document_url: c.datasheet_url || c.product_url, title: c.name, discovery_state: c.catalog_state, manufacturer_name: c.manufacturer_name }
+        });
+      }
     }
 
     if (filters.has_specification === true) {
