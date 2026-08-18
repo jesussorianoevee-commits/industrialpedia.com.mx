@@ -244,7 +244,7 @@ function contextualPartCandidate(candidates) {
   }
   // Contextual labels require corroboration: title OR repeated identity on page 1.
   return [...byToken.values()]
-    .filter((x) => x.firstPageCount >= 2 && (x.candidate.in_title || x.count >= 3))
+    .filter((x) => x.firstPageCount >= 2 && (x.candidate.in_title || x.count >= 2))
     .sort((a, b) => (Number(b.candidate.in_title) - Number(a.candidate.in_title)) || (b.firstPageCount - a.firstPageCount) || (a.candidate.text < b.candidate.text ? -1 : 1))[0]?.candidate || null;
 }
 
