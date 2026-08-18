@@ -97,6 +97,15 @@ export default function ResultCard({ result }) {
           >
             Ver componente <ArrowRight className="w-3 h-3" />
           </Link>
+        ) : result.catalog_id && result.source_url ? (
+          <a
+            href={result.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Ver producto <ArrowRight className="w-3 h-3" />
+          </a>
         ) : result.discovery_id && result.part_number ? (
           <button
             disabled={materializing}
