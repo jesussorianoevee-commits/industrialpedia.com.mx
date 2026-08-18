@@ -3,7 +3,7 @@ import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComp
 
 const DEFAULT_STATES = ['published'];
 const ALLOWED_STATES = ['published', 'validated', 'incomplete'];
-const SCAN_LIMIT = 500;
+const SCAN_LIMIT = 5000;
 
 function pushGrp(m, k, v) { (m[k] = m[k] || []).push(v); }
 
@@ -32,7 +32,8 @@ export default async function (req) {
       base.category = { $in: filters.categories };
     }
 
-    // 1) Coincidencias estructurales exactas ($or sobre campos indexados).
+    // 1) Coincidencias estructurales exactas sobre el SearchIndex.
+    //    BUSCAR consulta el índice del Knowledge Core; nunca invoca el crawler.
     const orClauses = [];
     if (q) {
       orClauses.push({ part_number: q });
@@ -45,8 +46,8 @@ export default async function (req) {
     let candidates = [];
     if (orClauses.length) {
       try {
-        candidates = await base44.asServiceRole.entities.Part.filter(
-          { ...base, $or: orClauses }, '-updated_date', 1000
+        candidates = await base44.asServiceRole.entities.SearchIndex.filter(
+          { ...base, $or: orClauses }, '-updated_date', 5000
         );
       } catch (e) { candidates = []; }
     }
@@ -57,7 +58,7 @@ export default async function (req) {
     const tokens = tokenize(q);
     if (q && !isPartNo && tokens.length) {
       try {
-        const scan = await base44.asServiceRole.entities.Part.filter(base, '-updated_date', SCAN_LIMIT);
+        const scan = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', SCAN_LIMIT);
         const seen = new Set(candidates.map((c) => c.id));
         for (const p of scan) {
           if (!seen.has(p.id)) { candidates.push(p); seen.add(p.id); }
@@ -68,7 +69,7 @@ export default async function (req) {
     // 3) Modo exploración: solo filtros, sin texto.
     if (!q && ((filters.manufacturers && filters.manufacturers.length) || (filters.categories && filters.categories.length))) {
       try {
-        candidates = await base44.asServiceRole.entities.Part.filter(base, '-updated_date', 1000);
+        candidates = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', 5000);
       } catch (e) { candidates = []; }
     }
 
