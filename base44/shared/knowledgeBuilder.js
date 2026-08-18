@@ -327,8 +327,10 @@ function partMarkingMatchesVersion(marking, version, partNumber = '') {
   // This is evidence from the orderable row itself, not a manufacturer-specific rule.
   if (p) {
     const grade = String(version || '').toUpperCase();
-    const familyStem = p.replace(new RegExp(`${grade}.*$`, 'i'), '');
-    if (familyStem && new RegExp(`${familyStem}${grade}(?:[A-Z0-9._\\/-]*)$`, 'i').test(p)) return true;
+    // Read the grade immediately after the numeric family stem. Order multi-letter
+    // grades first so BA/KA are not misread as B/K.
+    const match = p.match(/[0-9](BA|KA|B|A|K)(?:[A-Z0-9._\\/-]*)$/i);
+    if (match && match[1].toUpperCase() === grade) return true;
   }
 
   // Fallback for a marking that explicitly exposes the grade as a separated token.
