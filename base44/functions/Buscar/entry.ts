@@ -139,10 +139,31 @@ export default async function (req) {
 
     // 6) Scoring + filtros derivados de specs.
     let scored = candidates.map((p) => {
-      const specs = specsByPart[p.id] || [];
+      const specs = specsByPart[p.part_id] || [];
       const { score, match } = scorePart(p, q, specs);
-      return { part: p, specs, evidence: evidenceByPart[p.id] || [], score, match };
+      return { part: p, specs, evidence: evidenceByPart[p.part_id] || [], score, match, discovery: null };
     });
+
+    // Discovery results are intentionally separate from verified Knowledge Core results.
+    // A discovered candidate may be shown, but its state/source remain explicit and it never
+    // contributes invented specifications.
+    const indexedPartIds = new Set(candidates.map((p) => p.part_id).filter(Boolean));
+    for (const d of discoveryCandidates) {
+      if (d.part_id && indexedPartIds.has(d.part_id)) continue;
+      const pseudoPart = {
+        part_number: d.candidate_part_number,
+        part_number_normalized: d.candidate_part_number_normalized,
+        manufacturer_name: d.manufacturer_name,
+        category: '',
+        description: d.description || d.title || ''
+      };
+      const { score, match } = scorePart(pseudoPart, q, []);
+      if (score > 0) scored.push({
+        part: { ...pseudoPart, part_id: d.part_id || null, validation_state: d.discovery_state === 'verified' ? 'validated' : 'incomplete',
+          source_url: d.source_url, document_url: d.document_url },
+        specs: [], evidence: [], score, match, discovery: d
+      });
+    }
 
     if (filters.has_specification === true) {
       scored = scored.filter((r) => r.specs.length > 0);
@@ -184,6 +205,9 @@ export default async function (req) {
       evidence_count: r.evidence.length,
       source_ids: unique(r.specs.map((s) => s.source_id)),
       spec_count: r.specs.length,
+      discovery_state: r.discovery?.discovery_state || null,
+      source_url: r.discovery?.source_url || null,
+      document_url: r.discovery?.document_url || null,
       top_specs: r.specs.slice(0, 4).map((s) => ({
         attribute: s.attribute_canonical || s.attribute_name,
         value: s.normalized_value || s.original_value,
