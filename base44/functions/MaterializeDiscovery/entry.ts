@@ -114,7 +114,8 @@ export default async function (req) {
     if (!selected) throw new Error('part_number_not_demonstrated_in_source');
 
     const partNumber = selected.text.trim();
-    const manufacturer = manufacturerFrom(discovery, query, discovery.source_url, extracted.title || discovery.title);
+    const knownManufacturers = await base44.asServiceRole.entities.Manufacturer.list('-updated_date', 1000).catch(() => []);
+    const manufacturer = manufacturerFrom(discovery, query, discovery.source_url, extracted.title || discovery.title, knownManufacturers);
     if (!manufacturer) throw new Error('manufacturer_not_demonstrated');
 
     const rawSpecs = isPdf
