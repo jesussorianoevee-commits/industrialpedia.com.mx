@@ -34,7 +34,8 @@ const EXCLUDED_PART_CONTEXT = [
   /\b(?:typical\s+characteristics|electrical\s+characteristics)\b/i,
   /\b(?:literature|document)\s+(?:number|no|#)\b/i,
   /\b(?:revision|rev\.?|package|catalog)\b/i,
-  /\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)\b/i
+  /\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)(?:[-/ ]?\d+[A-Z0-9.-]*)?\b/i,
+  /\b(?:standard|std)\s+(?:number|no|#|reference|ref(?:erence)?|compliance)\b/i
 ];
 
 function normalized(value) {
@@ -64,7 +65,7 @@ export function classifyIdentifier(candidate) {
     return { role: 'ELECTRICAL_VALUE', demonstrated: false, reason: 'value_shape_not_identifier' };
   }
   if (EXCLUDED_PART_CONTEXT.some((re) => re.test(context))) {
-    if (/\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)\b/i.test(context)) {
+    if (/\b(?:jep|jesd|je[c]?d|iec|iso|mil[- ]std)(?:[-/ ]?\d+[A-Z0-9.-]*)?\b/i.test(context) || /\b(?:standard|std)\s+(?:number|no|#|reference|ref(?:erence)?|compliance)\b/i.test(context)) {
       return { role: 'STANDARD_REFERENCE', demonstrated: false, reason: 'standard_context' };
     }
     if (/\b(?:vref\d*|voltage\s+reference|reference\s+voltage)\b/i.test(context)) {
