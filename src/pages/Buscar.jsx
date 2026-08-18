@@ -6,7 +6,9 @@ import ResultCard from '@/components/search/ResultCard';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
 
-const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: true };
+// BUSCAR inicia en modo descubrimiento: muestra published/validated/incomplete.
+// El estado de confianza siempre se muestra en cada resultado; rejected queda fuera.
+const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
 export default function Buscar() {
   const [params, setParams] = useSearchParams();
