@@ -6,19 +6,34 @@ import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 
-function manufacturerFrom(discovery, query, url, title) {
+function manufacturerFrom(discovery, query, url, title, knownManufacturers = []) {
   if (discovery.manufacturer_name) return discovery.manufacturer_name;
-  const qTokens = String(query || '').trim().split(/\s+/).filter(Boolean);
   const corpus = `${title || ''} ${url || ''}`.toLowerCase();
-  const qBrand = qTokens.find((t) => t.length >= 2 && /[a-z]/i.test(t) && corpus.includes(t.toLowerCase()));
+
+  // Primero usamos una marca conocida explícitamente demostrada por la fuente.
+  const known = knownManufacturers
+    .filter((m) => m && String(m).name)
+    .sort((a, b) => String(b.name).length - String(a.name).length)
+    .find((m) => corpus.includes(String(m.name).toLowerCase()));
+  if (known) return known.name;
+
+  // Si la propia consulta contiene una marca y la fuente la repite, también es
+  // evidencia suficiente. No confundimos términos técnicos con fabricante.
+  const qTokens = String(query || '').trim().split(/\s+/).filter(Boolean);
+  const qBrand = qTokens.find((t) => t.length >= 3 && /[a-z]/i.test(t) && !/^\d/.test(t) && corpus.includes(t.toLowerCase()));
   if (qBrand) return qBrand;
-  try {
-    const host = new URL(url).hostname.replace(/^www\./i, '');
-    const stem = host.split('.')[0].replace(/[-_]+/g, ' ').trim();
-    if (stem && !['www','docs','support','download','catalog'].includes(stem.toLowerCase())) {
-      return stem.split(/\s+/).map((x) => x ? x[0].toUpperCase() + x.slice(1) : x).join(' ');
-    }
-  } catch {}
+
+  // Solo una fuente oficial puede demostrar fabricante por su propio dominio.
+  // En un distribuidor NO usamos el dominio del distribuidor como fabricante.
+  if (discovery.source_trust === 'official') {
+    try {
+      const host = new URL(url).hostname.replace(/^www\./i, '');
+      const stem = host.split('.')[0].replace(/[-_]+/g, ' ').trim();
+      if (stem && !['www','docs','support','download','catalog'].includes(stem.toLowerCase())) {
+        return stem.split(/\s+/).map((x) => x ? x[0].toUpperCase() + x.slice(1) : x).join(' ');
+      }
+    } catch {}
+  }
   return '';
 }
 
