@@ -127,6 +127,18 @@ function brandHostMatches(host, manufacturerNames = []) {
   });
 }
 
+// No depende de una lista cerrada de fabricantes. Para una marca que todavía
+// no exista en Manufacturer, BUSCAR puede reconocer su dominio oficial cuando
+// el nombre de la marca aparece explícitamente en la consulta.
+export function manufacturerTokensFromQuery(query, looksLikePartNumberFn = () => false) {
+  return String(query || '')
+    .split(/[^A-Za-z0-9&.-]+/)
+    .map((token) => token.replace(/^[.-]+|[.-]+$/g, ''))
+    .filter((token) => token.length >= 3)
+    .filter((token) => !looksLikePartNumberFn(token))
+    .filter((token) => !/^(industrial|products?|product|part|parts|number|catalog|catalogue|datasheet|sensor|sensors|valve|valves|motor|motors|pneumatic|electrical|automation|component|components|refaccion|refacciones|repuesto|repuestos)$/i.test(token));
+}
+
 export function classifyIndustrialSource(r, manufacturerNames = [], trustedOfficialDomains = []) {
   const host = hostOf(r.url);
   if (!host || SUSPICIOUS_HOST_TERMS.test(host)) return 'untrusted';
