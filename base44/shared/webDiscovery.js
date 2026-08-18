@@ -33,7 +33,7 @@ async function googleCustomSearch(query) {
   // Google Programmable Search / Custom Search JSON API. No IA: devuelve
   // resultados web directamente. Soporta varios nombres habituales de secretos
   // para no obligar a cambiar la configuración de Base44.
-  const key = Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || '';
+  const key = Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('Google_Api') || '';
   const cx = Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '2725a736ccf564979';
   if (!key || !cx) return [];
   try {
