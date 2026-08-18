@@ -85,7 +85,7 @@ export default function ResultCard({ result }) {
             rel="noreferrer"
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            Abrir fuente <ArrowRight className="w-3 h-3" />
+            Ver fuente <ArrowRight className="w-3 h-3" />
           </a>
         ) : null}
         <button
