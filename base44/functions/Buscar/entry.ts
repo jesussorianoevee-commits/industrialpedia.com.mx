@@ -172,7 +172,7 @@ export default async function (req) {
         // si el buscador externo devolvió resultados pero ninguno pasó el filtro,
         // mostramos los resultados devueltos y conservamos la fuente explícita.
         const industrialMatches = web.results.filter(isLikelyIndustrialResult);
-        const industrial = (industrialMatches.length ? industrialMatches : web.results).slice(0, 8);
+        const industrial = (industrialMatches.length ? industrialMatches : web.results).slice(0, 50);
         for (const r of industrial) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
