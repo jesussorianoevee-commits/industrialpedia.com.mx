@@ -1,7 +1,7 @@
 // Descubrimiento web determinístico para BUSCAR. Sin IA ni embeddings.
 // Orden: proveedor API configurado -> DuckDuckGo HTML como fallback sin clave.
 
-const TIMEOUT_MS = 4500;
+const TIMEOUT_MS = 9000;
 const MAX_RESULTS = 8;
 
 function stripHtml(s) {
