@@ -147,7 +147,13 @@ function detectTables(lines) {
     const headerRoles = [];
     for (let i = 0; i < Math.min(indexedRows.length, 3); i++) {
       const roles = indexedRows[i].map((c) => headerRole(c.text));
-      if (roles.filter(Boolean).length >= 2) {
+      const recognizedRoles = roles.filter(Boolean);
+      // Ordering tables can have a single semantically recognized header
+      // (PART_NUMBER) while the remaining columns are document-specific
+      // metadata (Status, Material type, RoHS, Part marking, etc.).
+      // Do not relax the generic >=2 rule for specification tables; only a
+      // positively identified PART_NUMBER header may qualify on its own.
+      if (recognizedRoles.length >= 2 || recognizedRoles.includes('PART_NUMBER')) {
         headerIndex = i;
         for (const c of indexedRows[i]) headerRoles[c.column_index] = headerRole(c.text);
         break;
