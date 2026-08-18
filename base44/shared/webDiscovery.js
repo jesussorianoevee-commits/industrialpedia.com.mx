@@ -29,6 +29,24 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUT_MS) {
   } finally { clearTimeout(timer); }
 }
 
+async function googleCustomSearch(query) {
+  // Google Programmable Search / Custom Search JSON API. No IA: devuelve
+  // resultados web directamente. Soporta varios nombres habituales de secretos
+  // para no obligar a cambiar la configuración de Base44.
+  const key = Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || '';
+  const cx = Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '';
+  if (!key || !cx) return [];
+  try {
+    const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=10`;
+    const r = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
+    if (!r.ok) return [];
+    const data = await r.json();
+    return (data.items || []).slice(0, 10).map((x) => ({
+      title: x.title || '', url: x.link || '', snippet: x.snippet || '', provider: 'google'
+    })).filter((x) => x.url);
+  } catch { return []; }
+}
+
 async function bing(query) {
   const key = Deno.env.get('BING_SEARCH_API_KEY') || '';
   if (!key) return [];
@@ -85,15 +103,21 @@ export async function discoverIndustrialWeb(query) {
   const q = String(query || '').trim();
   if (!q) return { provider: 'none', results: [] };
 
-  // Con API de Bing disponible, hacemos varias búsquedas complementarias y
-  // combinamos sus resultados. Esto mejora mucho la cobertura sin depender de
-  // una lista cerrada de fabricantes ni de una sola forma de nombrar la pieza.
-  const bingQueries = [
+  // Primero intentamos Google si el secreto de búsqueda y el ID del motor están
+  // configurados. Se hacen varias consultas complementarias y se combinan sin IA.
+  const searchQueries = [
     q,
     `${q} datasheet`,
     `${q} product catalog`
   ];
-  const bingBatches = await Promise.all(bingQueries.map((term) => bing(term)));
+
+  const googleBatches = await Promise.all(searchQueries.map((term) => googleCustomSearch(term)));
+  const googleResults = unique(googleBatches.flat());
+  if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS) };
+
+  // Bing queda como segundo proveedor si Google no está configurado o no devuelve
+  // resultados útiles; DuckDuckGo permanece como último fallback.
+  const bingBatches = await Promise.all(searchQueries.map((term) => bing(term)));
   const bingResults = unique(bingBatches.flat());
   if (bingResults.length) return { provider: 'bing', results: bingResults.slice(0, MAX_RESULTS) };
 
