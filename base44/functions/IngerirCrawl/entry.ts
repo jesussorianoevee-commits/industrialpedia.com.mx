@@ -208,6 +208,39 @@ export default async function (req) {
         // El GENÉRICO ya NO adjudica part_number: sólo detecta candidatos; el significado lo demuestra
         // una etiqueta positiva en el documento o una grammar activa validada fuera de muestra.
         const idCandidates = extractCandidates(extracted.text, extracted.pages, extracted.blocks || [], extracted.tables || []);
+        // Discovery Index: persistir candidatos encontrados aunque todavía no puedan
+        // publicarse en Knowledge Core. Esto permite que BUSCAR descubra una refacción
+        // antes de que Quality Gateway haya demostrado todas sus especificaciones.
+        if (!dryRun && idCandidates.length) {
+          const discoveryCandidates = idCandidates
+            .filter((c) => /^[A-Za-z0-9][A-Za-z0-9\\-/_.]{1,39}$/.test(String(c.text || '').trim()))
+            .slice(0, 200);
+          for (const c of discoveryCandidates) {
+            const pn = String(c.text || '').trim();
+            const pnNorm = normalizePartNumber(pn);
+            const confidence = c.label_type === 'positive' || c.in_title || c.label_relation === 'table_header' ? 0.95 : 0.55;
+            const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({
+              candidate_part_number_normalized: pnNorm,
+              source_url: task.url
+            }, 'updated_date', 1).catch(() => []);
+            const payload = {
+              candidate_part_number: pn,
+              candidate_part_number_normalized: pnNorm,
+              manufacturer_name: manufacturerName,
+              source_url: task.url,
+              document_url: task.url,
+              source_type: isPdf ? 'datasheet' : 'website',
+              title: extracted.title || '',
+              description: (extracted.title || extracted.text || '').slice(0, 240),
+              discovery_state: 'discovered',
+              confidence,
+              last_seen: new Date().toISOString(),
+              document_id: task.document_id || ''
+            };
+            if (existing.length) await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
+            else await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
+          }
+        }
         if (!dryRun && idCandidates.length) {
           await base44.asServiceRole.entities.CandidateIdentifier.bulkCreate(
             idCandidates.slice(0, 60).map((c) => ({
