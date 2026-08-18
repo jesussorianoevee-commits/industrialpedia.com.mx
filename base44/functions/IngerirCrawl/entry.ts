@@ -261,39 +261,140 @@ export default async function (req) {
         }
 
         if (multiPartDocument) {
-          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
-          const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
-            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'incomplete'
-          });
-          if (existingDoc) {
-            await base44.asServiceRole.entities.Document.update(existingDoc.id, {
+          const partPlans = tableSelections.map((partSel) => ({
+            selection: partSel,
+            applicableSpecs: selectSpecificationsForPart(rec.specs, partSel.candidate)
+          }));
+          const applicabilityMissing = partPlans.filter((p) => p.applicableSpecs.length === 0);
+
+          // No publicar parcialmente: si siquiera un Part no tiene una relación de
+          // aplicabilidad demostrada, todo el documento permanece INCOMPLETE.
+          if (applicabilityMissing.length) {
+            const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+            const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
+              title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'incomplete'
+            });
+            if (existingDoc) await base44.asServiceRole.entities.Document.update(existingDoc.id, {
               title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash,
               document_type: 'datasheet', status: 'incomplete'
             });
-          }
-          await base44.asServiceRole.entities.Provenance.create({
-            entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '',
-            note: 'multiple_parts_detected; specification_applicability_not_yet_demonstrated'
-          });
-          for (const partSel of tableSelections) {
             await base44.asServiceRole.entities.Provenance.create({
+              entity_type: 'document', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '',
+              note: 'family_part_applicability_incomplete: no explicit part-number/version evidence for every detected Part'
+            });
+            for (const p of applicabilityMissing) await base44.asServiceRole.entities.Provenance.create({
               entity_type: 'candidate_part', entity_id: docRec.id, operation: 'reject', source_id: task.source_id || '',
               rule_id: 'PN.TABLE_HEADER_BINDING.v1',
-              note: `candidate=${partSel.value}; family member demonstrated by orderable-part table, but specification applicability is not yet demonstrated`
+              note: `candidate=${p.selection.value}; applicable_specs=0; no explicit part-number/version applicability evidence`
             });
+            await base44.asServiceRole.entities.IngestionTask.update(task.id, {
+              state: 'incomplete', document_id: docRec.id,
+              last_error: 'family_part_applicability_incomplete'
+            });
+            await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true }).catch(() => {});
+            incomplete++;
+            processed++;
+            report.push({
+              task_id: task.id, url: task.url, status: 'multi_part_pending_applicability',
+              document_id: docRec.id, part_count: tableSelections.length,
+              parts: partPlans.map((p) => ({ part_number: p.selection.value, applicable_spec_count: p.applicableSpecs.length, page: p.selection.candidate?.page, row_index: p.selection.candidate?.row_index }))
+            });
+            return;
           }
+
+          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+          const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
+            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'published'
+          });
+          if (existingDoc) await base44.asServiceRole.entities.Document.update(existingDoc.id, {
+            title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash,
+            document_type: 'datasheet', status: 'published'
+          });
+          const existingSource = existingDoc?.source_id
+            ? await base44.asServiceRole.entities.Source.get(existingDoc.source_id).catch(() => null)
+            : null;
+          const sourceRec = existingSource || await base44.asServiceRole.entities.Source.create({
+            document_id: docRec.id, url: task.url, type: 'datasheet', retrieved_date: new Date().toISOString()
+          });
+          if (!existingDoc?.source_id || !existingSource) await base44.asServiceRole.entities.Document.update(docRec.id, { source_id: sourceRec.id });
+          const manuf = await base44.asServiceRole.entities.Manufacturer.filter({ name: rec.manufacturer_name }, 'updated_date', 1);
+          const manufacturerId = manuf.length ? manuf[0].id : (await base44.asServiceRole.entities.Manufacturer.create({ name: rec.manufacturer_name, status: 'active' })).id;
+
+          const createdParts = [];
+          for (const plan of partPlans) {
+            const partCandidate = plan.selection.candidate;
+            const partRecData = {
+              part_number: plan.selection.value,
+              part_number_normalized: normalizePartNumber(plan.selection.value),
+              manufacturer_name: rec.manufacturer_name,
+              description,
+              specs: plan.applicableSpecs,
+              raw_text: extracted.text,
+              part_demonstration: {
+                role: 'PART_NUMBER', candidate_text: partCandidate.text,
+                evidence_text: partCandidate.context_text || partCandidate.text,
+                page: partCandidate.page,
+                rule_id: 'PN.TABLE_HEADER_BINDING.v1'
+              }
+            };
+            const partGate = gatePart(partRecData);
+            if (partGate.state !== 'published') throw new Error(`multi_part_gate_failed:${plan.selection.value}:${partGate.causes.join('|')}`);
+
+            const partRec = await base44.asServiceRole.entities.Part.create({
+              manufacturer_id: manufacturerId, manufacturer_name: rec.manufacturer_name,
+              part_number: partRecData.part_number, part_number_normalized: partRecData.part_number_normalized,
+              category: (source && source.name) || '', description: partRecData.description, validation_state: 'published'
+            });
+            const partEv = await base44.asServiceRole.entities.Evidence.create({
+              document_id: docRec.id, part_id: partRec.id,
+              raw_text: partCandidate.context_text || partCandidate.text,
+              page: Number.isFinite(Number(partCandidate.page)) ? partCandidate.page : null,
+              bbox: partCandidate.bbox || null, rule_id: 'PN.TABLE_HEADER_BINDING.v1'
+            });
+            await base44.asServiceRole.entities.Provenance.create({
+              entity_type: 'part', entity_id: partRec.id, operation: 'extract', source_id: sourceRec.id,
+              rule_id: 'PN.TABLE_HEADER_BINDING.v1', note: `orderable_part_table row=${partCandidate.row_index}; part_marking=${partCandidate.part_marking || ''}`
+            });
+            await base44.asServiceRole.entities.DemonstratedFact.create({
+              part_id: partRec.id, document_id: docRec.id, source_id: sourceRec.id,
+              value: partRecData.part_number, derivation: 'explicit_part_number_table_header',
+              grammar_id: '', grammar_version: 0, evidence_id: partEv.id
+            });
+
+            let specsPublished = 0;
+            for (const s of plan.applicableSpecs) {
+              const sg = gateSpec(s);
+              const specRec = await base44.asServiceRole.entities.Specification.create({
+                part_id: partRec.id, attribute_name: s.attribute_name, attribute_canonical: s.attribute_canonical,
+                original_value: s.original_value, normalized_value: s.normalized_value,
+                original_unit: s.original_unit, normalized_unit: s.normalized_unit,
+                source_id: sourceRec.id, validation_state: sg.state
+              });
+              if (!sg.pass) continue;
+              const ev = await base44.asServiceRole.entities.Evidence.create({
+                document_id: docRec.id, part_id: partRec.id, specification_id: specRec.id,
+                raw_text: s.evidence_text, page: s.page || null, bbox: s.evidence_bbox || null,
+                rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
+              });
+              await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: ev.id, validation_state: 'published' });
+              await base44.asServiceRole.entities.Provenance.create({
+                entity_type: 'specification', entity_id: specRec.id, operation: 'validate', source_id: sourceRec.id,
+                rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1',
+                note: 'applicability demonstrated by explicit part-number/version relation in source document'
+              });
+              specsPublished++;
+            }
+            createdParts.push({ part_id: partRec.id, part_number: partRecData.part_number, specs_published: specsPublished });
+          }
+
           await base44.asServiceRole.entities.IngestionTask.update(task.id, {
-            state: 'incomplete', document_id: docRec.id,
-            last_error: 'multiple_parts_detected; specification_applicability_not_yet_demonstrated'
+            state: 'published', document_id: docRec.id, part_id: createdParts[0]?.part_id || '',
+            specs_published: createdParts.reduce((n, p) => n + p.specs_published, 0), last_error: ''
           });
-          await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true }).catch(() => {});
-          incomplete++;
+          await base44.asServiceRole.entities.CrawlDocument.update(task.crawl_document_id, { ingested: true, state: 'ingested' }).catch(() => {});
+          published++;
           processed++;
-          report.push({
-            task_id: task.id, url: task.url, status: 'multi_part_pending_applicability',
-            document_id: docRec.id, part_count: tableSelections.length,
-            parts: tableSelections.map((s) => ({ part_number: s.value, reason: s.reason, page: s.candidate?.page, row_index: s.candidate?.row_index }))
-          });
+          report.push({ task_id: task.id, url: task.url, status: 'published', document_id: docRec.id, part_count: createdParts.length, parts: createdParts });
           return;
         }
 
