@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
+import { discoverIndustrialWeb, isLikelyIndustrialResult } from '../../shared/webDiscovery.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
 // 'published' (revalidacion en curso), se incluye 'incomplete' para que
@@ -140,7 +141,43 @@ export default async function (req) {
       }
     }
 
-    // 3) Para texto libre (no número de parte), scan acotado + filtro en código
+    // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene respuesta,
+    //    BUSCAR no se queda en cero. Consulta una fuente web externa determinística
+    //    (Bing API si está configurada; DuckDuckGo HTML como fallback), sin IA.
+    //    El resultado externo se registra en DiscoveryIndex y se muestra como
+    //    "encontrado en fuente"; nunca se inventan especificaciones.
+    if (q && candidates.length === 0 && discoveryCandidates.length === 0) {
+      try {
+        const web = await discoverIndustrialWeb(q);
+        const industrial = web.results.filter(isLikelyIndustrialResult).slice(0, 8);
+        for (const r of industrial) {
+          let host = '';
+          try { host = new URL(r.url).hostname; } catch {}
+          const candidatePn = isPartNo ? q : '';
+          const payload = {
+            candidate_part_number: candidatePn,
+            candidate_part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '',
+            manufacturer_name: '',
+            source_url: r.url,
+            document_url: r.url,
+            source_type: 'web_discovery',
+            title: r.title || host,
+            description: r.snippet || r.title || '',
+            search_text: [q, r.title, r.snippet, host].filter(Boolean).join(' '),
+            discovery_state: 'discovered',
+            confidence: 0.5,
+            last_seen: new Date().toISOString(),
+            document_id: ''
+          };
+          const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
+          if (existing.length) await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
+          else await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
+          discoveryCandidates.push({ ...payload, id: existing[0]?.id || null });
+        }
+      } catch (e) { /* Knowledge Core sigue siendo la fuente primaria */ }
+    }
+
+    // 4) Para texto libre (no número de parte), scan acotado + filtro en código
     //    (la plataforma no expone $regex; este scan está limitado y respeta filtros).
     const isPartNo = looksLikePartNumber(q);
     const tokens = tokenize(q);
@@ -157,14 +194,14 @@ export default async function (req) {
       } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
 
-    // 4) Modo exploración: solo filtros, sin texto.
+    // 5) Modo exploración: solo filtros, sin texto.
     if (!q && ((filters.manufacturers && filters.manufacturers.length) || (filters.categories && filters.categories.length))) {
       try {
         candidates = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', 5000);
       } catch (e) { candidates = []; }
     }
 
-    // 5) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
+    // 6) Cargar especificaciones y evidencia para los candidatos ($in, una llamada cada uno).
     // SearchIndex.id identifies the index row; part_id identifies the Knowledge Core Part.
     const ids = [...new Set(candidates.map((c) => c.part_id || c.id).filter(Boolean))];
     const specsByPart = {};
@@ -197,7 +234,7 @@ export default async function (req) {
       } catch (e) { /* sin evidencia */ }
     }
 
-    // 6) Scoring + filtros derivados de specs.
+    // 7) Scoring + filtros derivados de specs.
     let scored = candidates.map((p) => {
       const specs = specsByPart[p.part_id || p.id] || [];
       const { score, match } = scorePart(p, q, specs);
@@ -241,7 +278,7 @@ export default async function (req) {
     const total = scored.length;
     const page = scored.slice(offset, offset + limit);
 
-    // 7) Facetas desde el conjunto completo (pre-paginación).
+    // 8) Facetas desde el conjunto completo (pre-paginación).
     const mfCounts = {};
     const catCounts = {};
     scored.forEach((r) => {
