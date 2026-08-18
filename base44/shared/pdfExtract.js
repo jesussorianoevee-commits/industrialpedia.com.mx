@@ -66,6 +66,7 @@ function groupLines(items) {
 
 const HEADER_ROLE_PATTERNS = [
   ['PART_NUMBER', /^(?:part(?:[ ]+number|[ ]+no\.?|[ ]+#)|p\/n|pn|mpn|order(?:ing|able)?[ ]+(?:part[ ]+number|number|no\.?|code)|model[ ]+(?:number|no\.?)|product[ ]+number)$/i],
+  ['PART_MARKING', /^(?:part[ ]+marking|marking)$/i],
   ['PARAMETER', /^(?:parameter|param|spec(?:ification)?|characteristic|item)$/i],
   ['TEST_CONDITION', /^(?:test[ ]+conditions?|conditions?|test)$/i],
   ['MIN', /^min(?:imum)?$/i],
