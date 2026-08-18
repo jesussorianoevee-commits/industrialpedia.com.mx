@@ -90,7 +90,11 @@ export default async function (req: Request) {
     if (valid) partsValid++; else partsInvalid++;
     const partState = valid ? 'published' : (reason.includes('not_demonstrated') || reason.includes('mismatch') ? 'rejected' : 'incomplete');
     partReport.push({ id: part.id, part_number: part.part_number, manufacturer_name: part.manufacturer_name, current_state: part.validation_state, verdict: valid ? 'VERIFIED' : partState.toUpperCase(), reason: valid ? selected.reason : reason, evidence: selected });
-    if (!dryRun && !valid) await base44.asServiceRole.entities.Part.update(part.id, { validation_state: partState });
+    if (!dryRun && !valid) {
+      await base44.asServiceRole.entities.Part.update(part.id, { validation_state: partState });
+      const idx = await base44.asServiceRole.entities.SearchIndex.filter({ part_id: part.id }, 'updated_date', 1).catch(() => []);
+      if (idx.length) await base44.asServiceRole.entities.SearchIndex.update(idx[0].id, { validation_state: partState });
+    }
   }
 
   for (const spec of specs) {
