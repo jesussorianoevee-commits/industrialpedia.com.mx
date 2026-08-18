@@ -1,0 +1,61 @@
+{
+  "name": "SearchIndex",
+  "type": "object",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "document_id": {
+      "type": "string"
+    },
+    "part_number": {
+      "type": "string"
+    },
+    "part_number_normalized": {
+      "type": "string"
+    },
+    "manufacturer_name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "search_text": {
+      "type": "string"
+    },
+    "spec_text": {
+      "type": "string"
+    },
+    "validation_state": {
+      "type": "string",
+      "enum": [
+        "processed",
+        "validated",
+        "published",
+        "rejected",
+        "incomplete"
+      ]
+    },
+    "evidence_count": {
+      "type": "number"
+    },
+    "source_count": {
+      "type": "number"
+    },
+    "spec_count": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "part_id",
+    "part_number",
+    "part_number_normalized",
+    "validation_state"
+  ]
+}
