@@ -169,6 +169,17 @@ export default async function (req) {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
 
+        // Registrar cada intento real de descubrimiento. No guardamos la API key ni
+        // datos sensibles; esto permite comprobar en producción si Google respondió.
+        try {
+          await base44.asServiceRole.entities.SearchQueryLog.create({
+            query: q,
+            result_count: Number(web.results?.length || 0),
+            duration_ms: 0,
+            created_at: new Date().toISOString()
+          });
+        } catch (e) { /* observabilidad no debe bloquear BUSCAR */ }
+
         // Solo aceptamos fuentes de confianza para el buscador industrial:
         // 1) dominio oficial conocido del fabricante;
         // 2) dominio que coincide con el nombre del fabricante;
