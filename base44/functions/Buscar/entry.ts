@@ -340,6 +340,7 @@ export default async function (req) {
     const unique = (arr) => [...new Set(arr.filter(Boolean))];
     const results = page.map((r) => ({
       id: r.part.part_id,
+      discovery_id: r.discovery?.id || null,
       part_number: r.part.part_number,
       manufacturer_name: r.part.manufacturer_name,
       category: r.part.category,
@@ -357,6 +358,7 @@ export default async function (req) {
       source_url: r.discovery?.source_url || null,
       document_url: r.discovery?.document_url || null,
       title: r.part.title || r.discovery?.title || '',
+      source_title: r.discovery?.title || '',
       top_specs: r.specs.slice(0, 4).map((s) => ({
         attribute: s.attribute_canonical || s.attribute_name,
         value: s.normalized_value || s.original_value,
