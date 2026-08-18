@@ -145,7 +145,7 @@ export default async function (req) {
     const report = [];
 
     async function processTask(task) {
-      if (task.content_hash && publishedHashes.has(task.content_hash) && !rebuild) {
+      if (task.content_hash && publishedHashes.has(task.content_hash)) {
         if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'skipped' });
         report.push({ task_id: task.id, url: task.url, status: 'skipped_duplicate_hash' }); processed++; return;
       }
