@@ -3,7 +3,7 @@ import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared
 import { gatePart, gateSpec } from '../../shared/qualityGateway.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
+import { extractCandidates, selectPartNumber, selectPartNumbers, selectSpecificationsForPart } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 
@@ -114,11 +114,12 @@ export default async function (req: Request) {
     const manualCandidate = manualPN
       ? idCandidates.find((c) => normalizePartNumber(c.text) === normalizePartNumber(manualPN))
       : null;
+    const tableSelections = !manualPN ? selectPartNumbers(idCandidates, grammar) : [];
     const sel = manualPN
       ? (manualCandidate
         ? { value: manualPN, demonstrated: true, reason: 'manual_verified_against_document', role: 'PART_NUMBER', candidate: manualCandidate, grammar_id: '' }
         : { value: '', demonstrated: false, reason: 'manual_hint_not_found_in_document', role: 'UNKNOWN', candidate: null, grammar_id: '' })
-      : selectPartNumber(idCandidates, grammar);
+      : (tableSelections.length ? tableSelections[0] : selectPartNumber(idCandidates, grammar));
 
     const partNumber = sel.value || '';
     const rawSpecs = isPdf
@@ -171,6 +172,14 @@ export default async function (req: Request) {
     });
 
     const existingSpecRecords = await base44.asServiceRole.entities.Specification.filter({ part_id: document.part_id || '' }, 'created_date', READ_LIMIT).catch(() => []);
+
+    const multiPartPlans = tableSelections.length > 1
+      ? tableSelections.map((partSel) => ({
+          selection: partSel,
+          applicableSpecs: selectSpecificationsForPart(specs, partSel.candidate)
+        }))
+      : [];
+    const applicabilityMissing = multiPartPlans.filter((p) => p.applicableSpecs.length === 0);
     const proposedSource = existingSource
       ? { mode: 'existing', id: existingSource.id, document_id: existingSource.document_id, url: existingSource.url }
       : { mode: 'new_record_would_be_created_by_IngerirCrawl', id: null, document_id: document.id, url };
@@ -180,6 +189,59 @@ export default async function (req: Request) {
       rule_id: rec.part_demonstration.rule_id,
       document_id: document.id
     } : null;
+
+    if (multiPartPlans.length) {
+      return Response.json({
+        mode: 'dry_run_detailed',
+        writes: false,
+        inputs: { document_id: document.id, content_hash: document.content_hash || null, url, part_number_hint: manualPN || null },
+        current: {
+          document: { id: document.id, source_id: document.source_id || null, status: document.status, content_hash: document.content_hash || null },
+          source: existingSource ? { id: existingSource.id, document_id: existingSource.document_id, url: existingSource.url } : null,
+          crawl_document: crawlDocument ? { id: crawlDocument.id, state: crawlDocument.state, ingested: crawlDocument.ingested } : null,
+          ingestion_task: task ? { id: task.id, state: task.state, attempts: task.attempts, specs_published: task.specs_published } : null,
+          existing_specifications: existingSpecRecords.length
+        },
+        proposed: {
+          document: { source_id: documentSourceId || null, proposed_source: proposedSource },
+          multi_part: {
+            status: applicabilityMissing.length ? 'multi_part_pending_applicability' : 'multi_part_ready',
+            table_part_count: multiPartPlans.length,
+            parts: multiPartPlans.map((p) => ({
+              part_number: p.selection.value,
+              part_marking: p.selection.candidate?.part_marking || '',
+              semantic_role: p.selection.role || null,
+              rule_id: ruleIdForSelection(p.selection),
+              page: p.selection.candidate?.page || null,
+              row_index: p.selection.candidate?.row_index ?? null,
+              evidence: p.selection.candidate ? {
+                raw_text: p.selection.candidate.context_text || p.selection.candidate.text,
+                page: p.selection.candidate.page || null,
+                document_id: document.id
+              } : null,
+              applicable_spec_count: p.applicableSpecs.length,
+              applicable_specs: p.applicableSpecs.map((s) => ({
+                attribute_name: s.attribute_name,
+                original_value: s.original_value,
+                page: s.page || null
+              }))
+            })),
+            missing_applicability_parts: applicabilityMissing.map((p) => p.selection.value),
+            causes: applicabilityMissing.length ? ['family_part_applicability_incomplete'] : []
+          }
+        },
+        counts: {
+          candidates: idCandidates.length,
+          extracted_specifications: specs.length,
+          table_part_count: multiPartPlans.length,
+          parts_with_applicable_specs: multiPartPlans.filter((p) => p.applicableSpecs.length > 0).length,
+          parts_without_applicable_specs: applicabilityMissing.length,
+          verified_specifications: specReports.filter((s) => s.verdict === 'VERIFIED').length,
+          rejected_specifications: specReports.filter((s) => s.verdict === 'REJECTED').length,
+          incomplete_specifications: specReports.filter((s) => s.verdict === 'INCOMPLETE').length
+        }
+      });
+    }
 
     return Response.json({
       mode: 'dry_run_detailed',
