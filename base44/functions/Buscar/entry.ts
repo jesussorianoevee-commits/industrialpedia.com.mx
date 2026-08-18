@@ -58,7 +58,12 @@ export default async function (req) {
     try {
       const directParts = await base44.asServiceRole.entities.Part.list('-updated_date', SCAN_LIMIT);
       const allowed = new Set(states);
-      const direct = directParts.filter((p) => allowed.has(p.validation_state || 'processed'));
+      const direct = directParts.filter((p) => {
+        if (!allowed.has(p.validation_state || 'processed')) return false;
+        if (filters.manufacturers?.length && !filters.manufacturers.includes(p.manufacturer_name)) return false;
+        if (filters.categories?.length && !filters.categories.includes(p.category)) return false;
+        return true;
+      });
       const byId = new Map();
       for (const p of direct) {
         byId.set(p.id, {
