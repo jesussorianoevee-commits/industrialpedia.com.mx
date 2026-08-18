@@ -188,6 +188,17 @@ export default async function (req) {
           trustedOfficialDomains = matched.map((m) => {
             try { return new URL(m.website).hostname; } catch { return ''; }
           }).filter(Boolean);
+
+          // El CSE ya está configurado por el usuario con fabricantes industriales.
+          // Esas fuentes oficiales deben seguir siendo confiables incluso cuando la
+          // consulta sea SOLO un PN y todavía no sepamos la marca.
+          const approvedSources = await base44.asServiceRole.entities.CrawlSource.filter(
+            { state: { $in: ['approved', 'queued', 'crawling', 'downloaded', 'ingested', 'completed'] } },
+            '-updated_date', 500
+          ).catch(() => []);
+          trustedOfficialDomains.push(...approvedSources.map((s) => String(s.domain || '').trim()).filter(Boolean));
+          trustedOfficialDomains = [...new Set(trustedOfficialDomains)];
+
           // Si aún no conocemos la marca en la base, derivamos candidatos de marca
           // desde todos los tokens de la consulta, excluyendo términos técnicos y PNs.
           if (!manufacturerNames.length) {
