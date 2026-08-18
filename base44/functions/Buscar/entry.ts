@@ -172,12 +172,12 @@ export default async function (req) {
             document_id: ''
           };
           const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
-          if (existing.length) await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
-          else await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
           let discoveryId = existing[0]?.id || null;
-          if (!discoveryId) {
-            const created = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
-            discoveryId = created[0]?.id || null;
+          if (existing.length) {
+            await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
+          } else {
+            const created = await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
+            discoveryId = created?.id || null;
           }
 
           // Si la consulta parece un Part Number, no dejamos el resultado como simple enlace:
