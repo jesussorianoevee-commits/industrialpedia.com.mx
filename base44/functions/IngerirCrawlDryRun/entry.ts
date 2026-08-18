@@ -71,8 +71,9 @@ export default async function (req: Request) {
 
     const task = tasks[0] || null;
     const crawlDocument = crawlDocs[0] || null;
-    const sourceId = document.source_id || task?.source_id || crawlDocument?.source_id || '';
-    const source = sourceId ? await base44.asServiceRole.entities.CrawlSource.get(sourceId).catch(() => null) : null;
+    const crawlSourceId = task?.source_id || crawlDocument?.source_id || '';
+    const crawlSource = crawlSourceId ? await base44.asServiceRole.entities.CrawlSource.get(crawlSourceId).catch(() => null) : null;
+    const documentSourceId = document.source_id || '';
     const url = document.file_url || task?.url || crawlDocument?.url || '';
     if (!url) return Response.json({ error: 'No source URL available for document' }, { status: 422 });
 
@@ -102,10 +103,10 @@ export default async function (req: Request) {
     }
     if (!extracted.extractable) throw new Error(extracted.reason || 'not extractable');
 
-    const manufacturerName = (body.manufacturer_hint || source?.manufacturer || task?.manufacturer || '').trim();
+    const manufacturerName = (body.manufacturer_hint || crawlSource?.manufacturer || task?.manufacturer || '').trim();
     const idCandidates = extractCandidates(extracted.text, extracted.pages, extracted.blocks || [], extracted.tables || []);
-    const grammarList = sourceId
-      ? await base44.asServiceRole.entities.PartNumberGrammar.filter({ source_id: sourceId, status: 'active' }, '-version', 1).catch(() => [])
+    const grammarList = crawlSourceId
+      ? await base44.asServiceRole.entities.PartNumberGrammar.filter({ source_id: crawlSourceId, status: 'active' }, '-version', 1).catch(() => [])
       : (manufacturerName ? await base44.asServiceRole.entities.PartNumberGrammar.filter({ manufacturer: manufacturerName, status: 'active' }, '-version', 1).catch(() => []) : []);
     const grammar = grammarList[0] || null;
 
@@ -163,14 +164,16 @@ export default async function (req: Request) {
         proposed_provenance: gate.pass ? {
           entity_type: 'specification',
           operation: 'validate',
-          source_id: sourceId || null,
+          source_id: documentSourceId || null,
           rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
         } : null
       };
     });
 
     const existingSpecRecords = await base44.asServiceRole.entities.Specification.filter({ part_id: document.part_id || '' }, 'created_date', READ_LIMIT).catch(() => []);
-    const proposedSourceId = sourceId || null;
+    const proposedSource = existingSource
+      ? { mode: 'existing', id: existingSource.id, document_id: existingSource.document_id, url: existingSource.url }
+      : { mode: 'new_record_would_be_created_by_IngerirCrawl', id: null, document_id: document.id, url };
     const partEvidence = rec.part_demonstration ? {
       raw_text: rec.part_demonstration.evidence_text,
       page: rec.part_demonstration.page,
@@ -190,7 +193,10 @@ export default async function (req: Request) {
         existing_specifications: existingSpecRecords.length
       },
       proposed: {
-        document: { source_id: proposedSourceId },
+        document: {
+          source_id: documentSourceId || null,
+          proposed_source: proposedSource
+        },
         part: {
           part_number: rec.part_number,
           manufacturer_name: rec.manufacturer_name,
@@ -202,8 +208,9 @@ export default async function (req: Request) {
         },
         specifications: specReports,
         provenance: {
-          part: partGate.pass && proposedSourceId ? {
-            entity_type: 'part', operation: 'extract', source_id: proposedSourceId,
+          part: partGate.pass ? {
+            entity_type: 'part', operation: 'extract', source_id: documentSourceId || null,
+            source_id_status: existingSource ? 'known_existing_source' : 'would_be_new_source_id_at_apply',
             rule_id: 'extract.' + (isPdf ? 'pdf' : 'html')
           } : null,
           specification_count: specReports.filter((s) => s.proposed_provenance).length
