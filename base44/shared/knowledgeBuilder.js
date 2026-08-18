@@ -303,7 +303,7 @@ export function selectPartNumbers(candidates, grammar) {
 }
 
 function normalizePartKey(value) {
-  return String(value || '').trim().toUpperCase().replace(/\\s+/g, '');
+  return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 }
 
 function versionTokens(text) {
@@ -317,8 +317,8 @@ function versionTokens(text) {
 }
 
 function partMarkingMatchesVersion(marking, version, partNumber = '') {
-  const m = String(marking || '').toUpperCase().replace(/\\s+/g, '');
-  const p = String(partNumber || '').toUpperCase().replace(/\\s+/g, '');
+  const m = String(marking || '').toUpperCase().replace(/\s+/g, '');
+  const p = String(partNumber || '').toUpperCase().replace(/\s+/g, '');
   if (!m && !p) return false;
 
   // A marking may carry package/suffix characters after the grade (e.g. LM324BIDR),
