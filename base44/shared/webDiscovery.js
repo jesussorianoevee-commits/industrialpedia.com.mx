@@ -34,10 +34,10 @@ async function googleCustomSearch(query) {
   // resultados web directamente. Soporta varios nombres habituales de secretos
   // para no obligar a cambiar la configuración de Base44.
   const key = Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || '';
-  const cx = Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '';
+  const cx = Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '2725a736ccf564979';
   if (!key || !cx) return [];
   try {
-    const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=10`;
+    const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=10&filter=1&safe=active&hl=en`;
     const r = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
     if (!r.ok) return [];
     const data = await r.json();
