@@ -105,11 +105,11 @@ export async function discoverIndustrialWeb(query) {
 
   // Primero intentamos Google si el secreto de búsqueda y el ID del motor están
   // configurados. Se hacen varias consultas complementarias y se combinan sin IA.
-  const searchQueries = [
-    q,
-    `${q} datasheet`,
-    `${q} product catalog`
-  ];
+  // Para PNs/familias conservamos primero la consulta literal. El CSE ya está
+  // configurado con los dominios industriales del usuario, por lo que añadir
+  // demasiadas palabras puede empeorar el recall. Solo usamos variantes si la
+  // búsqueda literal no devuelve resultados.
+  const searchQueries = [q];
 
   const googleBatches = await Promise.all(searchQueries.map((term) => googleCustomSearch(term)));
   const googleResults = unique(googleBatches.flat());
