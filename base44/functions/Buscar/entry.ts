@@ -227,9 +227,9 @@ export default async function (req) {
             discoveryId = created?.id || null;
           }
 
-          // Si la consulta parece un Part Number, no dejamos el resultado como simple enlace:
-          // materializamos la fuente encontrada en Knowledge Core antes de responder.
-          // Para búsquedas de familia/texto libre, el descubrimiento permanece ligero.
+          // Solo materializamos cuando la consulta identifica un Part Number concreto.
+          // Una búsqueda de marca/familia no debe convertir una página de catálogo o
+          // distribuidor en una ficha arbitraria: primero hay que identificar un PN real.
           let materializedPartId = null;
           if (isPartNo && discoveryId) {
             try {
