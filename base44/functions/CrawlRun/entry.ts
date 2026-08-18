@@ -20,7 +20,7 @@ export default async function (req) {
     const sourceId = body.source_id;
     if (!sourceId) return Response.json({ error: 'source_id required' }, { status: 400 });
     const dryRun = !!body.dry_run;
-    const batchSize = Math.min(body.batch_size || 5, 10);
+    const batchSize = Math.min(Math.max(parseInt(body.batch_size, 10) || 25, 1), 50);
 
     const source = await base44.asServiceRole.entities.CrawlSource.get(sourceId);
     if (!['approved', 'crawling', 'paused', 'completed'].includes(source.state)) {
@@ -72,7 +72,7 @@ export default async function (req) {
           while ((m = re.exec(xml))) sitemapUrls.push(m[1].trim());
         }
       } catch {}
-      const toEnq = [...(source.seed_urls || []).map((u) => ({ url: u, origin: 'seed', depth: 0 })), ...sitemapUrls.slice(0, 200).map((u) => ({ url: u, origin: 'sitemap', depth: 0 }))];
+      const toEnq = [...(source.seed_urls || []).map((u) => ({ url: u, origin: 'seed', depth: 0 })), ...sitemapUrls.map((u) => ({ url: u, origin: 'sitemap', depth: 0 }))];
       for (const e of toEnq) {
         const nu = normalizeUrl(e.url);
         if (existingUrls.has(nu)) continue;
@@ -155,7 +155,7 @@ export default async function (req) {
         const html = await resp.text();
         if (!dryRun) await base44.asServiceRole.entities.CrawlURL.update(cu.id, { state: 'fetched', type_detected: 'page' });
         if (cu.depth < (source.max_depth ?? 2)) {
-          const links = extractLinks(cu.url, html).slice(0, 50);
+          const links = extractLinks(cu.url, html);
           let added = 0;
           for (const l of links) {
             if (!isAllowedDomain(l, source) || !isPathAllowed(l, source)) continue;
@@ -172,8 +172,8 @@ export default async function (req) {
       }
       processed++;
 
-      if (stats.documents >= (source.max_documents || 20)) { cp.limits_reached = true; break; }
-      if (stats.accepted >= (source.max_pages || 50)) { cp.limits_reached = true; break; }
+      if (stats.documents >= (source.max_documents || 5000)) { cp.limits_reached = true; break; }
+      if (stats.accepted >= (source.max_pages || 10000)) { cp.limits_reached = true; break; }
     }
 
     const drained = pending.length < batchSize;
