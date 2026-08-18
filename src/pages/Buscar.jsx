@@ -182,7 +182,7 @@ export default function Buscar() {
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <form onSubmit={submit} className="mx-auto max-w-2xl flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-full pl-3 pr-1.5 py-1">
+        <form onSubmit={submit} className="relative mx-auto max-w-2xl flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-full pl-3 pr-1.5 py-1">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -197,6 +197,47 @@ export default function Buscar() {
           <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-sm font-semibold px-4 py-1.5 rounded-full transition-colors">
             Buscar
           </button>
+
+          {input.trim().length >= 2 && input.trim() !== q.trim() && (suggestionsLoading || suggestions.length > 0) && (
+            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
+              {suggestionsLoading ? (
+                <div className="px-4 py-4 text-xs text-white/40">Buscando productos…</div>
+              ) : (
+                <div className="max-h-[430px] overflow-y-auto">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.id || `${s.manufacturer}-${s.partNumber}-${s.title}`}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        const value = s.partNumber || s.title;
+                        setSuggestions([]);
+                        setInput(value);
+                        setParams({ q: value });
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors"
+                    >
+                      {s.image ? (
+                        <img src={s.image} alt="" className="h-11 w-11 rounded-lg object-contain bg-white" />
+                      ) : (
+                        <div className="h-11 w-11 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                          <Search className="w-4 h-4 text-white/30" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-white truncate">{s.title}</div>
+                        <div className="mt-0.5 flex gap-2 text-xs text-white/45">
+                          {s.partNumber && <span className="font-mono text-white/65">{s.partNumber}</span>}
+                          {s.manufacturer && <span>{s.manufacturer}</span>}
+                        </div>
+                      </div>
+                      <span className="text-white/25">›</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </header>
 
