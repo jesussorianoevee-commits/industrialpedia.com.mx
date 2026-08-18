@@ -29,6 +29,25 @@ import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
 const LIMIT_DEFAULT = 20, CONC_DEFAULT = 3, MAX_ATT_DEFAULT = 3, BACKOFF_DEFAULT = 5000;
 const STALE_MS = 10 * 60 * 1000;
 
+async function refreshSearchIndexForPart(base44, partId) {
+  const part = await base44.asServiceRole.entities.Part.get(partId);
+  if (!part) return;
+  const specs = await base44.asServiceRole.entities.Specification.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
+  const evidence = await base44.asServiceRole.entities.Evidence.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
+  const specText = specs.map((s) => [s.attribute_canonical || s.attribute_name || '', s.normalized_value || s.original_value || '', s.normalized_unit || s.original_unit || ''].join(' ')).join(' | ');
+  const searchText = [part.part_number || '', part.part_number_normalized || '', part.manufacturer_name || '', part.category || '', part.subcategory || '', part.description || '', specText].join(' ').replace(/\\s+/g, ' ').trim();
+  const payload = {
+    part_id: part.id, part_number: part.part_number || '', part_number_normalized: part.part_number_normalized || '',
+    manufacturer_name: part.manufacturer_name || '', category: part.category || '', subcategory: part.subcategory || '',
+    description: part.description || '', search_text: searchText, spec_text: specText,
+    validation_state: part.validation_state || 'processed', evidence_count: evidence.length,
+    source_count: new Set(specs.map((s) => s.source_id).filter(Boolean)).size, spec_count: specs.length
+  };
+  const existing = await base44.asServiceRole.entities.SearchIndex.filter({ part_id: part.id }, 'updated_date', 1).catch(() => []);
+  if (existing.length) await base44.asServiceRole.entities.SearchIndex.update(existing[0].id, payload);
+  else await base44.asServiceRole.entities.SearchIndex.create(payload);
+}
+
 async function pool(items, n, worker) {
   let i = 0; const out = new Array(items.length);
   async function run() { while (i < items.length) { const idx = i++; out[idx] = await worker(items[idx]); } }
