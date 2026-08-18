@@ -56,10 +56,14 @@ async function duckduckgo(query) {
     if (!r.ok) return [];
     const html = await r.text();
     const out = [];
-    const re = /<a[^>]*class=["']result__a["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    const re = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
     let m;
     while ((m = re.exec(html)) && out.length < MAX_RESULTS) {
-      const url = decodeUrl(m[1]);
+      const attrs = m[1] || '';
+      if (!/class=[\"'][^\"']*result__a[^\"']*[\"']/i.test(attrs)) continue;
+      const href = attrs.match(/href=[\"']([^\"']+)[\"']/i);
+      if (!href) continue;
+      const url = decodeUrl(href[1]);
       const title = stripHtml(m[2]);
       if (!/^https?:\/\//i.test(url) || !title) continue;
       out.push({ title, url, snippet: '', provider: 'duckduckgo' });
