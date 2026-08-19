@@ -105,7 +105,7 @@ export async function tavilySearch(query, apiKey, options = {}) {
       max_results: options.max_results || 10,
       include_answer: false,
       include_raw_content: true,
-      include_images: false,
+      include_images: true,
       ...(options.include_domains?.length ? { include_domains: options.include_domains } : {})
     };
     const r = await fetchWithTimeout('https://api.tavily.com/search', {
@@ -162,6 +162,7 @@ export async function discoverTavilyIndustrial(query, apiKey) {
       product_name: title,
       description: snippet,
       raw_content: item.raw_content || '',
+      image_url: Array.isArray(item.images) && item.images.length ? item.images[0] : '',
       is_pdf: /\.pdf(?:$|[?#])/i.test(item.url || ''),
       provider: 'tavily',
       relevance_score: typeof item.score === 'number' ? item.score : null
