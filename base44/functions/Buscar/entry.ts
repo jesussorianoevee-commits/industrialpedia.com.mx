@@ -242,93 +242,40 @@ export default async function (req) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
           const candidatePn = isPartNo ? q : '';
-          const payload = {
-            candidate_part_number: candidatePn,
-            candidate_part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '',
-            manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : (manufacturerNames.find((name) => String(r.title || '').toLowerCase().includes(String(name).toLowerCase())) || ''),
-            source_url: r.url,
-            document_url: r.url,
-            source_type: 'website',
-            title: r.title || host,
-            description: r.snippet || r.title || '',
-            search_text: [q, r.title, r.snippet, host].filter(Boolean).join(' '),
-            discovery_state: 'discovered',
-            confidence: 0.5,
-            last_seen: new Date().toISOString(),
-            document_id: '',
-            source_trust: r.source_type
-          };
           const webKey = String(r.url || '').replace(/#.*$/, '').toLowerCase();
           if (!webKey || seenWeb.has(webKey)) continue;
           seenWeb.add(webKey);
+          const manufacturer = manufacturerNames.length === 1
+            ? manufacturerNames[0]
+            : (manufacturerNames.find((name) => `${r.title || ''} ${r.snippet || ''}`.toLowerCase().includes(String(name).toLowerCase())) || '');
+          const webText = `${candidatePn} ${manufacturer} ${r.title || ''} ${r.snippet || ''} ${host}`.toLowerCase();
+          const hits = tokenize(q).filter((t) => webText.includes(t)).length;
           webCandidates.push({
-            part: { part_number: candidatePn, part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '', manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : '', category: '', description: r.snippet || r.title || '', title: r.title || host, image_url: '' },
-            specs: [], evidence: [], score: isPartNo ? 1000 : 250,
-            match: isPartNo ? 'web_exact_query' : 'web_discovery_match',
-            discovery: { id: null, source_url: r.url, document_url: r.url, title: r.title || host, description: r.snippet || '', discovery_state: 'discovered', manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : '', source_type: r.source_type, source_provider: web.provider }
-          });
-          continue;
-          const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
-          let discoveryId = existing[0]?.id || null;
-          if (existing.length) {
-            await base44.asServiceRole.entities.DiscoveryIndex.update(existing[0].id, payload);
-          } else {
-            const created = await base44.asServiceRole.entities.DiscoveryIndex.create(payload);
-            discoveryId = created?.id || null;
-          }
-
-          // Solo materializamos cuando la consulta identifica un Part Number concreto.
-          // Una búsqueda de marca/familia no debe convertir una página de catálogo o
-          // distribuidor en una ficha arbitraria: primero hay que identificar un PN real.
-          let materializedPartId = null;
-          if (isPartNo && discoveryId) {
-            try {
-              const materialized = await base44.asServiceRole.functions.invoke('MaterializeDiscovery', {
-                discovery_id: discoveryId,
-                query: q
-              });
-              materializedPartId = materialized?.data?.part_id || null;
-            } catch (e) { /* el resultado web sigue siendo visible aunque la materialización falle */ }
-          }
-          if (materializedPartId) {
-            const materializedPart = await base44.asServiceRole.entities.Part.get(materializedPartId).catch(() => null);
-            if (materializedPart) candidates.push({ ...materializedPart, part_id: materializedPart.id, part_number_normalized: materializedPart.part_number_normalized || normalizePartNumber(materializedPart.part_number || '') });
-          }
-
-          // Catálogo propio: cada resultado industrial aceptado se conserva como
-          // producto de catálogo. No sustituye la ficha técnica: es el inventario
-          // de productos que BUSCAR ya encontró y que puede reutilizar después.
-          try {
-            const catalogPayload = {
-              manufacturer_name: payload.manufacturer_name,
+            part: {
               part_number: candidatePn,
               part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '',
-              name: r.title || host,
-              description: r.snippet || r.title || '',
+              manufacturer_name: manufacturer,
               category: '',
-              image_url: '',
-              product_url: r.url,
-              datasheet_url: /datasheet|data.?sheet/i.test(`${r.title} ${r.url} ${r.snippet}`) ? r.url : '',
+              description: r.snippet || r.title || '',
+              title: r.title || host,
+              image_url: ''
+            },
+            specs: [],
+            evidence: [],
+            score: isPartNo ? 1000 + hits * 10 : 250 + hits * 40,
+            match: isPartNo ? 'web_exact_query' : 'web_discovery_match',
+            discovery: {
+              id: null,
+              source_url: r.url,
+              document_url: r.url,
+              title: r.title || host,
+              description: r.snippet || '',
+              discovery_state: 'discovered',
+              manufacturer_name: manufacturer,
               source_type: r.source_type,
-              source_domain: host,
-              source_provider: web.provider,
-              catalog_state: candidatePn ? 'identified' : 'discovered',
-              search_text: [q, r.title, r.snippet, host, payload.manufacturer_name, candidatePn].filter(Boolean).join(' '),
-              last_seen: new Date().toISOString(),
-              discovery_id: discoveryId || '',
-              part_id: materializedPartId || ''
-            };
-            const existingCatalog = await base44.asServiceRole.entities.CatalogProduct.filter({ product_url: r.url }, 'updated_date', 1).catch(() => []);
-            if (existingCatalog.length) {
-              await base44.asServiceRole.entities.CatalogProduct.update(existingCatalog[0].id, catalogPayload).catch(() => {});
-              catalogCandidates.push({ ...existingCatalog[0], ...catalogPayload, id: existingCatalog[0].id });
-            } else {
-              const createdCatalog = await base44.asServiceRole.entities.CatalogProduct.create(catalogPayload).catch(() => null);
-              if (createdCatalog) catalogCandidates.push(createdCatalog);
+              source_provider: web.provider
             }
-          } catch (e) { /* DiscoveryIndex sigue siendo suficiente si el catálogo falla */ }
-
-          discoveryCandidates.push({ ...payload, id: discoveryId, part_id: materializedPartId });
+          });
         }
       } catch (e) { /* Knowledge Core sigue siendo la fuente primaria */ }
     }
