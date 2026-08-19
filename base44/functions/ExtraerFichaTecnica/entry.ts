@@ -64,7 +64,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       datasheet_url: isPdf ? url : '',
       source_type: ficha.source_type === 'official' ? 'official' : 'distributor',
       source_domain: hostOf(url),
-      source_provider: 'google',
+      source_provider: 'tavily',
       catalog_state: 'identified',
       search_text: [pn, ficha.manufacturer_name, ficha.product_name, catalogSpecs.map((s: any) => `${s.attribute} ${s.original_value}`).join(' ')].filter(Boolean).join(' '),
       last_seen: new Date().toISOString()
