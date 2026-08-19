@@ -161,6 +161,7 @@ export async function discoverTavilyIndustrial(query, apiKey) {
   let primaryError = batch.error;
   let primaryDetail = batch.detail;
   let items = batch.results;
+  let batchImages = batch.images || [];
 
   if (!items.length && !primaryError) {
     const fallbackQuery = partLike ? `${q} datasheet` : `${q} datasheet specifications`;
@@ -168,33 +169,42 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     queriesMade++;
     if (fb.error && !primaryError) { primaryError = fb.error; primaryDetail = fb.detail; }
     items = fb.results;
+    batchImages = fb.images || [];
   }
 
-  const enriched = items.map((item) => {
+  // Tavily returns `images` at the top level, not inside each result. Prefer a
+  // per-result image from the content/metadata; use the Tavily image list only
+  // as a last resort for the first result. For blocked/dynamic distributor
+  // pages, fetch og:image directly so the search card can still show the real
+  // product image without touching the technical-spec pipeline.
+  const candidateImages = batchImages.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean);
+  const enriched = await Promise.all(items.map(async (item, index) => { 
     const host = hostOf(item.url);
     const title = item.title || '';
     const snippet = item.content || '';
     const brand = extractBrandFromContent(`${title} ${snippet}`, queryBrandTokens);
     const sourceType = classifySource(host, brand, queryBrandTokens, title);
     const partNumber = partLike ? q : '';
+    const contentImage = extractImageFromContent(item.raw_content || item.content || '');
+    const tavilyImage = candidateImages[index] || (index === 0 ? candidateImages[0] : '');
+    const imageUrl = item.image_url || contentImage || tavilyImage || await fetchOgImage(item.url);
     return {
       title,
       url: item.url,
       display_link: host,
       snippet,
       source_type: sourceType,
-      image_url: '',
+      image_url: imageUrl,
       manufacturer_name: brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
       part_number: partNumber,
       product_name: title,
       description: snippet,
       raw_content: item.raw_content || '',
-      image_url: Array.isArray(item.images) && item.images.length ? item.images[0] : '',
       is_pdf: /\.pdf(?:$|[?#])/i.test(item.url || ''),
       provider: 'tavily',
       relevance_score: typeof item.score === 'number' ? item.score : null
     };
-  });
+  }));
 
   const filtered = enriched.filter((r) => !isExcluded(hostOf(r.url), r.title, r.snippet));
   const sourcePriority = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
