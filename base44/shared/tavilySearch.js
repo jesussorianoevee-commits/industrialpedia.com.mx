@@ -179,7 +179,7 @@ function isManufacturerOnlyQuery(q) {
 const CORPORATE_PAGE_TERMS = /(?:about us|about the company|a global manufacturer|global manufacturer|company profile|corporate|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|sobre nosotros|la empresa|oficinas|ubicaciones|empleo|trabaja con nosotros)/i;
 const PRODUCT_RESULT_TERMS = /(?:product|products|catalog|catalogue|datasheet|data sheet|part number|order number|model|series|pneumatic|electromechanical|electrical|automation|actuator|cylinder|valve|sensor|gripper|drive|motor|controller|plc|connector|fitting|regulator|filter|vacuum|component|refaccion|repuesto|componente)/i;
 
-function isProductResultForManufacturer(item) {
+export function isProductResultForManufacturer(item) {
   const text = `${item?.title || ''} ${item?.snippet || item?.content || ''} ${item?.url || ''}`;
   if (CORPORATE_PAGE_TERMS.test(text)) return false;
   return PRODUCT_RESULT_TERMS.test(text) || /[A-Za-z]{1,6}[-_]?\d[A-Za-z0-9_-]{2,}/.test(text);
