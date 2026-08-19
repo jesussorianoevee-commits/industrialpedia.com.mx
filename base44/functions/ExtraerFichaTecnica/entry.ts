@@ -99,7 +99,7 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
     const { value, unit } = splitValueUnit(r.value);
     const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages || []);
     const semantic = isTechnicalSpecification(r.attribute, r.value);
-    return {
+    const builtSpec = {
       attribute_name: safeText(r.attribute, 100),
       attribute: safeText(r.attribute, 100),
       original_value: safeText(r.value, 120),
@@ -116,9 +116,9 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
         consultation_date: consultationDate,
         document_type: isPdf ? 'datasheet' : 'website'
       },
-      verified: false,
-      gate_passed: gateSpec(spec).pass
+      verified: false
     };
+    return { ...builtSpec, gate_passed: gateSpec(builtSpec).pass };
   });
 }
 
