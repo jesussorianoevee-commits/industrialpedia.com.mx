@@ -440,7 +440,7 @@ export default async function (req: Request) {
         derivation = 'manual_hint_literal_in_source';
       }
     }
-    if (!partNumber) {
+    if (!partNumber && !ambiguousMultiProductSource) {
       const sel = selectPartNumber(candidates, null);
       if (sel.demonstrated && sel.candidate) {
         selectedCandidate = sel.candidate;
@@ -448,9 +448,13 @@ export default async function (req: Request) {
         derivation = sel.reason;
       }
     }
-    if (!partNumber && query && normalizePartNumber(extracted.text).includes(normalizePartNumber(query)) && /[\d]/.test(query) && /[A-Za-z]/.test(query)) {
+    if (!partNumber && !ambiguousMultiProductSource && query && normalizePartNumber(extracted.text).includes(normalizePartNumber(query)) && /[\d]/.test(query) && /[A-Za-z]/.test(query)) {
       partNumber = query;
       derivation = 'query_literal_in_source';
+    }
+
+    if (ambiguousMultiProductSource) {
+      derivation = 'ambiguous_multi_product_source';
     }
 
     // 4) Especificaciones técnicas con evidencia. Semantic Resolver + Quality Gateway.
@@ -462,8 +466,8 @@ export default async function (req: Request) {
     // Los pares documentales/corporativos (Website, Industry, Company size,
     // Headquarters, Type, Specialties, etc.) se conservan en la adquisición para
     // trazabilidad, pero NO se presentan como "especificaciones".
-    let specs = allBuiltSpecs.filter((s: any) => s.gate_passed);
-    let unverifiedSpecs = allBuiltSpecs.filter((s: any) =>
+    let specs = ambiguousMultiProductSource ? [] : allBuiltSpecs.filter((s: any) => s.gate_passed);
+    let unverifiedSpecs = ambiguousMultiProductSource ? [] : allBuiltSpecs.filter((s: any) =>
       !s.gate_passed && isTechnicalSpecification(s.attribute_name, s.original_value).ok
     );
 
@@ -580,6 +584,7 @@ export default async function (req: Request) {
 
     const ficha = {
       found: true,
+      ambiguous_source: ambiguousMultiProductSource,
       source: {
         url,
         domain: host,
@@ -602,7 +607,7 @@ export default async function (req: Request) {
       component_type_label: template.label,
       specs,
       unverified_specs: unverifiedSpecs,
-      basic_specs: computeBasicSpecs(sourceContent, extracted.text),
+      basic_specs: ambiguousMultiProductSource ? [] : computeBasicSpecs(sourceContent, extracted.text),
       specs_grouped: grouped,
       specs_other: others,
       part_derivation: derivation,
