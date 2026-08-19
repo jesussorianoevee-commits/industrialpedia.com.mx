@@ -56,7 +56,8 @@ const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
   'masterelectronics.com', 'futureelectronics.com', 'digikey.ca', 'digikey.mx'
 ]);
 
-const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|ebay|mercadolibre|aliexpress|alibaba|amazon|walmart|temu|wish|etsy|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit)(?:[.]|$)/i;
+const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|ebay|mercadolibre|aliexpress|alibaba|amazon|walmart|temu|wish|etsy|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit|merriam-webster|wordreference|thesaurus|collinsdictionary|dictionary\.cambridge|cambridgedictionary)(?:[.]|$)/i;
+const DICTIONARY_URL_PATTERNS = /(?:\/dictionary\/|\/diccionario\/|\/definition\/|\/definicion\/|\/define\b|\/translate\/|\/traducir\/|\/synonyms\/|\/sinonimos\/)/i;
 const EXCLUDE_TEXT_TERMS = [
   'foro', 'forum', 'curso', 'course', 'tutorial', 'opinion', 'opiniones',
   'empleo', 'job', 'jobs', 'careers', 'subasta', 'auction', 'usado', 'used',
@@ -74,8 +75,9 @@ function registrableBase(host) {
 }
 function domainBaseToken(host) { return registrableBase(host).split('.')[0].replace(/[^a-z0-9]/g, ''); }
 function domainMatches(host, domain) { return host === domain || host.endsWith(`.${domain}`); }
-function isExcluded(host, title, snippet) {
+function isExcluded(host, title, snippet, url) {
   if (!host || EXCLUDE_HOST_PATTERNS.test(host)) return true;
+  if (url && DICTIONARY_URL_PATTERNS.test(url)) return true;
   const text = `${title || ''} ${snippet || ''}`.toLowerCase();
   return EXCLUDE_TEXT_TERMS.some((term) => text.includes(term));
 }
@@ -107,7 +109,7 @@ export function isCorporateOnlyResult(item) {
 // contamine DiscoveryIndex/SearchQueryLog como si fuera conocimiento industrial.
 // Se exige evidencia contextual industrial o una forma clara de PN, y se rechazan
 // explícitamente señales de contenido de consumo.
-const NON_INDUSTRIAL_TERMS = /(?:recipe|receta|food|comida|restaurant|restaurante|movie|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|phone|telefono|smartphone|samsung|galaxy|iphone|apple watch|ipad|tablet pc|laptop|notebook|gaming|video game|hotel|travel|tourism|sports?|deportes?|celebrity|celebridad|stock price|crypto|cryptocurrency)/i;
+const NON_INDUSTRIAL_TERMS = /(?:recipe|receta|food|comida|restaurant|restaurante|movie|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|phone|telefono|smartphone|samsung|galaxy|iphone|apple watch|ipad|tablet pc|laptop|notebook|gaming|video game|hotel|travel|tourism|sports?|deportes?|celebrity|celebridad|stock price|crypto|cryptocurrency|\bintercom\b|\bbeltpack\b|\bbroadcast\b|\bbeltpacks\b|wireless intercom)/i;
 const INDUSTRIAL_CONTEXT_TERMS = /(?:industrial|automation|automación|manufacturing|factory|fabrica|electrical|electrico|electronics|electronica|pneumatic|neumatic|hydraulic|hidraulic|sensor|valve|valvula|actuator|motor|bearing|rodamiento|balero|rodamientos|baleros|plc|drive|inverter|relay|rele|contactor|connector|conector|switch|interruptor|cylinder|cilindro|robot|robotics|servo|encoder|cnc|fanuc|siemens|festo|smc|balluff|eaton|omron|allen[- ]?bradley|rockwell|schneider|mitsubishi|yaskawa|keyence|ifm|sick|pepperl\+fuchs|turck|phoenix contact|terminal block|power supply|datasheet|data sheet|technical specification|specification|catalog|part number|order number|model number|replacement|refaccion|refacción|repuesto|componente industrial)/i;
 
 export function isLikelyIndustrialTavilyResult(item, query) {
@@ -116,7 +118,13 @@ export function isLikelyIndustrialTavilyResult(item, query) {
   // Un texto alfanumérico cualquiera (p. ej. "Balero 2/4", "Modelo 2", "S24")
   // NO es suficiente para convertir cualquier resultado web en una referencia industrial.
   if (NON_INDUSTRIAL_TERMS.test(`${text} ${query || ''}`)) return false;
-  return INDUSTRIAL_CONTEXT_TERMS.test(text) || INDUSTRIAL_CONTEXT_TERMS.test(String(query || ''));
+  // Para consultas por número de parte, el PN es señal industrial suficiente:
+  // no exigimos contexto industrial adicional en el texto del resultado.
+  if (isPartNumberQuery(String(query || ''))) return true;
+  // Para consultas genéricas, el resultado debe demostrar contexto industrial
+  // propio. Que la consulta sea industrial no basta: "Bolero" (intercom audio)
+  // no es "balero" (rodamiento) aunque la palabra coincida parcialmente.
+  return INDUSTRIAL_CONTEXT_TERMS.test(text);
 }
 function normalizeBrand(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -243,6 +251,7 @@ const PRODUCT_FAMILY_SIGNALS = /(?:\bseries\b|\bfamily\b|\bfamilia\b|\bserie\b|\
 const DATASHEET_SIGNALS = /(?:datasheet|data sheet|hoja de datos|specifications?|technical data|technical specifications|ficha t[ée]cnica|spec sheet|product specifications)/i;
 const DISTRIBUTOR_BUY_SIGNALS = /(?:\bbuy\b|\bpurchase\b|comprar|precio|\bprice\b|in stock|disponible|add to cart|order now|distribuidor|distributor|authorized distributor|authorised distributor)/i;
 const ARTICLE_EDITORIAL_SIGNALS = /(?:\bblog\b|\barticle\b|art[íi]culo|noticias?|\bnews\b|\bpost\b|gu[íi]a|\btutorial\b|how to|c[óo]mo funcionan|qu[ée] es|what is|learn about|understanding|introduction to|overview of|benefits of|applications of|types of|que es un|que son los)/i;
+const ARTICLE_URL_PATTERNS = /(?:\/blog\/|\/article|\/post\/|\/news\/|\/learning[-_/]|\/columns?\/|\/guide\/|\/tutorial\/|\/how-to\/|\/what-is\/|\/education\/|\/resources\/|\/wiki\/|\/support\/.*\/educational)/i;
 const PN_IN_TEXT = /\b[A-Z]{2,6}[-_]?\d{2,}[A-Z0-9-_/]*\b/;
 
 export function classifyContentType(item) {
@@ -255,6 +264,20 @@ export function classifyContentType(item) {
 
   // PDF datasheets: máxima prioridad (documentación técnica verificable).
   if (isPdf) return { type: 'datasheet', tier: 5 };
+
+  // Señales tempranas necesarias para distinguir artículos de productos.
+  const hasDatasheetEarly = DATASHEET_SIGNALS.test(text);
+  const isArticleUrl = ARTICLE_URL_PATTERNS.test(url);
+  const isArticleTitle = ARTICLE_EDITORIAL_SIGNALS.test(title);
+
+  // Artículos/editoriales con señales claras en URL + título: se conservan si
+  // tienen información técnica útil, pero se clasifican por debajo de
+  // productos/catálogos. Incluso si el contenido menciona PNs o términos de
+  // producto, la estructura de la página (URL + título) demuestra que es
+  // contenido editorial, no una ficha de producto.
+  if (!isPdf && !hasDatasheetEarly && isArticleUrl && isArticleTitle) {
+    return { type: 'article_editorial', tier: 1 };
+  }
 
   const isCorporate = CORPORATE_HARD_TERMS.test(text) ||
     (CORPORATE_PAGE_TERMS.test(text) && !PRODUCT_RESULT_TERMS.test(text));
@@ -469,7 +492,7 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
   }));
 
   const filtered = enriched.filter((r) =>
-    !isExcluded(hostOf(r.url), r.title, r.snippet) &&
+    !isExcluded(hostOf(r.url), r.title, r.snippet, r.url) &&
     !isCorporateOnlyResult(r) &&
     isLikelyIndustrialTavilyResult(r, q) &&
     (!manufacturerOnly || isProductResultForManufacturer(r))
