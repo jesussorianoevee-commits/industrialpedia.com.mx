@@ -7,7 +7,6 @@ import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTemplates.js';
 import { gateSpec } from '../../shared/qualityGateway.js';
-import { gateSpec } from '../../shared/qualityGateway.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
