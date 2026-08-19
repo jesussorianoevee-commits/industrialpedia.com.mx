@@ -84,7 +84,7 @@ function isExcluded(host, title, snippet) {
 // fuentes de producto aunque el texto mencione automatización industrial.
 // Se filtran a nivel de descubrimiento para que tampoco lleguen a la ficha.
 const CORPORATE_ONLY_TERMS = /(?:about us|about the company|company profile|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|public company|company size|specialties|industry\s*[:\-]|website\s*[:\-]|employee|employees|linkedin)/i;
-function isCorporateOnlyResult(item) {
+export function isCorporateOnlyResult(item) {
   const host = hostOf(item?.url);
   const text = `${item?.title || ''} ${item?.snippet || item?.content || ''}`;
   if (EXCLUDE_HOST_PATTERNS.test(host)) return true;
