@@ -175,7 +175,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       discovery_state: 'discovered',
       confidence: 0.6,
       last_seen: new Date().toISOString(),
-      part_id: existingCatalog[0]?.part_id || ''
+      part_id: partId
     };
     let discoveryId = '';
     if (existingDiscovery.length) {
@@ -374,7 +374,13 @@ export default async function (req: Request) {
     };
 
     // 9) Alimentación asíncrona del Knowledge Core (no bloquea la respuesta).
-    waitUntil(feedKnowledgeCore(base44, ficha, url, isPdf));
+    const persistence = await feedKnowledgeCore(base44, ficha, url, isPdf);
+    ficha.persistence = {
+      saved: Boolean(persistence?.queued),
+      part_id: persistence?.part_id || '',
+      catalog_id: persistence?.catalog_id || '',
+      discovery_id: persistence?.discovery_id || ''
+    };
 
     return Response.json(ficha);
   } catch (error) {
