@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUsableExternalImageUrl, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUnsafeExtractedPair, isUsableExternalImageUrl, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -91,10 +91,15 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
         ...extractTextSpecs(extracted.text),
         ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`),
         ...extractValueFirstSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
-      ].filter((r: any, i: number, arr: any[]) => {
-        const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
-        return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
-      });
+      ]
+        // Defensa común final: ningún extractor puede convertir navegación, URLs,
+        // código o recursos internos en una Specification aunque llegue por otro
+        // formato de página.
+        .filter((r: any) => !isUnsafeExtractedPair(r.attribute, r.value))
+        .filter((r: any, i: number, arr: any[]) => {
+          const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
+          return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
+        });
   return rawSpecs.filter((r: any) => r.attribute && r.value).map((r: any) => {
     const { value, unit } = splitValueUnit(r.value);
     const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages || []);
@@ -142,6 +147,7 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
     const val = String(s.value || '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
+    if (isUnsafeExtractedPair(attr, val)) continue;
     if (BASIC_BLOCK.test(attr)) continue;
     const key = `${attr}|${val}`.toLowerCase();
     if (seen.has(key)) continue;
