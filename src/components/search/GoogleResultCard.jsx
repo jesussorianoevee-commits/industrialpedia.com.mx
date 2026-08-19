@@ -6,7 +6,8 @@ import { base44 } from '@/api/base44Client';
 const SOURCE_TYPE_LABELS = {
   official: { label: 'Fabricante oficial', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
   distributor: { label: 'Distribuidor', cls: 'text-[#5a9cd9] bg-[#5a9cd9]/10' },
-  cse_configured: { label: 'Fuente CSE', cls: 'text-white/55 bg-white/10' }
+  cse_configured: { label: 'Fuente web', cls: 'text-white/55 bg-white/10' },
+  web_discovery: { label: 'Fuente web', cls: 'text-white/55 bg-white/10' }
 };
 
 export default function GoogleResultCard({ result, query, onFicha }) {
