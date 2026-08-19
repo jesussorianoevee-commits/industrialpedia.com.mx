@@ -3,7 +3,26 @@
 // PDF binario: NO es extraíble sin un parser de texto determinístico; se marca como
 // no-extraíble (el Quality Gateway lo deja en INCOMPLETE; nunca se inventa contenido).
 
-function raw() { [native code] }export function extractHTML(html) {
+function extractIndustrialCompactSpecs(rawText) {
+  const raw = String(rawText || '');
+  const specs = [];
+  const patterns = [
+    [/\b(\d+)\s*DI\s*([0-9.,]+\s*V\s*DC)\b/i, 'Digital inputs', (m) => `${m[1]} DI ${m[2]}`],
+    [/\b(\d+)\s*DO\s*([0-9.,]+\s*V\s*DC)\b/i, 'Digital outputs', (m) => `${m[1]} DO ${m[2]}`],
+    [/\b(\d+)\s*AI\s*([0-9.,]+\s*-\s*[0-9.,]+\s*V\s*DC)\b/i, 'Analog inputs', (m) => `${m[1]} AI ${m[2]}`],
+    [/(?:power supply|alimentaci[oó]n|supply voltage)\s*[:\-]?\s*(?:DC\s*)?([0-9.,]+\s*[-–]\s*[0-9.,]+\s*V\s*DC)/i, 'Power supply', (m) => m[1]],
+    [/(?:program\/data memory|working memory|memoria de (?:trabajo|programas\/datos))\s*[:\-]?\s*([0-9.,]+\s*(?:KB|kB|MB|GB))/i, 'Working memory', (m) => m[1]]
+  ];
+  for (const [re, attribute, valueFn] of patterns) {
+    const match = raw.match(re);
+    if (!match) continue;
+    const value = valueFn(match).replace(/\s+/g, ' ').trim();
+    if (value && !specs.some((s) => s.attribute === attribute && s.value === value)) specs.push({ attribute, value });
+  }
+  return specs;
+}
+
+export function extractHTML(html) {
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [, ''])[1].trim()
     || (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [, ''])[1].trim();
   const text = html
