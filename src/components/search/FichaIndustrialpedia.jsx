@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
-import { Image } from '@/components/ui/image';
 
 const SOURCE_TYPE_LABELS = {
   official: 'Fabricante oficial',
@@ -45,6 +45,7 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
 }
 
 export default function FichaIndustrialpedia({ ficha, loading, error, onClose }) {
+  const [imgError, setImgError] = useState(false);
   const specs = Array.isArray(ficha?.specs) ? ficha.specs : [];
   const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
   const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
@@ -82,15 +83,16 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
           <div className="p-4 sm:p-6 space-y-6">
             <section className="rounded-xl border border-white/10 bg-[#10161d] p-5 sm:p-6">
               <div className="flex items-start gap-4">
-                {ficha.image_url ? (
-                  <Image
+                {ficha.image_url && !imgError ? (
+                  <img
                     src={ficha.image_url}
                     alt=""
-                    fittingType="fit"
-                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10"
+                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10 object-contain p-2"
+                    referrerPolicy="no-referrer"
+                    onError={() => setImgError(true)}
                   />
                 ) : (
-                  <div className="h-20 w-20 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                  <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
                     <FileText className="w-6 h-6 text-white/20" />
                   </div>
                 )}
