@@ -329,19 +329,73 @@ export function classifyContentType(item) {
   return { type: 'other_industrial', tier: 2 };
 }
 
-// Reordena resultados web por calidad de contenido. Productos/catálogos primero,
-// artículos/editoriales al final. Determinístico y generalizable: no depende de
-// un fabricante o producto concreto, solo de señales estructurales de contenido.
-export function rankIndustrialResults(results) {
-  const withTiers = results.map((r) => ({ r, tier: classifyContentType(r).tier }));
-  withTiers.sort((a, b) => {
+// Relevancia lexical de la consulta. El buscador externo puede devolver páginas
+// industrialmente válidas pero poco relacionadas con lo que el usuario escribió.
+// Para BUSCAR, la relevancia de la consulta debe dominar al simple hecho de que
+// una página sea PDF o contenga vocabulario industrial.
+function normalizeSearchText(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9áéíóúüñ]+/gi, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function queryTokensForRanking(query) {
+  return normalizeSearchText(query).split(/\s+/).filter((t) => t.length >= 2);
+}
+
+function tokenMatchesField(token, field) {
+  const text = normalizeSearchText(field);
+  if (!text) return false;
+  if (text.split(/\s+/).some((word) => word === token)) return true;
+  // Permite búsquedas cortas como "Rex" -> "Rexroth", pero exige prefijo de palabra,
+  // nunca una coincidencia arbitraria dentro de otra palabra.
+  return text.split(/\s+/).some((word) => word.startsWith(token) && token.length >= 3);
+}
+
+export function queryRelevanceScore(item, query) {
+  const tokens = queryTokensForRanking(query);
+  if (!tokens.length) return 0;
+  const title = item?.title || '';
+  const url = item?.url || '';
+  const snippet = item?.snippet || item?.content || item?.description || '';
+  const identity = item?.product_name || item?.product_identity?.short_description || '';
+  let score = 0;
+  let matched = 0;
+  for (const token of tokens) {
+    if (tokenMatchesField(token, title)) { score += 80; matched++; continue; }
+    if (tokenMatchesField(token, identity)) { score += 65; matched++; continue; }
+    if (tokenMatchesField(token, snippet)) { score += 45; matched++; continue; }
+    if (tokenMatchesField(token, url)) { score += 35; matched++; continue; }
+  }
+  // Las consultas de varias palabras deben demostrar todas sus palabras relevantes.
+  // Para una consulta corta de una sola palabra basta una coincidencia fuerte.
+  if (tokens.length > 1 && matched < tokens.length) return 0;
+  return score;
+}
+
+export function isQueryRelevantIndustrialResult(item, query) {
+  const q = String(query || '').trim();
+  if (!q) return true;
+  if (isPartNumberQuery(q)) return true;
+  return queryRelevanceScore(item, q) > 0;
+}
+
+// Reordena resultados web por: 1) relevancia con la consulta, 2) tipo de contenido,
+// 3) autoridad de la fuente y 4) score del proveedor. Un PDF irrelevante ya no puede
+// quedar arriba solo por ser PDF. Determinístico y generalizable.
+export function rankIndustrialResults(results, query = '') {
+  const sourcePriority = { official: 4, distributor: 3, web_discovery: 1, untrusted: 0 };
+  const withScores = results.map((r) => ({
+    r,
+    queryScore: queryRelevanceScore(r, query),
+    tier: classifyContentType(r).tier
+  }));
+  withScores.sort((a, b) => {
+    if (b.queryScore !== a.queryScore) return b.queryScore - a.queryScore;
     if (b.tier !== a.tier) return b.tier - a.tier;
-    const sp = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
-    const spDiff = (sp[b.r.source_type] || 0) - (sp[a.r.source_type] || 0);
+    const spDiff = (sourcePriority[b.r.source_type] || 0) - (sourcePriority[a.r.source_type] || 0);
     if (spDiff) return spDiff;
     return (b.r.relevance_score || 0) - (a.r.relevance_score || 0);
   });
-  return withTiers.map((x) => x.r);
+  return withScores.map((x) => x.r);
 }
 
 // Extracción determinística de Part Number desde una consulta multi-token o
