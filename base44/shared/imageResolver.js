@@ -7,9 +7,12 @@
 import { isUsableExternalImageUrl } from './extract.js';
 
 // Patrones que indican que una imagen NO es del producto.
-const REJECT_KEYWORDS = /\b(?:logo|logotype|brandmark|brand[-_ ]?mark|banner|hero[-_ ]?banner|carousel|slider|icon|favicon|nav[-_]?bar|navigation|header|footer|placeholder|sprite|tracking|pixel|beacon|spinner|loader|arrow|chevron|button|social|facebook|twitter|linkedin|instagram|youtube|whatsapp|tiktok|pinterest|share|print|cart|account|login|register|search[-_ ]?icon|menu|hamburger|close|expand|collapse|plus|minus|check|cross|tick|star[-_ ]?rating|rating|review|badge|seal|certified|award|warranty|guarantee|return|shipping[-_ ]?icon|payment|secure|ssl|visa|mastercard|paypal|amex|trust|verified|cookie|gdpr|privacy|newsletter|subscribe|email[-_ ]?icon|phone[-_ ]?icon|location[-_ ]?icon|chat|support[-_ ]?icon|help|faq)\b/i;
+// Los nombres reales de archivos suelen usar guiones bajos (logo_01.gif), guiones
+// (header-text.png) o directorios (images/logo/). \b no detecta esos casos porque
+// '_' sigue siendo un carácter de palabra; por eso usamos límites alfanuméricos.
+const REJECT_KEYWORDS = /(?:^|[^a-z0-9])(?:logo|logotype|brandmark|brand[-_ ]?mark|banner|hero[-_ ]?banner|carousel|slider|icon|favicon|nav[-_]?bar|navigation|header|footer|placeholder|sprite|tracking|pixel|beacon|spinner|loader|arrow|chevron|button|social|facebook|twitter|linkedin|instagram|youtube|whatsapp|tiktok|pinterest|share|print|cart|account|login|register|search[-_ ]?icon|menu|hamburger|close|expand|collapse|plus|minus|check|cross|tick|star[-_ ]?rating|rating|review|badge|seal|certified|award|warranty|guarantee|return|shipping[-_ ]?icon|payment|secure|ssl|visa|mastercard|paypal|amex|trust|verified|cookie|gdpr|privacy|newsletter|subscribe|email[-_ ]?icon|phone[-_ ]?icon|location[-_ ]?icon|chat|support[-_ ]?icon|help|faq)(?:[^a-z0-9]|$)/i;
 
-const REJECT_URL_PATHS = /\/(?:logo[s]?|banners?|icons?|sprites?|placeholders?|buttons?|social|favicon|headers?|footers?|nav[-_]?|menus?|cta|hero[-_]?banners?|carousels?|sliders?|backgrounds?)\//i;
+const REJECT_URL_PATHS = /(?:^|\/)(?:logo[s]?|banners?|icons?|sprites?|placeholders?|buttons?|social|favicon|headers?|footers?|nav[-_]?|menus?|cta|hero[-_]?banners?|carousels?|sliders?|backgrounds?)(?:\/|[_.-]|$)/i;
 
 const TRACKING_DIM = 2;
 
