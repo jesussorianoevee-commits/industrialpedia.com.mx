@@ -61,17 +61,21 @@ export default function GoogleResultCard({ result, query, onFicha }) {
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
-      <div className="flex gap-3 mb-3">
-        {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={result.product_name || ''}
-            className="h-14 w-14 rounded-lg object-contain bg-white/5 shrink-0"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setImageSrc('')}
-          />
-        ) : null}
+      <div className="flex gap-4 mb-3">
+        <div className="w-28 h-28 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={result.product_name || ''}
+              className="w-full h-full object-contain p-2"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setImageSrc('')}
+            />
+          ) : (
+            <div className="text-[10px] uppercase tracking-wider text-white/20 text-center px-2">Imagen del producto</div>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           {result.description && <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>}
           <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-white/45">
