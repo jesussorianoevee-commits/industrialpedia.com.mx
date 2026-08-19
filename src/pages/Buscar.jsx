@@ -243,7 +243,8 @@ export default function Buscar() {
                 <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
                   <div className="text-sm text-amber-300/90 font-medium mb-1">Google no respondió</div>
                   <div className="text-xs text-white/50">Error técnico: {googleError}</div>
-                  <div className="text-[11px] text-white/35 mt-1">Si el error persiste, revisa la configuración de la API key de Google (Google_Api) y el CSE ID.</div>
+                  {googleTelemetry.google_detail ? <div className="text-[11px] text-white/35 mt-2 break-words">Detalle Google: {googleTelemetry.google_detail}</div> : null}
+                  <div className="text-[11px] text-white/35 mt-1">El detalle anterior es la respuesta técnica de Google; no muestra la API key.</div>
                 </div>
               ) : googleResults.length === 0 ? (
                 <div className="text-center py-8 text-white/40 text-xs">No se encontraron fuentes industriales para esta referencia.</div>
