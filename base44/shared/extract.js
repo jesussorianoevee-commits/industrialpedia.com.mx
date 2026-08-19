@@ -39,7 +39,27 @@ export function extractHTML(html) {
 }
 
 export function extractPlainText(text) {
-  return { title: '', text: String(text || '').trim(), specTable: [], extractable: true };
+  const raw = String(text || '').trim();
+  const specTable = [];
+  const lines = raw.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+
+  // Tavily raw_content suele llegar como Markdown. Recuperamos únicamente
+  // estructuras explícitas de atributo/valor; el Quality Gateway decide después
+  // si realmente son especificaciones técnicas.
+  for (const line of lines) {
+    const cells = line.split('|').map((x) => x.replace(/[*_`]/g, '').trim()).filter(Boolean);
+    if (cells.length === 2 && !/^[-: ]+$/.test(cells[0]) && !/^[-: ]+$/.test(cells[1])) {
+      const [attribute, value] = cells;
+      if (attribute.length <= 100 && value.length <= 160 && /\d/.test(value)) {
+        specTable.push({ attribute, value });
+      }
+      continue;
+    }
+    const m = line.replace(/^[-*]\s+/, '').match(/^([^:]{2,80})\s*:\s*(.{1,160})$/);
+    if (m && /\d/.test(m[2])) specTable.push({ attribute: m[1].trim(), value: m[2].trim() });
+  }
+
+  return { title: '', text: raw, specTable, extractable: true };
 }
 
 // Candidato a part number (GENÉRICO conservador): primera ocurrencia en título/página 1
