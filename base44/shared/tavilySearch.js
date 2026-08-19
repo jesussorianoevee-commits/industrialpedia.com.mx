@@ -4,6 +4,8 @@
 
 import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, stripMarkdownNoise } from './extract.js';
 import { deriveProductIdentity } from './productIdentity.js';
+import { isTechnicalSpecification } from './semanticResolver.js';
+import { isUnsafeExtractedPair } from './extract.js';
 import { selectBestImage } from './imageResolver.js';
 
 const TIMEOUT_MS = 15000;
@@ -27,7 +29,9 @@ function extractBasicSpecs(snippet, rawContent) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
     const val = String(s.value || '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
+    if (isUnsafeExtractedPair(attr, val)) continue;
     if (BASIC_BLOCK.test(attr)) continue;
+    if (!isTechnicalSpecification(attr, val).ok) continue;
     const key = `${attr}|${val}`.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
