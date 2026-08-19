@@ -65,11 +65,15 @@ export function extractHTML(html) {
   const specTable = [];
   const rowRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
   let m;
-  while ((m = rowRe.exec(html))) {
+  while ((m = rowRe.exec(cleanHtml))) {
     const cells = (m[1].match(/<t[dh][^>]*>[\s\S]*?<\/t[dh]>/gi) || [])
       .map((c) => c.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
       .filter(Boolean);
-    if (cells.length >= 2) specTable.push({ attribute: cells[0], value: cells.slice(1).join(' ') });
+    if (cells.length >= 2) {
+      const attribute = cells[0];
+      const value = cells.slice(1).join(' ');
+      if (!isUnsafeExtractedPair(attribute, value)) specTable.push({ attribute, value });
+    }
   }
 
   // Algunas fichas de fabricantes usan listas de definición en lugar de <table>.
@@ -77,7 +81,7 @@ export function extractHTML(html) {
   while ((m = dtRe.exec(html))) {
     const attribute = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     const value = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    if (attribute && value) specTable.push({ attribute, value });
+    if (attribute && value && !isUnsafeExtractedPair(attribute, value)) specTable.push({ attribute, value });
   }
 
   specTable.push(...extractIndustrialCompactSpecs(text));
@@ -85,7 +89,7 @@ export function extractHTML(html) {
 }
 
 export function extractPlainText(text) {
-  const raw = String(text || '').trim();
+  const raw = cleanExtractionText(text).trim();
   const specTable = [];
   const lines = raw.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
 
@@ -96,13 +100,13 @@ export function extractPlainText(text) {
     const cells = line.split('|').map((x) => x.replace(/[*_`]/g, '').trim()).filter(Boolean);
     if (cells.length === 2 && !/^[-: ]+$/.test(cells[0]) && !/^[-: ]+$/.test(cells[1])) {
       const [attribute, value] = cells;
-      if (attribute.length <= 100 && value.length <= 160 && /\d/.test(value)) {
+      if (!isUnsafeExtractedPair(attribute, value) && attribute.length <= 100 && value.length <= 160 && /\d/.test(value)) {
         specTable.push({ attribute, value });
       }
       continue;
     }
     const m = line.replace(/^[-*]\s+/, '').match(/^([^:]{2,80})\s*:\s*(.{1,160})$/);
-    if (m && /\d/.test(m[2])) specTable.push({ attribute: m[1].trim(), value: m[2].trim() });
+    if (m && /\d/.test(m[2]) && !isUnsafeExtractedPair(m[1], m[2])) specTable.push({ attribute: m[1].trim(), value: m[2].trim() });
   }
 
   // Fichas industriales compactas suelen concentrar varias especificaciones
