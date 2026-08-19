@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets, waitUntil } from 'base44:runtime';
-import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult, rankIndustrialResults } from '../../shared/tavilySearch.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult, rankIndustrialResults, classifySource } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
@@ -31,6 +31,7 @@ export default async function (req: Request) {
     const queryNorm = query.toLowerCase().replace(/\s+/g, ' ').trim();
     const queryTokens = query.split(/\s+/).filter(Boolean);
     let manufacturerOnly = queryTokens.length === 1 && brandTokensFromQuery(query).length === 1;
+    let trustedOfficialDomains: string[] = [];
     // El catálogo de Manufacturer es la fuente de verdad cuando la consulta
     // coincide exactamente con un fabricante. Esto cubre fabricantes de varias
     // palabras (p. ej. Rockwell Automation / Schneider Electric) sin convertir
@@ -43,6 +44,22 @@ export default async function (req: Request) {
         manufacturerOnly = manufacturers.some((m: any) => normalize(m.name) === qManufacturer);
       }
     } catch { /* fallback heurístico de una sola palabra */ }
+
+    // Catálogo de dominios oficiales: una fuente solo puede llamarse "Fabricante oficial"
+    // si su dominio está verificado aquí o coincide exactamente con la marca. El título
+    // de una página nunca concede autoridad de fabricante.
+    try {
+      const manufacturers = await base44.asServiceRole.entities.Manufacturer.filter({ status: 'active' }, 'name', 1000);
+      trustedOfficialDomains = manufacturers.map((m: any) => {
+        try { return new URL(m.website).hostname; } catch { return ''; }
+      }).filter(Boolean);
+    } catch { trustedOfficialDomains = []; }
+
+    const hostOf = (url: string) => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; } };
+    const reclassifyCachedSource = (r: any) => ({
+      ...r,
+      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains)
+    });
 
     // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
     //    sin recurrir al buscador web. La base sigue siendo la fuente de verdad,
@@ -63,11 +80,12 @@ export default async function (req: Request) {
             (!manufacturerOnly || isProductResultForManufacturer(r))
           )
           .map((r: any) => {
+            const reclassified = reclassifyCachedSource(r);
             // Sanitizar identidad: descartar manufacturer_name o part_number
             // derivados de tokens de la consulta o términos genéricos. Los
             // resultados cacheados pueden haberse guardado antes de las reglas
             // actuales de validación de identidad.
-            const copy = sanitizeResultIdentity(r, query);
+            const copy = sanitizeResultIdentity(reclassified, query);
             if (!isUsableProductImageCandidate(copy.image_url, copy.title, copy.description || copy.snippet)) {
               copy.image_url = '';
               copy.image_method = '';
@@ -89,7 +107,7 @@ export default async function (req: Request) {
     } catch { /* cache miss → buscar en la web */ }
 
     if (!discovery) {
-      discovery = await discoverTavilyIndustrial(query, apiKey, { manufacturerOnly });
+      discovery = await discoverTavilyIndustrial(query, apiKey, { manufacturerOnly, trustedOfficialDomains });
       // Guardar en cache (sin raw_content para no exceder el tamaño del registro).
       const trimmed = discovery.results.map((r: any) => {
         const rest: any = { ...r };
@@ -163,6 +181,14 @@ export default async function (req: Request) {
     //    Cada resultado descubierto queda en la base: URL, título, descripción,
     //    fabricante/PN sólo si están demostrados, imagen, proveedor y estado.
     //    CatalogProduct se materializa después, al abrir la ficha, con evidencia.
+    // Defensa final: incluso resultados recién descubiertos se reclasifican con
+    // el catálogo oficial actual. Esto evita regresiones por caché o por cambios
+    // en el clasificador del proveedor.
+    discovery.results = discovery.results.map((r: any) => ({
+      ...r,
+      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains)
+    })).filter((r: any) => r.source_type === 'official' || r.source_type === 'distributor' || r.source_type === 'web_discovery');
+
     if (Array.isArray(discovery.results) && discovery.results.length) {
       waitUntil(persistDiscoveryResults(base44, discovery.results, query).catch(() => {}));
     }
