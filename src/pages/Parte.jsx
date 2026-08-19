@@ -149,7 +149,7 @@ export default function Parte() {
 
         <div className="flex gap-2 pt-2">
           <button disabled title="Pilar ENCONTRAR — próxima iteración" className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Encontrar alternativas</button>
-          <button disabled title="Pilar COMPARAR — próxima iteración" className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Comparar</button>
+          <Link to={`/comparar/${id}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">Comparar</Link>
         </div>
       </main>
     </div>
