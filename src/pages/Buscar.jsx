@@ -177,7 +177,7 @@ export default function Buscar() {
       const container = document.getElementById(containerId);
       if (container) container.innerHTML = '';
     };
-  }, [q, results.length]);
+  }, [q]);
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
@@ -286,11 +286,25 @@ export default function Buscar() {
             )}
           </>
         ) : (
-          <div className="space-y-3">
-            {results.map((r) => (
-              <ResultCard key={r.id} result={r} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {results.map((r) => (
+                <ResultCard key={r.id} result={r} />
+              ))}
+            </div>
+            {q && (
+              <section className="mt-6 rounded-2xl border border-white/10 bg-[#11161c] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-white">Descubrimiento web</div>
+                    <div className="text-xs text-white/40 mt-0.5">Resultados del buscador industrial configurado</div>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/35">Google</span>
+                </div>
+                <div id="industrialpedia-cse-results" className="min-h-[120px] text-white"></div>
+              </section>
+            )}
+          </>
         )}
       </main>
     </div>
