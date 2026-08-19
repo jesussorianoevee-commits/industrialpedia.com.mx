@@ -102,6 +102,7 @@ function unique(results) {
 export async function discoverIndustrialWeb(query) {
   const q = String(query || '').trim();
   if (!q) return { provider: 'none', results: [] };
+  const telemetry = { google_configured: Boolean(Deno.env.get('Google_Api') || Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY')), cx: Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '2725a736ccf564979' };
 
   // Primero intentamos Google si el secreto de búsqueda y el ID del motor están
   // configurados. Se hacen varias consultas complementarias y se combinan sin IA.
@@ -113,13 +114,13 @@ export async function discoverIndustrialWeb(query) {
 
   const googleBatches = await Promise.all(searchQueries.map((term) => googleCustomSearch(term)));
   const googleResults = unique(googleBatches.flat());
-  if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS) };
+  if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS), telemetry };
 
   // Si la consulta literal no encontró nada, hacemos una segunda pasada orientada
   // a documentación industrial. Esto evita contaminar las búsquedas exactas de PN.
   const googleFallbackQueries = [`${q} datasheet`, `${q} product catalog`];
   const googleFallback = unique((await Promise.all(googleFallbackQueries.map((term) => googleCustomSearch(term)))).flat());
-  if (googleFallback.length) return { provider: 'google', results: googleFallback.slice(0, MAX_RESULTS) };
+  if (googleFallback.length) return { provider: 'google', results: googleFallback.slice(0, MAX_RESULTS), telemetry };
 
   // Bing queda como segundo proveedor si Google no está configurado o no devuelve
   // resultados útiles; DuckDuckGo permanece como último fallback.
@@ -130,7 +131,7 @@ export async function discoverIndustrialWeb(query) {
   const ddg = await duckduckgo(q);
   if (ddg.length) return { provider: 'duckduckgo', results: unique(ddg).slice(0, MAX_RESULTS) };
 
-  return { provider: 'none', results: [] };
+  return { provider: 'none', results: [], telemetry };
 }
 
 const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
