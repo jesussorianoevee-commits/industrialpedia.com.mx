@@ -2,10 +2,9 @@
 // Sin respuestas generativas. Sin escrituras en base de datos.
 // Tavily es la capa de descubrimiento web; Industrialpedia conserva el filtrado y ranking.
 
-import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, stripMarkdownNoise } from './extract.js';
+import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, isUnsafeExtractedPair, stripMarkdownNoise } from './extract.js';
 import { deriveProductIdentity } from './productIdentity.js';
 import { isTechnicalSpecification } from './semanticResolver.js';
-import { isUnsafeExtractedPair } from './extract.js';
 import { selectBestImage } from './imageResolver.js';
 
 const TIMEOUT_MS = 15000;
