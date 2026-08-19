@@ -56,7 +56,7 @@ const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
   'masterelectronics.com', 'futureelectronics.com', 'digikey.ca', 'digikey.mx'
 ]);
 
-const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|ebay|mercadolibre|aliexpress|alibaba|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|linkedin\.com\/(jobs|pulse)|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit)(?:[.]|$)/i;
+const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|ebay|mercadolibre|aliexpress|alibaba|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit)(?:[.]|$)/i;
 const EXCLUDE_TEXT_TERMS = [
   'foro', 'forum', 'curso', 'course', 'tutorial', 'opinion', 'opiniones',
   'empleo', 'job', 'jobs', 'careers', 'subasta', 'auction', 'usado', 'used',
@@ -78,6 +78,17 @@ function isExcluded(host, title, snippet) {
   if (!host || EXCLUDE_HOST_PATTERNS.test(host)) return true;
   const text = `${title || ''} ${snippet || ''}`.toLowerCase();
   return EXCLUDE_TEXT_TERMS.some((term) => text.includes(term));
+}
+
+// Las páginas corporativas, perfiles sociales y páginas de empresa no son
+// fuentes de producto aunque el texto mencione automatización industrial.
+// Se filtran a nivel de descubrimiento para que tampoco lleguen a la ficha.
+const CORPORATE_ONLY_TERMS = /(?:about us|about the company|company profile|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|public company|company size|specialties|industry\s*[:\-]|website\s*[:\-]|employee|employees|linkedin)/i;
+function isCorporateOnlyResult(item) {
+  const host = hostOf(item?.url);
+  const text = `${item?.title || ''} ${item?.snippet || item?.content || ''}`;
+  if (EXCLUDE_HOST_PATTERNS.test(host)) return true;
+  return CORPORATE_ONLY_TERMS.test(text) && !PRODUCT_RESULT_TERMS.test(text);
 }
 
 // Gate determinístico de relevancia industrial. Tavily es un buscador web general;
