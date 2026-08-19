@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets, waitUntil } from 'base44:runtime';
-import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult, rankIndustrialResults, classifySource } from '../../shared/tavilySearch.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult, rankIndustrialResults, classifySource, isQueryRelevantIndustrialResult } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
@@ -77,6 +77,7 @@ export default async function (req: Request) {
           .filter((r: any) =>
             !isCorporateOnlyResult(r) &&
             isLikelyIndustrialTavilyResult(r, query) &&
+            isQueryRelevantIndustrialResult(r, query) &&
             (!manufacturerOnly || isProductResultForManufacturer(r))
           )
           .map((r: any) => {
@@ -100,7 +101,7 @@ export default async function (req: Request) {
           // Re-aplica el ranking de calidad a los resultados cacheados: así una
           // mejora del clasificador no queda anulada por datos guardados en orden
           // anterior. Los resultados se re-clasifican con la regla vigente.
-          discovery = { results: rankIndustrialResults(safeCachedResults), provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
+          discovery = { results: rankIndustrialResults(safeCachedResults, query), provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
           cached = true;
         }
       }
