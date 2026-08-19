@@ -22,24 +22,34 @@ function extractIndustrialCompactSpecs(rawText) {
   return specs;
 }
 
-function isUnsafeExtractedPair(attribute, value) {
+export function isUnsafeExtractedPair(attribute, value) {
   const a = String(attribute || '').trim();
   const v = String(value || '').trim();
   const combined = `${a} ${v}`;
   return !a || !v ||
-    /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:text\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(combined) ||
-    /!\[|\]\(|\{\{|<\/?(?:script|style|template|noscript)\b/i.test(combined) ||
-    /^\s*\[[^\]]+\]\s*$/i.test(a);
+    /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(combined) ||
+    /(?:https?:)?\/\//i.test(combined) ||
+    /(?:cloudfront\.net|amazonaws\.com|googleusercontent\.com|gstatic\.com|cdn\.)/i.test(combined) ||
+    /!\[[^\]]*\]\(|\[[^\]]+\]\(|\]\(|\)\s*\[/i.test(combined) ||
+    /\{\{|<\/?(?:script|style|template|noscript)\b/i.test(combined) ||
+    /^\s*\[[^\]]+\]\s*$/i.test(a) ||
+    /\b(?:search|our locations|contact|careers|privacy policy|terms|login|sign in|menu|home|footer)\b/i.test(a) && /(?:icon|image|url|https?|\/)/i.test(combined);
 }
 
 function cleanExtractionText(text) {
-  return String(text || '')
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/!\[[^\]]*\]\((?:https?:\/\/|\/\/|blob:|data:)[^)]+\)/gi, ' ')
-    .replace(/\[[^\]]+\]\(javascript:[^)]+\)/gi, ' ')
-    .replace(/(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:text\/[^\s)]+|https?:\/\/localhost[^\s)]*)/gi, ' ')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n[ \t]+/g, '\n');
+  const lines = String(text || '').split(/\r?\n/);
+  return lines.map((line) => {
+    let s = line;
+    // Elimina imágenes/enlaces Markdown completos, incluidos enlaces scheme-relative
+    // (//cdn...), que no eran cubiertos por el saneamiento anterior.
+    s = s.replace(/!?\[[^\]]*\]\([^\n]*\)/g, ' ');
+    // Si el Markdown quedó partido por una URL con paréntesis internos, la línea es
+    // navegación/recurso y no contenido técnico; no intentamos reconstruirla.
+    if (/!?\[[^\]]*\]|(?:https?:)?\/\/|\b(?:Search|Our locations|Contact|Careers)\b/i.test(s) &&
+        /(?:https?:)?\/\/|\]\(/i.test(line)) return '';
+    s = s.replace(/(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/[^\s)]+|(?:https?:)?\/\/[^\s)]+|\/\/[^\s)]+)/gi, ' ');
+    return s;
+  }).join('\n').replace(/```[\s\S]*?```/g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n');
 }
 
 export function extractHTML(html) {
@@ -260,7 +270,7 @@ const ADJACENT_LABEL_STOP = /^(specifications?|general|description|features|over
 const ADJACENT_LABEL_PREFIX_STOP = /^(?:the|a|an|this|these|those|some|any|our|your|its|all|each|every|no|both|such|that|which|what|when|where|how|why|who|from|with|for|and|but|or|nor|so|yet)\b/i;
 const ADJACENT_VALUE_STOP = /\b(?:the|a|an|with|for|and|of|to|in|is|are|includes|has|have|that|this|which|from|by|at|on|or|as|be|been|was|were|will|would|can|could|should|may|might|must|shall|do|does|did|not|no|yes)\b/i;
 export function extractAdjacentSpecs(text) {
-  const lines = String(text || '').split(/\r?\n/).map((l) => l.replace(/^[\s>*#-]+/, '').replace(/[*_`]/g, '').trim()).filter(Boolean);
+  const lines = cleanExtractionText(text).split(/\r?\n/).map((l) => l.replace(/^[\s>*#-]+/, '').replace(/[*_`]/g, '').trim()).filter(Boolean);
   const specs = [];
   const seen = new Set();
   for (let i = 0; i < lines.length - 1; i++) {
