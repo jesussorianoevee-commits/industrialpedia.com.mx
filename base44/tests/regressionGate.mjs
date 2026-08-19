@@ -8,7 +8,7 @@ const tests = [
   ['válvula', false], ['relevador', false], ['conector neumático', false],
   ['PLC', false], ['motor', false], ['bomba', false], ['fuente', false],
   ['driver', false], ['controlador', false], ['receta de cocina', true],
-  ['película de terror', true], ['pizza', false], ['asdfgh', false]
+  ['película de terror', true], ['pizza', true], ['asdfgh', false]
 ];
 for (const [q, expected] of tests) assert.equal(isNonIndustrialQuery(q), expected, `query gate: ${q}`);
 
