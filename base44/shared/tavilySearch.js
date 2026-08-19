@@ -266,7 +266,10 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     }
   }
 
-  const filtered = enriched.filter((r) => !isExcluded(hostOf(r.url), r.title, r.snippet));
+  const filtered = enriched.filter((r) =>
+    !isExcluded(hostOf(r.url), r.title, r.snippet) &&
+    isLikelyIndustrialTavilyResult(r, q)
+  );
   const sourcePriority = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
   filtered.sort((a, b) => {
     const priorityDiff = (sourcePriority[b.source_type] || 0) - (sourcePriority[a.source_type] || 0);
