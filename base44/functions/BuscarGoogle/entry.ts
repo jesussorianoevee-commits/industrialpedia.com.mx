@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets, waitUntil } from 'base44:runtime';
-import { discoverTavilyIndustrial, brandTokensFromQuery } from '../../shared/tavilySearch.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 
@@ -36,8 +36,11 @@ export default async function (req: Request) {
         { query_normalized: queryNorm }, '-created_date', 1
       );
       if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
-        discovery = { results: cachedRecs[0].results, provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
-        cached = true;
+        const safeCachedResults = cachedRecs[0].results.filter((r: any) => isLikelyIndustrialTavilyResult(r, query));
+        if (safeCachedResults.length) {
+          discovery = { results: safeCachedResults, provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
+          cached = true;
+        }
       }
     } catch { /* cache miss → buscar en la web */ }
 
