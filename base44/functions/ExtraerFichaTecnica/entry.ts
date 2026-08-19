@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUsableExternalImageUrl, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -484,11 +484,11 @@ export default async function (req: Request) {
     const { grouped, others } = groupSpecsByTemplate(specs, template);
 
     // 8) Imagen: hint del resultado > og:image del HTML.
-    let imageUrl = imageUrlHint;
+    let imageUrl = isUsableExternalImageUrl(imageUrlHint) ? imageUrlHint : '';
     if (!imageUrl && !isPdf && bytes) {
       const raw = new TextDecoder().decode(bytes.slice(0, 50000));
       const m = raw.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      if (m) imageUrl = m[1];
+      if (m && isUsableExternalImageUrl(m[1])) imageUrl = m[1];
     }
 
     const ficha = {
