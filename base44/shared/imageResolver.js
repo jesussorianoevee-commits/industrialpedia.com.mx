@@ -158,19 +158,19 @@ export function resolveProductImage(candidates, productContext) {
 
   if (valid.length === 0) return null;
 
-  // Deduplicar por URL (path sin query params).
+  // Puntuar primero, luego deduplicar por URL conservando el candidato
+  // de mayor score (ej: tavily_result base 30 + bonus > markdown_generic base 10).
+  const scored = valid.map((c) => scoreCandidate(c, productContext));
+  scored.sort((a, b) => b.score - a.score);
   const seen = new Set();
-  const unique = valid.filter((c) => {
+  const unique = scored.filter((c) => {
     const key = normalizeUrlKey(c.url);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 
-  const scored = unique.map((c) => scoreCandidate(c, productContext));
-  scored.sort((a, b) => b.score - a.score);
-
-  const best = scored[0];
+  const best = unique[0];
   return {
     image_url: best.url,
     source_url: productContext.source_url || '',
