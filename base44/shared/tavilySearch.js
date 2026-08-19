@@ -363,6 +363,7 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
 
   const filtered = enriched.filter((r) =>
     !isExcluded(hostOf(r.url), r.title, r.snippet) &&
+    !isCorporateOnlyResult(r) &&
     isLikelyIndustrialTavilyResult(r, q) &&
     (!manufacturerOnly || isProductResultForManufacturer(r))
   );
