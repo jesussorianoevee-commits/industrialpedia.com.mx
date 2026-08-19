@@ -3,6 +3,14 @@ import { FileText, Globe, ExternalLink, ArrowRight, Loader2 } from 'lucide-react
 import { Image } from '@/components/ui/image';
 import { base44 } from '@/api/base44Client';
 
+function isUsableImageUrl(value) {
+  if (!value || typeof value !== 'string') return false;
+  try {
+    const u = new URL(value);
+    return /^https?:$/.test(u.protocol);
+  } catch { return false; }
+}
+
 const SOURCE_TYPE_LABELS = {
   official: { label: 'Fabricante oficial', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
   distributor: { label: 'Distribuidor', cls: 'text-[#5a9cd9] bg-[#5a9cd9]/10' },
@@ -12,6 +20,7 @@ const SOURCE_TYPE_LABELS = {
 
 export default function GoogleResultCard({ result, query, onFicha }) {
   const [loading, setLoading] = useState(false);
+  const [imageSrc, setImageSrc] = useState(isUsableImageUrl(result.image_url) ? result.image_url : '');
   const [err, setErr] = useState('');
 
   const verFicha = async () => {
@@ -54,8 +63,13 @@ export default function GoogleResultCard({ result, query, onFicha }) {
       </div>
 
       <div className="flex gap-3 mb-3">
-        {result.image_url ? (
-          <Image src={result.image_url} alt={result.product_name || ''} className="h-14 w-14 rounded-lg object-contain bg-white/5 shrink-0" />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={result.product_name || ''}
+            className="h-14 w-14 rounded-lg object-contain bg-white/5 shrink-0"
+            onError={() => setImageSrc('')}
+          />
         ) : null}
         <div className="min-w-0 flex-1">
           {result.description && <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>}
