@@ -22,8 +22,8 @@ export default async function (req: Request) {
     const query = String(body.query || '').trim();
     if (!query) return Response.json({ error: 'query required' }, { status: 400 });
 
-    const apiKey = secrets.get('key=API_KEY') || '';
-    const cx = secrets.get('Industrialpediasearch') || '';
+    const apiKey = String(secrets.get('key=API_KEY') || '').trim().replace(/^["']|["']$/g, '').trim();
+    const cx = String(secrets.get('Industrialpediasearch') || '').trim().replace(/^["']|["']$/g, '').replace(/^cx=/i, '').trim();
 
     // 1) Descubrimiento Google (1-2 consultas máximo, con fallback técnico si es necesario).
     const discovery = await discoverGoogleIndustrial(query, apiKey, cx);
