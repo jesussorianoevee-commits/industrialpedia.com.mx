@@ -416,6 +416,16 @@ export default async function (req: Request) {
 
     // 3) Part Number: pista manual > candidatos estructurados > literal en la fuente.
     const candidates = extractCandidates(extracted.text, extracted.pages || [], extracted.blocks || [], extracted.tables || []);
+    // Una URL puede ser un catálogo/familia con varios productos. En ese caso
+    // ningún PN debe "ganar" por frecuencia y arrastrar las especificaciones de
+    // todos los productos a una sola ficha. Solo una pista explícita del usuario
+    // (part_number_hint) puede resolver la ambigüedad.
+    const explicitPnCandidates = [...new Map(
+      candidates
+        .filter((c: any) => c.label_type === 'positive' || c.label_relation === 'table_header')
+        .map((c: any) => [normalizePartNumber(c.text), c])
+    ).values()].filter((c: any) => normalizePartNumber(c.text));
+    const ambiguousMultiProductSource = !partNumberHint && explicitPnCandidates.length > 1;
     let selectedCandidate: any = null;
     let partNumber = '';
     let derivation = '';
