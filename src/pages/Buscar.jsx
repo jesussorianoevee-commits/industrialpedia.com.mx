@@ -105,6 +105,7 @@ export default function Buscar() {
 
   const facets = data?.facets || { manufacturers: [], categories: [] };
   const results = data?.results || [];
+  const webResults = data?.web_results || [];
 
   // Google Programmable Search: usa el motor industrial configurado por el usuario
   // como capa de descubrimiento web, sin IA. Solo se muestra cuando Knowledge Core
