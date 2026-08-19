@@ -22,7 +22,7 @@ export default async function (req: Request) {
     const query = String(body.query || '').trim();
     if (!query) return Response.json({ error: 'query required' }, { status: 400 });
 
-    const apiKey = secrets.get('Google_Api') || '';
+    const apiKey = secrets.get('Industrialpediasearch') || secrets.get('Google_Api') || '';
     const cx = '2725a736ccf564979';
 
     // 1) Descubrimiento Google (1-2 consultas máximo, con fallback técnico si es necesario).
