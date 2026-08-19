@@ -78,7 +78,7 @@ export function extractHTML(html) {
 
   // Algunas fichas de fabricantes usan listas de definición en lugar de <table>.
   const dtRe = /<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/gi;
-  while ((m = dtRe.exec(cleanHtml)))
+  while ((m = dtRe.exec(cleanHtml))) {
     const attribute = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     const value = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     if (attribute && value && !isUnsafeExtractedPair(attribute, value)) specTable.push({ attribute, value });
