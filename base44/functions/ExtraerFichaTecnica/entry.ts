@@ -188,7 +188,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
     if (catalogId && discoveryId) {
       await base44.asServiceRole.entities.CatalogProduct.update(catalogId, { discovery_id: discoveryId }).catch(() => {});
     }
-    return { queued: true, catalog_id: catalogId, discovery_id: discoveryId };
+    return { queued: true, part_id: partId, catalog_id: catalogId, discovery_id: discoveryId };
   } catch (e) {
     return { queued: false, reason: String(e?.message || e) };
   }
