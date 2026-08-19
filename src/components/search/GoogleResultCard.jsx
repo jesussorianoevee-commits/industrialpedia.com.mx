@@ -64,10 +64,12 @@ export default function GoogleResultCard({ result, query, onFicha }) {
 
       <div className="flex gap-3 mb-3">
         {imageSrc ? (
-          <Image
+          <img
             src={imageSrc}
             alt={result.product_name || ''}
             className="h-14 w-14 rounded-lg object-contain bg-white/5 shrink-0"
+            loading="lazy"
+            referrerPolicy="no-referrer"
             onError={() => setImageSrc('')}
           />
         ) : null}
