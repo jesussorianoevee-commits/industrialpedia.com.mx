@@ -282,7 +282,7 @@ export default function Buscar() {
                   </div>
                   <span className="text-[10px] uppercase tracking-wider text-white/35">Google</span>
                 </div>
-                <div id="industrialpedia-cse-results" className="min-h-[120px] text-white"></div>
+                <div className="space-y-2">{webResults.length ? webResults.map((w, i) => <a key={`${w.url}-${i}`} href={w.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 bg-white/[0.03] p-3"><div className="text-sm font-medium text-white">{w.title || w.url}</div><div className="mt-1 text-xs text-white/45">{w.snippet || 'Fuente encontrada por Google.'}</div><div className="mt-2 text-[10px] uppercase tracking-wider text-white/35">{w.source_type === 'official' ? 'Fuente oficial' : w.source_type === 'distributor' ? 'Distribuidor' : 'Fuente CSE configurada'} · Google</div></a>) : <div className="min-h-[80px] flex items-center justify-center text-sm text-white/35">Google no devolvió fuentes utilizables para esta consulta.</div>}</div>
               </section>
             )}
           </>
@@ -302,7 +302,7 @@ export default function Buscar() {
                   </div>
                   <span className="text-[10px] uppercase tracking-wider text-white/35">Google</span>
                 </div>
-                <div id="industrialpedia-cse-results" className="min-h-[120px] text-white"></div>
+                <div className="space-y-2">{webResults.length ? webResults.map((w, i) => <a key={`${w.url}-${i}`} href={w.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 bg-white/[0.03] p-3"><div className="text-sm font-medium text-white">{w.title || w.url}</div><div className="mt-1 text-xs text-white/45">{w.snippet || 'Fuente encontrada por Google.'}</div><div className="mt-2 text-[10px] uppercase tracking-wider text-white/35">{w.source_type === 'official' ? 'Fuente oficial' : w.source_type === 'distributor' ? 'Distribuidor' : 'Fuente CSE configurada'} · Google</div></a>) : <div className="min-h-[80px] flex items-center justify-center text-sm text-white/35">Google no devolvió fuentes utilizables para esta consulta.</div>}</div>
               </section>
             )}
           </>
