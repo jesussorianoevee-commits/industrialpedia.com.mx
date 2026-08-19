@@ -35,16 +35,24 @@ async function googleCustomSearch(query) {
   // para no obligar a cambiar la configuración de Base44.
   const key = Deno.env.get('GOOGLE_SEARCH_API_KEY') || Deno.env.get('GOOGLE_CUSTOM_SEARCH_API_KEY') || Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('Google_Api') || '';
   const cx = Deno.env.get('GOOGLE_CSE_ID') || Deno.env.get('GOOGLE_SEARCH_ENGINE_ID') || Deno.env.get('GOOGLE_CX') || '2725a736ccf564979';
-  if (!key || !cx) return [];
+  if (!key || !cx) return { results: [], error: 'google_not_configured' };
   try {
     const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${encodeURIComponent(cx)}&q=${encodeURIComponent(query)}&num=10&filter=1&safe=active&hl=en`;
     const r = await fetchWithTimeout(url, { headers: { Accept: 'application/json' } });
-    if (!r.ok) return [];
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      return { results: [], error: `google_http_${r.status}`, detail: body.slice(0, 300) };
+    }
     const data = await r.json();
-    return (data.items || []).slice(0, 10).map((x) => ({
-      title: x.title || '', url: x.link || '', snippet: x.snippet || '', provider: 'google'
-    })).filter((x) => x.url);
-  } catch { return []; }
+    return {
+      results: (data.items || []).slice(0, 10).map((x) => ({
+        title: x.title || '', url: x.link || '', snippet: x.snippet || '', provider: 'google'
+      })).filter((x) => x.url),
+      error: null
+    };
+  } catch (e) {
+    return { results: [], error: `google_exception_${e?.name || 'unknown'}` };
+  }
 }
 
 async function bing(query) {
@@ -113,13 +121,17 @@ export async function discoverIndustrialWeb(query) {
   const searchQueries = [q];
 
   const googleBatches = await Promise.all(searchQueries.map((term) => googleCustomSearch(term)));
-  const googleResults = unique(googleBatches.flat());
-  if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS), telemetry };
+  const googleResults = unique(googleBatches.flatMap((batch) => batch.results || []));
+  telemetry.google_error = googleBatches.find((batch) => batch.error)?.error || null;
+  telemetry.google_detail = googleBatches.find((batch) => batch.detail)?.detail || null;
+  if (googleResults.length) return { provider: 'google', results: googleResults.slice(0, MAX_RESULTS), telemetry }; 
 
   // Si la consulta literal no encontró nada, hacemos una segunda pasada orientada
   // a documentación industrial. Esto evita contaminar las búsquedas exactas de PN.
   const googleFallbackQueries = [`${q} datasheet`, `${q} product catalog`];
-  const googleFallback = unique((await Promise.all(googleFallbackQueries.map((term) => googleCustomSearch(term)))).flat());
+  const googleFallbackBatches = await Promise.all(googleFallbackQueries.map((term) => googleCustomSearch(term)));
+  const googleFallback = unique(googleFallbackBatches.flatMap((batch) => batch.results || []));
+  telemetry.google_fallback_error = googleFallbackBatches.find((batch) => batch.error)?.error || null;
   if (googleFallback.length) return { provider: 'google', results: googleFallback.slice(0, MAX_RESULTS), telemetry };
 
   // Bing queda como segundo proveedor si Google no está configurado o no devuelve
