@@ -6,6 +6,7 @@ import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuild
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTemplates.js';
+import { gateSpec } from '../../shared/qualityGateway.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -48,12 +49,16 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
     const existingCatalog = await base44.asServiceRole.entities.CatalogProduct.filter(
       { part_number_normalized: pnNorm, product_url: url }, 'updated_date', 1
     ).catch(() => []);
+    // CatalogProduct consume únicamente contenido que haya pasado el Quality Gateway.
+    // Nunca materializar el texto crudo del PDF en description/search_text.
+    const catalogSpecs = Array.isArray(ficha.specs) ? ficha.specs.filter((s: any) => gateSpec(s).pass) : [];
+    const catalogDescription = safeText(ficha.product_name || pn, 1000);
     const catalogPayload = {
       manufacturer_name: ficha.manufacturer_name || '',
       part_number: pn,
       part_number_normalized: pnNorm,
-      name: ficha.product_name || ficha.description || pn,
-      description: safeText(ficha.description, 1000),
+      name: ficha.product_name || pn,
+      description: catalogDescription,
       image_url: ficha.image_url || '',
       product_url: url,
       datasheet_url: isPdf ? url : '',
@@ -61,7 +66,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       source_domain: hostOf(url),
       source_provider: 'google',
       catalog_state: 'identified',
-      search_text: [pn, ficha.manufacturer_name, ficha.product_name, ficha.description, ficha.specs.map((s: any) => `${s.attribute} ${s.original_value}`).join(' ')].filter(Boolean).join(' '),
+      search_text: [pn, ficha.manufacturer_name, ficha.product_name, catalogSpecs.map((s: any) => `${s.attribute} ${s.original_value}`).join(' ')].filter(Boolean).join(' '),
       last_seen: new Date().toISOString()
     };
     let catalogId = '';
