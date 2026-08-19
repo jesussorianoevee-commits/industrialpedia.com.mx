@@ -475,7 +475,7 @@ export default async function (req: Request) {
     //     no aportó specs aceptadas, obtener el contenido renderizado vía Tavily
     //     Extract y re-extraer. Todo candidato sigue pasando Semantic Resolver + Gateway.
     let tavilyExtractUsed = false;
-    if (specs.length === 0) {
+    if (specs.length === 0 && !ambiguousMultiProductSource) {
       const richer = await tavilyExtractContent(url);
       if (richer && richer.length > (extracted.text || '').length) {
         mergeFallbackContent(extracted, richer);
