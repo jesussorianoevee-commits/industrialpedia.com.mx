@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator, isNonIndustrialQuery, isLikelyIndustrialSource } from '../../shared/searchRules.js';
 import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
+import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
 // 'published' (revalidacion en curso), se incluye 'incomplete' para que
@@ -238,9 +239,12 @@ export default async function (req) {
     // industriales (marketplaces, sitios de música/películas) o contenido no
     // industrial no deben aparecer en resultados, aunque hayan sido persistidos
     // anteriormente con datos contaminados. Es generalizable.
-    discoveryCandidates = discoveryCandidates.filter((d) =>
-      isLikelyIndustrialSource(d.source_url, d.title, d.description)
-    );
+    // Sanitización de identidad: los registros históricos pueden tener
+    // manufacturer_name o candidate_part_number derivados de tokens de consulta
+    // antes de las reglas actuales. Se limpian aquí para no mostrarlos.
+    discoveryCandidates = discoveryCandidates
+      .filter((d) => isLikelyIndustrialSource(d.source_url, d.title, d.description))
+      .map((d) => sanitizeResultIdentity(d, q));
 
     // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene una
     //    coincidencia relevante, BUSCAR puede descubrir una fuente externa.
@@ -322,8 +326,12 @@ export default async function (req) {
           const webKey = String(r.url || '').replace(/#.*$/, '').toLowerCase();
           if (!webKey || seenWeb.has(webKey)) continue;
           seenWeb.add(webKey);
+          // manufacturer solo se deriva de manufacturerNames (catálogo de
+          // fabricantes conocido), nunca de tokens arbitrarios de la consulta.
+          // Si solo hay un fabricante conocido en la consulta, se usa; si no,
+          // se busca en el contenido del resultado. Si ninguno coincide, vacío.
           const manufacturer = manufacturerNames.length === 1
-            ? manufacturerNames[0]
+            ? (manufacturerNames.find((name) => `${r.title || ''} ${r.snippet || ''}`.toLowerCase().includes(String(name).toLowerCase())) || '')
             : (manufacturerNames.find((name) => `${r.title || ''} ${r.snippet || ''}`.toLowerCase().includes(String(name).toLowerCase())) || '');
           const webText = `${candidatePn} ${manufacturer} ${r.title || ''} ${r.snippet || ''} ${host}`.toLowerCase();
           const hits = tokenize(q).filter((t) => webText.includes(t)).length;
@@ -395,7 +403,10 @@ export default async function (req) {
         );
         const seen = new Set(catalogCandidates.map((c) => c.id));
         for (const c of stored) {
-          if (!seen.has(c.id)) { catalogCandidates.push(c); seen.add(c.id); }
+          // Sanitizar identidad: los CatalogProduct históricos pueden tener
+          // manufacturer_name derivado de tokens de consulta.
+          const clean = sanitizeResultIdentity(c, q);
+          if (!seen.has(c.id)) { catalogCandidates.push(clean); seen.add(c.id); }
         }
       } catch (e) { /* catálogo aún vacío */ }
     }

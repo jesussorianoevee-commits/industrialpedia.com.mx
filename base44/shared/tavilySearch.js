@@ -439,7 +439,11 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       title,
       text: item.raw_content || snippet,
       query: q,
-      manufacturer_hint: brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
+      // manufacturer_hint: solo brand (token de consulta encontrado en contenido).
+      // identifyManufacturer valida el hint contra fabricantes conocidos, así que
+      // un token genérico como "balero" se rechaza. No se pasa queryBrandTokens[0]
+      // directamente: ese fallback derivaba manufacturer desde la consulta sin evidencia.
+      manufacturer_hint: brand || '',
       part_number_hint: partNumber,
       source_url: item.url
     });
@@ -479,7 +483,10 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       image_confidence: resolved?.confidence || 0,
       image_source_url: resolved?.source_url || item.url,
       basic_specs: extractBasicSpecs(snippet, item.raw_content),
-      manufacturer_name: identity.manufacturer || brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
+      // manufacturer_name: solo desde identidad derivada con evidencia (identity.manufacturer).
+      // Nunca desde tokens de la consulta (brand, queryBrandTokens): un token de la
+      // consulta que aparece en el contenido NO es evidencia de fabricante.
+      manufacturer_name: identity.manufacturer || '',
       part_number: identity.part_number || partNumber,
       product_name: identity.short_description,
       product_identity: identity,

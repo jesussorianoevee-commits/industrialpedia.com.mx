@@ -468,19 +468,33 @@ export default async function (req: Request) {
       }
     }
 
-    // 5) Fabricante: pista manual > marca de la consulta > derivación de dominio (solo si official).
+    // 5) Fabricante: pista manual > derivación de identidad desde contenido > dominio (solo si official).
+    //    Nunca se deriva manufacturer_name desde tokens de la consulta: un token como
+    //    "balero" o "neum" encontrado en el contenido NO es evidencia de fabricante.
+    //    deriveProductIdentity ya valida fabricantes contra una lista conocida y exige
+    //    que aparezcan en el contenido. El dominio solo cuenta como evidencia para
+    //    fuentes oficiales (no distribuidores): mouser.com no hace que el fabricante sea "Mouser".
     const host = hostOf(url);
     let manufacturer = manufacturerHint;
-    if (!manufacturer) {
-      const brandTokens = String(query || '').split(/\s+/).filter((t) => t.length >= 3 && /[a-z]/i.test(t) && !/^\d/.test(t));
-      const qBrand = brandTokens.find((t) => safeText(`${extracted.title || ''} ${extracted.text || ''}`, 2000).toLowerCase().includes(t.toLowerCase()));
-      if (qBrand) manufacturer = qBrand;
+    // La pista manual (manufacturer_hint del frontend) puede venir contaminada
+    // por tokens de consulta. La validamos: si no aparece en el contenido, se descarta.
+    if (manufacturer) {
+      const contentText = safeText(`${extracted.title || ''} ${extracted.text || ''}`, 3000).toLowerCase();
+      const mfrLower = String(manufacturer).toLowerCase();
+      if (!contentText.includes(mfrLower)) {
+        manufacturer = '';
+      }
     }
     if (!manufacturer && extracted.title) {
       // Último recurso: si la fuente es oficial, el dominio demuestra el fabricante.
-      const stem = host.split('.')[0];
-      if (stem && !['www', 'docs', 'support', 'download', 'catalog', 'shop'].includes(stem.toLowerCase())) {
-        manufacturer = stem.charAt(0).toUpperCase() + stem.slice(1);
+      // Solo para fuentes oficiales: un distribuidor (Mouser, DigiKey, etc.) no es
+      // el fabricante del producto.
+      const sourceType = String(body.source_type || '').toLowerCase();
+      if (sourceType === 'official') {
+        const stem = host.split('.')[0];
+        if (stem && !['www', 'docs', 'support', 'download', 'catalog', 'shop', 'store', 'products'].includes(stem.toLowerCase())) {
+          manufacturer = stem.charAt(0).toUpperCase() + stem.slice(1);
+        }
       }
     }
 

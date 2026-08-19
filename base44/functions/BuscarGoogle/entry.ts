@@ -5,6 +5,7 @@ import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRul
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
+import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
@@ -62,7 +63,11 @@ export default async function (req: Request) {
             (!manufacturerOnly || isProductResultForManufacturer(r))
           )
           .map((r: any) => {
-            const copy = { ...r };
+            // Sanitizar identidad: descartar manufacturer_name o part_number
+            // derivados de tokens de la consulta o términos genéricos. Los
+            // resultados cacheados pueden haberse guardado antes de las reglas
+            // actuales de validación de identidad.
+            const copy = sanitizeResultIdentity(r, query);
             if (!isUsableProductImageCandidate(copy.image_url, copy.title, copy.description || copy.snippet)) {
               copy.image_url = '';
               copy.image_method = '';
@@ -159,7 +164,7 @@ export default async function (req: Request) {
     //    fabricante/PN sólo si están demostrados, imagen, proveedor y estado.
     //    CatalogProduct se materializa después, al abrir la ficha, con evidencia.
     if (Array.isArray(discovery.results) && discovery.results.length) {
-      waitUntil(persistDiscoveryResults(base44, discovery.results).catch(() => {}));
+      waitUntil(persistDiscoveryResults(base44, discovery.results, query).catch(() => {}));
     }
 
     return Response.json({

@@ -81,23 +81,25 @@ function extractLabeledPartNumbers(text) {
 function normalizeBrand(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
 function identifyManufacturer(query, content, hint) {
-  // Only accept hint if it matches a known manufacturer (exact or partial).
+  // Only accept hint if it matches a known manufacturer AND appears in the content.
   // This prevents fragments like "neum" (from "neumático") or "lvula" (from
-  // "válvula") from being used as a manufacturer name.
+  // "válvula") from being used as a manufacturer name, and ensures the
+  // manufacturer is backed by explicit evidence in the source itself.
+  const text = String(content || '').toLowerCase();
   if (hint && hint.trim()) {
     const hintNorm = normalizeBrand(hint);
     if (hintNorm && hintNorm.length >= 3) {
       const exact = KNOWN_MANUFACTURERS.find((m) => normalizeBrand(m) === hintNorm);
-      if (exact) return exact;
+      if (exact && text.includes(exact.toLowerCase())) return exact;
       const partial = KNOWN_MANUFACTURERS.find((m) => normalizeBrand(m).includes(hintNorm) || hintNorm.includes(normalizeBrand(m)));
-      if (partial) return partial;
+      if (partial && text.includes(partial.toLowerCase())) return partial;
     }
   }
-  // Detect from content and query against known manufacturers
-  const text = String(content || '').toLowerCase();
-  const qLower = String(query || '').toLowerCase();
+  // Detect from content only — never from the query text. The query is the
+  // user's search, not evidence in the source. A manufacturer must appear in
+  // the content to be attributed to a product.
   for (const m of KNOWN_MANUFACTURERS) {
-    if (text.includes(m.toLowerCase()) || qLower.includes(m.toLowerCase())) return m;
+    if (text.includes(m.toLowerCase())) return m;
   }
   return '';
 }
@@ -107,8 +109,11 @@ export function deriveProductIdentity({ title, text, query, manufacturer_hint, p
   const fullContent = `${sourceTitle}\n${String(text || '')}`;
   const isMarketplace = isMarketplaceSource(source_url);
 
-  // 1) Part Number: combinar hint + etiqueta explícita + título + contenido.
-  //    Prioridad: hint manual > etiqueta > título > contenido. Deduplicado.
+  // 1) Part Number: hint > etiqueta explícita > título.
+  //    No se extraen PNs del contenido libre: los datasheets contienen números de
+  //    referencia, estándares, normas y productos cruzados que no constituyen
+  //    evidencia de identidad del producto mostrado en la página. Aceptarlos
+  //    sin discriminación generaba PNs falsos en la ficha.
   const allPns = [];
   const seenNorm = new Set();
   const addPn = (pn) => {
@@ -118,7 +123,6 @@ export function deriveProductIdentity({ title, text, query, manufacturer_hint, p
   if (part_number_hint && part_number_hint.trim()) addPn(part_number_hint.trim());
   extractLabeledPartNumbers(fullContent).forEach(addPn);
   extractAllPartNumbers(sourceTitle).forEach(addPn);
-  extractAllPartNumbers(fullContent).forEach(addPn);
   const partNumbers = allPns.slice(0, 5);
 
   // 2) Manufacturer

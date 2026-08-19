@@ -7,6 +7,7 @@
 // suficiente (al abrir la ficha → ExtraerFichaTecnica, o vía MaterializeDiscovery).
 
 import { normalizePartNumber } from './normalize.js';
+import { sanitizeResultIdentity } from './identityGuard.js';
 
 export function normalizeSourceUrl(url) {
   const raw = String(url || '').trim();
@@ -36,14 +37,18 @@ function confidenceFor(sourceType) {
 }
 
 // Persiste un lote de resultados descubiertos. Devuelve { created, updated, skipped }.
-export async function persistDiscoveryResults(base44, results) {
+export async function persistDiscoveryResults(base44, results, query = '') {
   const now = new Date().toISOString();
   let created = 0;
   let updated = 0;
   let skipped = 0;
 
-  for (const r of results || []) {
+  for (const rRaw of results || []) {
     try {
+      // Sanitizar identidad antes de persistir: no guardar manufacturer_name o
+      // part_number derivados de tokens de la consulta. La consulta se pasa
+      // como contexto para validar, pero no se persiste.
+      const r = sanitizeResultIdentity(rRaw, query);
       const url = String(r.url || '').trim();
       if (!url) { skipped++; continue; }
       const urlNorm = normalizeSourceUrl(url);
