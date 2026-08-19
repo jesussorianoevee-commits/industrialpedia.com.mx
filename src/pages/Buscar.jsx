@@ -196,7 +196,7 @@ export default function Buscar() {
             {!q ? 'Escribe una refacción industrial para buscarla.' : (
               <span className="flex items-center gap-2">
                 {googleLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                {googleLoading ? 'Descubriendo con Google…' : `${googleResults.length} resultado(s) Google · ${kcResults.length} en Knowledge Core`}
+                {googleLoading ? 'Descubriendo en la web…' : `${googleResults.length} resultado(s) web · ${kcResults.length} en Knowledge Core`}
               </span>
             )}
           </div>
@@ -228,16 +228,16 @@ export default function Buscar() {
               </section>
             )}
 
-            {/* Descubrimiento Google */}
+            {/* Descubrimiento web */}
             <section>
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] uppercase tracking-wider text-white/40">Descubrimiento Google</div>
+                <div className="text-[10px] uppercase tracking-wider text-white/40">Descubrimiento web</div>
                 {googleTelemetry.queries_made ? <span className="text-[10px] text-white/30">{googleTelemetry.queries_made} consulta(s) API</span> : null}
               </div>
 
               {googleLoading ? (
                 <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Buscando en Google…
+                  <Loader2 className="w-4 h-4 animate-spin" /> Buscando en la web…
                 </div>
               ) : googleError && googleResults.length === 0 ? (
                 <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
