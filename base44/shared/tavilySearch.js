@@ -277,8 +277,11 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
       : [];
     const sourceImage = resultImages[0] || '';
-    let imageUrl = item.image_url || sourceImage || contentImage || '';
-    if (!imageUrl) imageUrl = await fetchOgImage(item.url);
+    let imageUrl = [item.image_url, sourceImage, contentImage].find(isUsableExternalImageUrl) || '';
+    if (!imageUrl) {
+      const ogImage = await fetchOgImage(item.url);
+      if (isUsableExternalImageUrl(ogImage)) imageUrl = ogImage;
+    }
     return {
       title,
       url: item.url,
