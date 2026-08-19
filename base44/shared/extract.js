@@ -24,8 +24,17 @@ export function extractHTML(html) {
     const cells = (m[1].match(/<t[dh][^>]*>[\s\S]*?<\/t[dh]>/gi) || [])
       .map((c) => c.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
       .filter(Boolean);
-    if (cells.length === 2) specTable.push({ attribute: cells[0], value: cells[1] });
+    if (cells.length >= 2) specTable.push({ attribute: cells[0], value: cells.slice(1).join(' ') });
   }
+
+  // Algunas fichas de fabricantes usan listas de definición en lugar de <table>.
+  const dtRe = /<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/gi;
+  while ((m = dtRe.exec(html))) {
+    const attribute = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const value = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (attribute && value) specTable.push({ attribute, value });
+  }
+
   return { title, text, specTable, extractable: true };
 }
 
