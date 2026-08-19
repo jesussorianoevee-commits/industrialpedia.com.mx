@@ -45,6 +45,86 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
     const pnNorm = normalizePartNumber(pn);
     if (!pn) return { queued: false, reason: 'no_part_number' };
 
+    // Persistencia principal: la ficha encontrada se materializa como Part + Specification
+    // en estado PROCESSED/PENDIENTE, nunca como verificada automáticamente.
+    let partId = '';
+    try {
+      const existingParts = await base44.asServiceRole.entities.Part.filter({ part_number_normalized: pnNorm }, 'updated_date', 1).catch(() => []);
+      if (existingParts.length) {
+        partId = existingParts[0].id;
+      } else {
+        const createdPart = await base44.asServiceRole.entities.Part.create({
+          manufacturer_name: ficha.manufacturer_name || '',
+          part_number: pn,
+          part_number_normalized: pnNorm,
+          category: ficha.component_type || '',
+          description: safeText(ficha.product_name || pn, 1000),
+          image_url: ficha.image_url || '',
+          validation_state: 'processed'
+        });
+        partId = createdPart.id;
+      }
+
+      let documentId = '';
+      let sourceId = '';
+      const existingSources = await base44.asServiceRole.entities.Source.filter({ url }, '-retrieved_date', 1).catch(() => []);
+      if (existingSources.length) {
+        sourceId = existingSources[0].id;
+        documentId = existingSources[0].document_id || '';
+      } else {
+        const documentRec = await base44.asServiceRole.entities.Document.create({
+          title: ficha.product_name || pn,
+          file_url: url,
+          document_type: isPdf ? 'datasheet' : 'other',
+          status: 'processed'
+        });
+        documentId = documentRec.id;
+        const sourceRec = await base44.asServiceRole.entities.Source.create({
+          document_id: documentId,
+          url,
+          type: isPdf ? 'datasheet' : 'website',
+          retrieved_date: new Date().toISOString()
+        });
+        sourceId = sourceRec.id;
+        await base44.asServiceRole.entities.Document.update(documentId, { source_id: sourceId }).catch(() => {});
+      }
+
+      const acceptedSpecs = Array.isArray(ficha.specs) ? ficha.specs.filter((s: any) => gateSpec(s).pass) : [];
+      for (const s of acceptedSpecs) {
+        const existingSpecs = await base44.asServiceRole.entities.Specification.filter({
+          part_id: partId, attribute_name: s.attribute_name, source_id: sourceId
+        }, '-updated_date', 1).catch(() => []);
+        if (!existingSpecs.length) {
+          const specRec = await base44.asServiceRole.entities.Specification.create({
+            part_id: partId,
+            attribute_name: s.attribute_name,
+            attribute_canonical: s.attribute_canonical || s.attribute_name,
+            original_value: s.original_value,
+            normalized_value: s.normalized_value,
+            original_unit: s.original_unit,
+            normalized_unit: s.normalized_unit,
+            source_id: sourceId,
+            validation_state: 'processed'
+          });
+          const evidence = await base44.asServiceRole.entities.Evidence.create({
+            document_id: documentId,
+            part_id: partId,
+            specification_id: specRec.id,
+            raw_text: s.evidence_text,
+            page: s.page || undefined,
+            rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
+          });
+          await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: evidence.id });
+          await base44.asServiceRole.entities.Provenance.create({
+            entity_type: 'specification', entity_id: specRec.id, operation: 'extract', source_id: sourceId,
+            note: 'deterministic extraction from discovered source; pending verification'
+          }).catch(() => {});
+        }
+      }
+    } catch (persistError) {
+      // La ficha visual no se pierde si falla la persistencia.
+    }
+
     // CatalogProduct: capa de catálogo propia. Idempotente por product_url + PN.
     const existingCatalog = await base44.asServiceRole.entities.CatalogProduct.filter(
       { part_number_normalized: pnNorm, product_url: url }, 'updated_date', 1
