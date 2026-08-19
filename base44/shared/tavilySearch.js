@@ -149,8 +149,11 @@ function classifySource(host, brand, queryBrandTokens, title = '') {
   if (!host) return 'untrusted';
   if ([...TRUSTED_DISTRIBUTOR_DOMAINS].some((d) => domainMatches(host, d))) return 'distributor';
   const base = domainBaseToken(host);
-  if (brand && (normalizeBrand(brand) === base || base.includes(normalizeBrand(brand)))) return 'official';
-  if (queryBrandTokens.some((t) => normalizeBrand(t) === base || base.includes(normalizeBrand(t)))) return 'official';
+  // Un dominio oficial sólo se reconoce por coincidencia exacta del dominio
+  // registrable con la marca normalizada. Un substring no es evidencia:
+  // "festosupply.com" no debe convertirse en Festo por contener "festo".
+  if (brand && normalizeBrand(brand) === base) return 'official';
+  if (queryBrandTokens.some((t) => normalizeBrand(t) === base)) return 'official';
 
   // Para búsquedas por número de parte no hay marca en la consulta. Si el título
   // demuestra la misma marca que el dominio, tratamos la fuente como oficial.
