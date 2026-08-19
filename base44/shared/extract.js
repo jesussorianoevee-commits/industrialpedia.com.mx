@@ -363,10 +363,7 @@ export function isUsableExternalImageUrl(value) {
 }
 
 export function stripMarkdownNoise(text) {
-  return String(text || '')
-    .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/https?:\/\/\S+/g, ' ')
+  return stripMarkdownLinksAndImages(text)
     .replace(/\s+/g, ' ')
     .trim();
 }
