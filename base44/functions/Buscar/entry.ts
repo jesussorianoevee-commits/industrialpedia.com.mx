@@ -23,6 +23,17 @@ export default async function (req) {
     const limit = Math.min(parseInt(body.limit, 10) || 25, 100);
     const offset = parseInt(body.offset, 10) || 0;
 
+    // Registrar la ejecución inmediatamente. Esto permite distinguir un fallo de
+    // BUSCAR de un fallo del proveedor web; la búsqueda no depende de este log.
+    if (q) {
+      await base44.asServiceRole.entities.SearchQueryLog.create({
+        query: q,
+        result_count: 0,
+        duration_ms: 0,
+        created_at: new Date().toISOString()
+      }).catch(() => {});
+    }
+
     // Estados de validación: por defecto solo PUBLICADO.
     let states = DEFAULT_STATES;
     if (Array.isArray(filters.validation_states) && filters.validation_states.length) {
@@ -505,6 +516,10 @@ export default async function (req) {
       limit,
       states,
       results,
+      web_discovery: {
+        attempted: Boolean(q && !hasDirectQueryMatch),
+        provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core'
+      },
       facets: {
         manufacturers: Object.entries(mfCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
         categories: Object.entries(catCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
