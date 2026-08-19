@@ -65,6 +65,9 @@ export default async function (req) {
     let discoveryCandidates = [];
     let catalogCandidates = [];
     let webCandidates = [];
+    // Mantener el diagnóstico web fuera del bloque de descubrimiento para que la
+    // respuesta pueda devolverlo incluso cuando Google no encuentre resultados.
+    let webTelemetry = { google_configured: false, google_error: null, google_detail: null, google_fallback_error: null };
 
     // Fuente primaria de recuperación: Part + SearchIndex. SearchIndex acelera,
     // pero BUSCAR nunca depende de que el índice esté perfecto para funcionar.
@@ -180,6 +183,7 @@ export default async function (req) {
       try {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
+        webTelemetry = web?.telemetry || webTelemetry;
 
         // Registrar cada intento real de descubrimiento. No guardamos la API key ni
         // datos sensibles; esto permite comprobar en producción si Google respondió.
@@ -486,9 +490,9 @@ export default async function (req) {
         attempted: Boolean(q && !hasDirectQueryMatch),
         provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core',
         result_count: webCandidates.length,
-        google_configured: Boolean(web?.telemetry?.google_configured),
-        google_error: web?.telemetry?.google_error || web?.telemetry?.google_fallback_error || null,
-        google_detail: web?.telemetry?.google_detail || null
+        google_configured: Boolean(webTelemetry.google_configured),
+        google_error: webTelemetry.google_error || webTelemetry.google_fallback_error || null,
+        google_detail: webTelemetry.google_detail || null
       },
       web_results: webCandidates.slice(0, 50).map((w) => ({
         title: w.discovery?.title || w.part.title || '',
