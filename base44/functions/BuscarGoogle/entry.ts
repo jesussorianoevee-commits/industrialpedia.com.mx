@@ -86,10 +86,10 @@ export default async function (req: Request) {
       knowledge_core_hits: knowledgeCoreHits,
       telemetry: {
         provider: discovery.provider,
-        google_configured: discovery.telemetry.google_configured,
+        google_configured: discovery.telemetry.configured,
         queries_made: discovery.telemetry.queries_made,
-        google_error: discovery.telemetry.google_error,
-        google_detail: discovery.telemetry.google_detail,
+        google_error: discovery.telemetry.error,
+        google_detail: discovery.telemetry.detail,
         google_result_count: discovery.results.length
       }
     });
