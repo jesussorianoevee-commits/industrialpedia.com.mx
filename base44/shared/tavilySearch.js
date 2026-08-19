@@ -243,7 +243,6 @@ export async function discoverTavilyIndustrial(query, apiKey) {
   // imagen vinculada al resultado > imagen embebida en SU contenido > og:image
   // de SU propia URL. Nunca reutilizamos una imagen de otro resultado, porque
   // una imagen cruzada puede atribuir visualmente el producto equivocado.
-  const candidateImages = batchImages.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean);
   const enriched = await Promise.all(items.map(async (item) => {
     const host = hostOf(item.url);
     const title = item.title || '';
