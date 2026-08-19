@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUnsafeExtractedPair, isUsableExternalImageUrl, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUnsafeExtractedPair, isUsableExternalImageUrl, sanitizeExtractedPair, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -94,10 +94,15 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
         ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`),
         ...extractValueFirstSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
       ]
-        // Defensa común final: ningún extractor puede convertir navegación, URLs,
-        // código o recursos internos en una Specification aunque llegue por otro
-        // formato de página.
-        .filter((r: any) => !isUnsafeExtractedPair(r.attribute, r.value))
+        // Frontera única de calidad: normaliza/rechaza Markdown, URLs, assets,
+        // navegación y código ANTES del Semantic Resolver. Esto evita que una
+        // imagen como "![APC logo](//.../logo.svg)" se fragmente en atributo/valor
+        // y llegue a la ficha como si fuera una especificación técnica.
+        .map((r: any) => {
+          const clean = sanitizeExtractedPair(r.attribute, r.value);
+          return clean ? { ...r, attribute: clean.attribute, value: clean.value } : null;
+        })
+        .filter(Boolean)
         .filter((r: any, i: number, arr: any[]) => {
           const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
           return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
@@ -149,8 +154,9 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
     const val = String(s.value || '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
-    if (isUnsafeExtractedPair(attr, val)) continue;
-    if (BASIC_BLOCK.test(attr)) continue;
+    const cleanPair = sanitizeExtractedPair(attr, val);
+    if (!cleanPair) continue;
+    if (BASIC_BLOCK.test(cleanPair.attribute)) continue;
     // basic_specs es sólo una vista rápida de datos técnicos encontrados.
     // Nunca debe convertirse en un cajón de datos corporativos/documentales.
     if (!isTechnicalSpecification(attr, val).ok) continue;
