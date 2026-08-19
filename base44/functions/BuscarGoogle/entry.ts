@@ -3,7 +3,7 @@ import { secrets, waitUntil } from 'base44:runtime';
 import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
-import { isUsableProductImageCandidate, selectBestImage } from '../../shared/imageResolver.js';
+import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
