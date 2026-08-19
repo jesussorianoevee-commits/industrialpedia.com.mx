@@ -231,10 +231,22 @@ export default async function (req: Request) {
     // Algunas páginas industriales son shells/SPA y su HTML directo no contiene
     // la ficha renderizada. Tavily ya obtuvo el contenido de la página; úsalo como
     // evidencia de adquisición secundaria, sin saltarnos el Quality Gateway.
-    if (sourceContent && (!extracted.text || extracted.text.length < 250 || !(extracted.specTable?.length))) {
+    if (sourceContent) {
+      // Tavily puede tener el contenido útil aunque el HTML directo sea un shell/SPA.
+      // Siempre fusionamos sus candidatos con los del HTML y deduplicamos; no se
+      // sustituyen los datos y todo candidato sigue pasando Semantic Resolver + Gateway.
       const fallback = extractPlainText(sourceContent);
       if (fallback.text.length > extracted.text.length) extracted.text = fallback.text;
-      if (fallback.specTable?.length) extracted.specTable = [...(extracted.specTable || []), ...fallback.specTable];
+      if (fallback.specTable?.length) {
+        const merged = [...(extracted.specTable || []), ...fallback.specTable];
+        const seen = new Set();
+        extracted.specTable = merged.filter((s: any) => {
+          const key = `${String(s.attribute || '').trim().toLowerCase()}|${String(s.value || '').trim().toLowerCase()}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
     }
 
     // 3) Part Number: pista manual > candidatos estructurados > literal en la fuente.
