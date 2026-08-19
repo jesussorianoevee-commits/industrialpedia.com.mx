@@ -27,29 +27,79 @@ export function isUnsafeExtractedPair(attribute, value) {
   const v = String(value || '').trim();
   const combined = `${a} ${v}`;
   return !a || !v ||
+    // Recursos, código y URLs nunca son una especificación técnica.
     /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(combined) ||
     /(?:https?:)?\/\//i.test(combined) ||
     /(?:cloudfront\.net|amazonaws\.com|googleusercontent\.com|gstatic\.com|cdn\.)/i.test(combined) ||
-    /!\[[^\]]*\]\(|\[[^\]]+\]\(|\]\(|\)\s*\[/i.test(combined) ||
+    // Incluye Markdown partido por saltos de línea: "![Image 1]" +
+    // "(https://...)" ya no puede llegar al Quality Gateway como spec.
+    /!\[|\]\(|\[\[[^\]]*\]\(/i.test(combined) ||
     /\{\{|<\/?(?:script|style|template|noscript)\b/i.test(combined) ||
     /^\s*\[[^\]]+\]\s*$/i.test(a) ||
+    /^\s*\([^)]*(?:https?:)?\/\//i.test(v) ||
     /\b(?:search|our locations|contact|careers|privacy policy|terms|login|sign in|menu|home|footer)\b/i.test(a) && /(?:icon|image|url|https?|\/)/i.test(combined);
 }
 
+// El contenido Markdown de Tavily puede llegar envuelto en varias líneas y con
+// URLs que contienen paréntesis. Un regex por línea no es suficiente y terminaba
+// convirtiendo imágenes/navegación en pares atributo→valor. Este saneador elimina
+// bloques Markdown de imagen/enlace antes de cualquier extractor de specs.
+function stripMarkdownLinksAndImages(text) {
+  let s = String(text || '');
+
+  // Eliminar fenced code completo: nunca es evidencia de una ficha técnica.
+  s = s.replace(/```[\s\S]*?```/g, ' ');
+
+  // Elimina imágenes/enlaces Markdown aunque la URL tenga paréntesis o haya
+  // saltos de línea entre el texto alternativo y la URL.
+  const removeMarkdownBlock = (input, marker) => {
+    let out = '';
+    let i = 0;
+    while (i < input.length) {
+      const start = input.indexOf(marker, i);
+      if (start < 0) { out += input.slice(i); break; }
+      out += input.slice(i, start);
+      const openBracket = input.indexOf(']', start + marker.length);
+      if (openBracket < 0) { out += input.slice(start); break; }
+      let p = openBracket + 1;
+      while (p < input.length && /\s/.test(input[p])) p++;
+      if (input[p] !== '(') { out += input.slice(start, openBracket + 1); i = openBracket + 1; continue; }
+      let depth = 0;
+      let end = -1;
+      for (let j = p; j < input.length; j++) {
+        if (input[j] === '(') depth++;
+        else if (input[j] === ')') {
+          depth--;
+          if (depth === 0) { end = j + 1; break; }
+        }
+        // Un enlace sin cierre no debe consumir todo el documento.
+        if (j - p > 12000) break;
+      }
+      if (end < 0) {
+        // Caso frecuente de Tavily: el cierre quedó en otra línea. Hasta el fin
+        // de la línea actual es navegación/recurso, no contenido técnico.
+        const nl = input.indexOf('\n', p);
+        end = nl >= 0 ? nl : input.length;
+      }
+      i = end;
+      out += ' ';
+    }
+    return out;
+  };
+
+  s = removeMarkdownBlock(s, '![');
+  s = removeMarkdownBlock(s, '[');
+
+  // URLs sueltas y schemes internos restantes.
+  s = s
+    .replace(/(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/[^\s)]+|(?:https?:)?\/\/[^\s)]+|\/\/[^\s)]+)/gi, ' ')
+    .replace(/\s+\n/g, '\n')
+    .replace(/\n\s+/g, '\n');
+  return s;
+}
+
 function cleanExtractionText(text) {
-  const lines = String(text || '').split(/\r?\n/);
-  return lines.map((line) => {
-    let s = line;
-    // Elimina imágenes/enlaces Markdown completos, incluidos enlaces scheme-relative
-    // (//cdn...), que no eran cubiertos por el saneamiento anterior.
-    s = s.replace(/!?\[[^\]]*\]\([^\n]*\)/g, ' ');
-    // Si el Markdown quedó partido por una URL con paréntesis internos, la línea es
-    // navegación/recurso y no contenido técnico; no intentamos reconstruirla.
-    if (/!?\[[^\]]*\]|(?:https?:)?\/\/|\b(?:Search|Our locations|Contact|Careers)\b/i.test(s) &&
-        /(?:https?:)?\/\/|\]\(/i.test(line)) return '';
-    s = s.replace(/(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/[^\s)]+|(?:https?:)?\/\/[^\s)]+|\/\/[^\s)]+)/gi, ' ');
-    return s;
-  }).join('\n').replace(/```[\s\S]*?```/g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n[ \t]+/g, '\n');
+  return stripMarkdownLinksAndImages(text);
 }
 
 export function extractHTML(html) {
