@@ -157,12 +157,13 @@ function domainMatches(host, domain) {
 }
 
 function brandHostMatches(host, manufacturerNames = []) {
+  // No aceptamos prefijos casuales como "balluff" -> "balluffautomation.com".
+  // La confianza oficial debe venir de un dominio exacto registrado/permitido.
   const base = registrableHost(host).split('.')[0].replace(/[^a-z0-9]/g, '');
   if (!base || SUSPICIOUS_HOST_TERMS.test(host)) return false;
   return manufacturerNames.some((name) => {
     const token = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!token || token.length < 3) return false;
-    return base === token || base.startsWith(token) || token.startsWith(base);
+    return Boolean(token && token.length >= 3 && base === token);
   });
 }
 
