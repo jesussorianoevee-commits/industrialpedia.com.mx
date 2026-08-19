@@ -27,13 +27,17 @@ export default function Buscar() {
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const suggestionTimer = useRef(null);
+  const kcReqId = useRef(0);
+  const googleReqId = useRef(0);
 
   const [ficha, setFicha] = useState(null);
   const [fichaLoading, setFichaLoading] = useState(false);
   const [fichaError, setFichaError] = useState(null);
 
   const runKnowledgeCore = useCallback(async (query, f) => {
+    const reqId = ++kcReqId.current;
     setKcLoading(true);
+    setKcData(null);
     try {
       const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
       const res = await base44.functions.invoke('Buscar', {
@@ -42,26 +46,32 @@ export default function Buscar() {
         limit: 25,
         skip_web_discovery: true
       });
+      if (kcReqId.current !== reqId) return;
       setKcData(res.data);
     } catch {
+      if (kcReqId.current !== reqId) return;
       setKcData(null);
     } finally {
-      setKcLoading(false);
+      if (kcReqId.current === reqId) setKcLoading(false);
     }
   }, []);
 
   const runGoogle = useCallback(async (query) => {
+    const reqId = ++googleReqId.current;
     setGoogleLoading(true);
     setGoogleError(null);
+    setGoogleData(null);
     try {
       const res = await base44.functions.invoke('BuscarGoogle', { query });
+      if (googleReqId.current !== reqId) return;
       setGoogleData(res.data);
       if (res.data?.telemetry?.google_error) setGoogleError(res.data.telemetry.google_error);
     } catch (e) {
+      if (googleReqId.current !== reqId) return;
       setGoogleError(e.message || 'Error en el descubrimiento Google');
       setGoogleData(null);
     } finally {
-      setGoogleLoading(false);
+      if (googleReqId.current === reqId) setGoogleLoading(false);
     }
   }, []);
 
@@ -195,8 +205,8 @@ export default function Buscar() {
           <div className="text-white/40 text-xs">
             {!q ? 'Escribe una refacción industrial para buscarla.' : (
               <span className="flex items-center gap-2">
-                {googleLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                {googleLoading ? 'Descubriendo en la web…' : `${googleResults.length} resultado(s) web · ${kcResults.length} en Knowledge Core`}
+                {(kcLoading || googleLoading) && <Loader2 className="w-3 h-3 animate-spin" />}
+                {kcLoading ? 'Buscando en Knowledge Core…' : googleLoading ? 'Descubriendo en la web…' : `${googleResults.length} resultado(s) web · ${kcResults.length} en Knowledge Core`}
               </span>
             )}
           </div>
@@ -219,7 +229,11 @@ export default function Buscar() {
         ) : (
           <div className="space-y-6">
             {/* Knowledge Core verificado */}
-            {kcResults.length > 0 && (
+            {kcLoading ? (
+              <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
+                <Loader2 className="w-4 h-4 animate-spin" /> Buscando en Knowledge Core…
+              </div>
+            ) : kcResults.length > 0 && (
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">Knowledge Core</div>
                 <div className="space-y-3">
