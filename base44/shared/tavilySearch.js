@@ -80,12 +80,14 @@ function isExcluded(host, title, snippet) {
 // contamine DiscoveryIndex/SearchQueryLog como si fuera conocimiento industrial.
 // Se exige evidencia contextual industrial o una forma clara de PN, y se rechazan
 // explícitamente señales de contenido de consumo.
-const NON_INDUSTRIAL_TERMS = /(?:recipe|receta|food|comida|restaurant|restaurante|movie|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|phone|telefono|laptop|gaming|video game|hotel|travel|tourism|sports?|deportes?|celebrity|celebridad|stock price|crypto|cryptocurrency)/i;
+const NON_INDUSTRIAL_TERMS = /(?:recipe|receta|food|comida|restaurant|restaurante|movie|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|phone|telefono|smartphone|samsung|galaxy|iphone|apple watch|ipad|tablet pc|laptop|notebook|gaming|video game|hotel|travel|tourism|sports?|deportes?|celebrity|celebridad|stock price|crypto|cryptocurrency)/i;
 const INDUSTRIAL_CONTEXT_TERMS = /(?:industrial|automation|automación|manufacturing|factory|fabrica|electrical|electrico|electronics|electronica|pneumatic|neumatic|hydraulic|hidraulic|sensor|valve|valvula|actuator|motor|bearing|rodamiento|plc|drive|inverter|relay|rele|contactor|connector|conector|switch|interruptor|cylinder|cilindro|robot|robotics|servo|encoder|cnc|fanuc|siemens|festo|smc|balluff|eaton|omron|allen[- ]?bradley|rockwell|schneider|mitsubishi|yaskawa|keyence|ifm|sick|pepperl\+fuchs|turck|phoenix contact|terminal block|power supply|datasheet|data sheet|technical specification|specification|catalog|part number|order number|model number|replacement|refaccion|refacción|repuesto|componente industrial)/i;
 
 export function isLikelyIndustrialTavilyResult(item, query) {
   const text = `${item?.title || ''} ${item?.content || ''} ${item?.url || ''}`;
-  if (NON_INDUSTRIAL_TERMS.test(text)) return false;
+  // El chequeo de no-industrial incluye la consulta: "Samsung S24", "iPhone 15",
+  // etc. no deben pasar aunque el token tenga letras+dígitos como un PN industrial.
+  if (NON_INDUSTRIAL_TERMS.test(`${text} ${query || ''}`)) return false;
   const q = String(query || '').trim();
   const partLike = /[A-Za-z]/.test(q) && /\d/.test(q) && q.length >= 3 && q.length <= 40;
   if (partLike) return true;
