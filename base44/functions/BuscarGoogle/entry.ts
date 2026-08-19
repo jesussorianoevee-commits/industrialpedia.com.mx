@@ -3,10 +3,11 @@ import { secrets } from 'base44:runtime';
 import { discoverTavilyIndustrial, brandTokensFromQuery } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 
-// BUSCAR GOOGLE — capa de descubrimiento por Google CSE.
-// NO depende de que el producto exista en Part, SearchIndex, DiscoveryIndex o CatalogProduct.
-// NO escribe en la base de datos durante la consulta (la alimentación es asíncrona, en ExtraerFichaTecnica).
-// Google encuentra la fuente real; la ficha se construye después desde esa fuente.
+// BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
+// Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
+// resultados se devuelven desde la base sin recurrir al buscador web.
+// La alimentación del Knowledge Core (Part/Spec/Evidence) sigue siendo asíncrona,
+// en ExtraerFichaTecnica al abrir la ficha.
 //
 // Contrato:
 // { query: string }
@@ -23,10 +24,40 @@ export default async function (req: Request) {
     if (!query) return Response.json({ error: 'query required' }, { status: 400 });
 
     const apiKey = String(secrets.get('Apy_Tavly') || '').trim().replace(/^["']|["']$/g, '').trim();
+    const queryNorm = query.toLowerCase().replace(/\s+/g, ' ').trim();
 
+    // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
+    //    sin recurrir al buscador web. La base de datos es la fuente de verdad.
+    let discovery: any = null;
+    let cached = false;
+    try {
+      const cachedRecs = await base44.asServiceRole.entities.SearchQueryLog.filter(
+        { query_normalized: queryNorm }, '-created_date', 1
+      );
+      if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
+        discovery = { results: cachedRecs[0].results, provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
+        cached = true;
+      }
+    } catch { /* cache miss → buscar en la web */ }
 
-    // 1) Descubrimiento Google (1-2 consultas máximo, con fallback técnico si es necesario).
-    const discovery = await discoverTavilyIndustrial(query, apiKey);
+    if (!discovery) {
+      discovery = await discoverTavilyIndustrial(query, apiKey);
+      // Guardar en cache (sin raw_content para no exceder el tamaño del registro).
+      const trimmed = discovery.results.map((r: any) => {
+        const rest: any = { ...r };
+        delete rest.raw_content;
+        return rest;
+      });
+      try {
+        await base44.asServiceRole.entities.SearchQueryLog.create({
+          query,
+          query_normalized: queryNorm,
+          result_count: trimmed.length,
+          results: trimmed,
+          duration_ms: 0
+        });
+      } catch { /* el cache es best-effort */ }
+    }
 
     // 2) Chequeo ligero del Knowledge Core en paralelo: si ya tenemos la pieza
     //    verificada, la mostramos arriba como resultado verificado. Una sola
@@ -86,6 +117,7 @@ export default async function (req: Request) {
       knowledge_core_hits: knowledgeCoreHits,
       telemetry: {
         provider: discovery.provider,
+        cached,
         google_configured: discovery.telemetry.configured,
         queries_made: discovery.telemetry.queries_made,
         google_error: discovery.telemetry.error,

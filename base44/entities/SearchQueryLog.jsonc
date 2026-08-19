@@ -4,8 +4,17 @@
     "query": {
       "type": "string"
     },
+    "query_normalized": {
+      "type": "string"
+    },
     "result_count": {
       "type": "number"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
     },
     "duration_ms": {
       "type": "number"
