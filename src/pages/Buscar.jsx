@@ -106,13 +106,14 @@ export default function Buscar() {
   const facets = data?.facets || { manufacturers: [], categories: [] };
   const results = data?.results || [];
   const webResults = data?.web_results || [];
+  const webDiscovery = data?.web_discovery || null;
 
   // Google Programmable Search: usa el motor industrial configurado por el usuario
   // como capa de descubrimiento web, sin IA. Solo se muestra cuando Knowledge Core
   // no tiene resultados internos; la ficha Industrialpedia sigue dependiendo de
   // una fuente aceptada y evidencia real.
   useEffect(() => {
-    if (!q || results.length > 0) return;
+    if (!q) return;
 
     const scriptId = 'industrialpedia-google-cse';
     const gname = 'industrialpedia-cse';
