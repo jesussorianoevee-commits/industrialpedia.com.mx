@@ -22,7 +22,8 @@ export default function GoogleResultCard({ result, query, onFicha }) {
         query,
         manufacturer_hint: result.manufacturer_name || '',
         part_number_hint: result.part_number || '',
-        source_type: result.source_type
+        source_type: result.source_type,
+        source_content: result.raw_content || result.snippet || ''
       });
       const ficha = res?.data;
       if (!ficha || ficha.found === false) throw new Error(ficha?.error || 'No se pudo extraer la ficha de esta fuente.');
