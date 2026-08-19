@@ -221,7 +221,7 @@ export default function Buscar() {
             {/* Knowledge Core verificado */}
             {kcResults.length > 0 && (
               <section>
-                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">Verificado en Knowledge Core</div>
+                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">Knowledge Core</div>
                 <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
