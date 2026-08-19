@@ -3,7 +3,7 @@
 // PDF binario: NO es extraíble sin un parser de texto determinístico; se marca como
 // no-extraíble (el Quality Gateway lo deja en INCOMPLETE; nunca se inventa contenido).
 
-export function extractHTML(html) {
+function raw() { [native code] }export function extractHTML(html) {
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [, ''])[1].trim()
     || (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [, ''])[1].trim();
   const text = html
@@ -35,6 +35,7 @@ export function extractHTML(html) {
     if (attribute && value) specTable.push({ attribute, value });
   }
 
+  specTable.push(...extractIndustrialCompactSpecs(text));
   return { title, text, specTable, extractable: true };
 }
 
