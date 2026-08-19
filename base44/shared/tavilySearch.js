@@ -172,11 +172,10 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     batchImages = fb.images || [];
   }
 
-  // Tavily returns `images` at the top level, not inside each result. Prefer a
-  // per-result image from the content/metadata; use the Tavily image list only
-  // as a last resort for the first result. For blocked/dynamic distributor
-  // pages, fetch og:image directly so the search card can still show the real
-  // product image without touching the technical-spec pipeline.
+  // Tavily now returns source-linked `images` inside each result when
+  // include_images=true. Use those first so each card gets an image belonging
+  // to its own source. The top-level image list is only a secondary fallback;
+  // never prefer a generic query image over a source-specific product image.
   const candidateImages = batchImages.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean);
   const enriched = await Promise.all(items.map(async (item, index) => { 
     const host = hostOf(item.url);
@@ -186,8 +185,13 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     const sourceType = classifySource(host, brand, queryBrandTokens, title);
     const partNumber = partLike ? q : '';
     const contentImage = extractImageFromContent(item.raw_content || item.content || '');
+    const resultImages = Array.isArray(item.images)
+      ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
+      : [];
+    const sourceImage = resultImages[0] || '';
     const tavilyImage = candidateImages[index] || (index === 0 ? candidateImages[0] : '');
-    const imageUrl = item.image_url || contentImage || tavilyImage || await fetchOgImage(item.url);
+    const ogImage = await fetchOgImage(item.url);
+    const imageUrl = item.image_url || sourceImage || ogImage || contentImage || tavilyImage;
     return {
       title,
       url: item.url,
