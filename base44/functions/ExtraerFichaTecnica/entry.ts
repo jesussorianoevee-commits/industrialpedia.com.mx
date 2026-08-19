@@ -199,8 +199,12 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
         await base44.asServiceRole.entities.Document.update(documentId, { source_id: sourceId }).catch(() => {});
       }
 
-      const acceptedSpecs = Array.isArray(ficha.specs) ? ficha.specs.filter((s: any) => gateSpec(s).pass) : [];
-      for (const s of acceptedSpecs) {
+      // Mismo patron que IngerirCrawl: processed -> Quality Gateway PASS -> published
+      // directo, sin estado intermedio 'validated' y sin aprobacion humana. Las specs
+      // que no pasan el Gateway se registran igual (para trazabilidad futura) pero
+      // quedan en el estado que determine gateSpec (incomplete/rejected), nunca published.
+      for (const s of Array.isArray(ficha.specs) ? ficha.specs : []) {
+        const sg = gateSpec(s);
         const existingSpecs = await base44.asServiceRole.entities.Specification.filter({
           part_id: partId, attribute_name: s.attribute_name, source_id: sourceId
         }, '-updated_date', 1).catch(() => []);
@@ -214,21 +218,24 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
             original_unit: s.original_unit,
             normalized_unit: s.normalized_unit,
             source_id: sourceId,
-            validation_state: 'processed'
+            validation_state: sg.state
           });
-          const evidence = await base44.asServiceRole.entities.Evidence.create({
-            document_id: documentId,
-            part_id: partId,
-            specification_id: specRec.id,
-            raw_text: s.evidence_text,
-            page: s.page || undefined,
-            rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
-          });
-          await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: evidence.id });
-          await base44.asServiceRole.entities.Provenance.create({
-            entity_type: 'specification', entity_id: specRec.id, operation: 'extract', source_id: sourceId,
-            note: 'deterministic extraction from discovered source; pending verification'
-          }).catch(() => {});
+          if (sg.pass) {
+            const evidence = await base44.asServiceRole.entities.Evidence.create({
+              document_id: documentId,
+              part_id: partId,
+              specification_id: specRec.id,
+              raw_text: s.evidence_text,
+              page: s.page || undefined,
+              rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1'
+            });
+            await base44.asServiceRole.entities.Specification.update(specRec.id, { evidence_id: evidence.id, validation_state: 'published' });
+            await base44.asServiceRole.entities.Provenance.create({
+              entity_type: 'specification', entity_id: specRec.id, operation: 'validate', source_id: sourceId,
+              rule_id: 'SPEC.TECHNICAL_ATTRIBUTE_VALUE.v1',
+              note: 'deterministic extraction from discovered source; quality gateway pass'
+            }).catch(() => {});
+          }
         }
       }
     } catch (persistError) {
