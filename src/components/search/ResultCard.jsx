@@ -15,12 +15,14 @@ export default function ResultCard({ result }) {
   const navigate = useNavigate();
   const [materializing, setMaterializing] = useState(false);
   const [materializeError, setMaterializeError] = useState('');
-  const st = result.discovery_state === 'discovered'
-    ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
-    : result.discovery_state === 'pending_verification'
-      ? { label: 'Pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
-      : result.discovery_state === 'verified'
-        ? { label: 'Encontrado · verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
+  const isVerified = result.discovery_state === 'verified' ||
+    (['published', 'validated'].includes(result.validation_state) && Boolean(result.has_evidence));
+  const st = isVerified
+    ? { label: 'Verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
+    : result.discovery_state === 'discovered'
+      ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
+      : result.discovery_state === 'pending_verification'
+        ? { label: 'Pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
         : (STATE_LABELS[result.validation_state] || STATE_LABELS.processed);
   return (
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
@@ -34,7 +36,7 @@ export default function ResultCard({ result }) {
 
       {(result.description || result.source_title) && (
         <div className="mb-3">
-          {result.source_title && result.source_title !== result.part_number && (
+          {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
             <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
           )}
           {result.description && (
@@ -74,7 +76,7 @@ export default function ResultCard({ result }) {
             <ShieldCheck className="w-3.5 h-3.5" /> {result.evidence_count} evidencia(s)
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-white/40">
+          <span className="flex items-center gap-1 text-[#e68a00]/75">
             <AlertCircle className="w-3.5 h-3.5" /> sin evidencia
           </span>
         )}
