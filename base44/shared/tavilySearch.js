@@ -202,12 +202,13 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     batchImages = fb.images || [];
   }
 
-  // Tavily now returns source-linked `images` inside each result when
-  // include_images=true. Use those first so each card gets an image belonging
-  // to its own source. The top-level image list is only a secondary fallback;
-  // never prefer a generic query image over a source-specific product image.
+  // Cada resultado obtiene su imagen por orden de prioridad: imagen vinculada a
+  // la fuente > og:image > imagen embebida en el contenido. Sólo se hace fetch
+  // de og:image cuando la fuente no trajo imagen propia (reduce latencia).
+  // Después, cualquier resultado aún sin imagen toma una del pool de imágenes
+  // de Tavily (sin repetir hasta agotar) para que toda tarjeta tenga imagen.
   const candidateImages = batchImages.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean);
-  const enriched = await Promise.all(items.map(async (item, index) => { 
+  const enriched = await Promise.all(items.map(async (item) => {
     const host = hostOf(item.url);
     const title = item.title || '';
     const snippet = item.content || '';
@@ -219,9 +220,8 @@ export async function discoverTavilyIndustrial(query, apiKey) {
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
       : [];
     const sourceImage = resultImages[0] || '';
-    const tavilyImage = candidateImages[index] || (index === 0 ? candidateImages[0] : '');
-    const ogImage = await fetchOgImage(item.url);
-    const imageUrl = item.image_url || sourceImage || ogImage || contentImage || tavilyImage;
+    let imageUrl = item.image_url || sourceImage || contentImage || '';
+    if (!imageUrl) imageUrl = await fetchOgImage(item.url);
     return {
       title,
       url: item.url,
@@ -240,6 +240,14 @@ export async function discoverTavilyIndustrial(query, apiKey) {
       relevance_score: typeof item.score === 'number' ? item.score : null
     };
   }));
+
+  // Pool de imágenes de Tavily: rellena resultados sin imagen, sin repetir.
+  let poolIdx = 0;
+  for (const r of enriched) {
+    if (!r.image_url && poolIdx < candidateImages.length) {
+      r.image_url = candidateImages[poolIdx++];
+    }
+  }
 
   const filtered = enriched.filter((r) => !isExcluded(hostOf(r.url), r.title, r.snippet));
   const sourcePriority = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
