@@ -2,7 +2,37 @@
 // Sin respuestas generativas. Sin escrituras en base de datos.
 // Tavily es la capa de descubrimiento web; Industrialpedia conserva el filtrado y ranking.
 
+import { extractCompactSpecs, extractPlainText, extractTextSpecs, stripMarkdownNoise } from './extract.js';
+
 const TIMEOUT_MS = 15000;
+
+// Datos básicos determinísticos extraídos del snippet + raw_content que Tavily
+// ya devuelve. No requiere una segunda consulta ni invocar ExtraerFichaTecnica:
+// da al usuario información técnica mínima inmediatamente al encontrar la refacción.
+// Son datos encontrados en la fuente (no verificados): filtro ligero, sin Quality Gateway.
+const BASIC_BLOCK = /(?:catalog|folder|page|figure|table|revision|document|literature|scale|warranty|shipping|price|precio|gtin|careers|blog|news|contact|login|register|search|menu|home)/i;
+function extractBasicSpecs(snippet, rawContent) {
+  const clean = stripMarkdownNoise(`${snippet || ''}\n${rawContent || ''}`);
+  const merged = [
+    ...extractTextSpecs(clean),
+    ...((extractPlainText(clean).specTable) || []),
+    ...extractCompactSpecs(clean)
+  ];
+  const seen = new Set();
+  const out = [];
+  for (const s of merged) {
+    const attr = String(s.attribute || '').trim().slice(0, 60);
+    const val = String(s.value || '').trim().slice(0, 80);
+    if (!attr || !val || !/\d/.test(val)) continue;
+    if (BASIC_BLOCK.test(attr)) continue;
+    const key = `${attr}|${val}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ attribute: attr, value: val });
+    if (out.length >= 4) break;
+  }
+  return out;
+}
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController();
@@ -199,6 +229,7 @@ export async function discoverTavilyIndustrial(query, apiKey) {
       snippet,
       source_type: sourceType,
       image_url: imageUrl,
+      basic_specs: extractBasicSpecs(snippet, item.raw_content),
       manufacturer_name: brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
       part_number: partNumber,
       product_name: title,

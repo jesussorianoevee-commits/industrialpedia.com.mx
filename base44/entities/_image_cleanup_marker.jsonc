@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "_": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "_image_cleanup_marker"
+}

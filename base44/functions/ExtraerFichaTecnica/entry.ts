@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
+import { extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -116,6 +116,34 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
       verified: false
     };
   }).filter((spec: any) => gateSpec(spec).pass);
+}
+
+// Piso determinístico de datos básicos: si la extracción completa no logra
+// especificaciones aceptadas por el Quality Gateway (páginas SPA, shells, PDFs
+// no parseables), la ficha aún muestra los datos técnicos mínimos encontrados en
+// el contenido de la fuente. Así cualquier refacción buscada tiene su ficha.
+const BASIC_BLOCK = /(?:catalog|folder|page|figure|table|revision|document|literature|scale|warranty|shipping|price|precio|gtin|careers|blog|news|contact|login|register|search|menu|home)/i;
+function computeBasicSpecs(sourceContent: string, extractedText: string) {
+  const clean = stripMarkdownNoise(`${extractedText || ''}\n${sourceContent || ''}`);
+  const merged = [
+    ...extractTextSpecs(clean),
+    ...((extractPlainText(clean).specTable) || []),
+    ...extractCompactSpecs(clean)
+  ];
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const s of merged) {
+    const attr = String(s.attribute || '').trim().slice(0, 60);
+    const val = String(s.value || '').trim().slice(0, 80);
+    if (!attr || !val || !/\d/.test(val)) continue;
+    if (BASIC_BLOCK.test(attr)) continue;
+    const key = `${attr}|${val}`.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ attribute: attr, value: val });
+    if (out.length >= 6) break;
+  }
+  return out;
 }
 
 async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: boolean) {
@@ -287,25 +315,42 @@ export default async function (req: Request) {
     const sourceContent = String(body.source_content || '').trim();
     if (!url) return Response.json({ error: 'url required' }, { status: 400 });
 
-    // 1) Adquisición de la fuente.
-    const res = await fetchWithTimeout(url);
-    if (!res.ok) return Response.json({ found: false, error: `source_http_${res.status}`, url }, { status: 502 });
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    const isPdf = ct.includes('pdf') || /\.pdf(?:$|[?#])/i.test(url);
+    // 1) Adquisición de la fuente. Algunos fabricantes bloquean el fetch directo
+    // (403/SPA shells). Si falla, se construye la ficha desde el contenido que
+    // Tavily ya obtuvo (source_content) y/o desde Tavily Extract, para que toda
+    // refacción buscada tenga su ficha técnica.
+    let bytes: Uint8Array | null = null;
+    let ct = '';
+    let isPdf = /\.pdf(?:$|[?#])/i.test(url);
+    try {
+      const res = await fetchWithTimeout(url);
+      if (res.ok) {
+        ct = (res.headers.get('content-type') || '').toLowerCase();
+        bytes = new Uint8Array(await res.arrayBuffer());
+        isPdf = ct.includes('pdf') || isPdf;
+      }
+    } catch { bytes = null; }
 
     // 2) Extracción determinística (mismo pipeline que IngerirCrawl).
-    let extracted: any;
-    try {
-      if (isPdf) extracted = await extractPDF(bytes);
-      else {
-        const raw = new TextDecoder().decode(bytes);
-        extracted = /<\/html>/i.test(raw) || ct.includes('html') ? extractHTML(raw) : extractPlainText(raw);
-      }
-    } catch (e) {
-      return Response.json({ found: false, error: `extraction_failed: ${e?.message || e}`, url }, { status: 422 });
+    let extracted: any = null;
+    if (bytes) {
+      try {
+        if (isPdf) extracted = await extractPDF(bytes);
+        else {
+          const raw = new TextDecoder().decode(bytes);
+          extracted = /<\/html>/i.test(raw) || ct.includes('html') ? extractHTML(raw) : extractPlainText(raw);
+        }
+      } catch { extracted = null; }
     }
-    if (!extracted?.extractable) return Response.json({ found: false, error: extracted?.reason || 'source_not_extractable', url }, { status: 422 });
+
+    // 2b) Fallback de adquisición: si el fetch falló o la extracción no fue
+    //     extraíble, usar el contenido de Tavily (source_content / Extract).
+    if (!extracted || !extracted.extractable) {
+      let content = sourceContent || '';
+      if (!content) content = await tavilyExtractContent(url);
+      if (content) extracted = extractPlainText(content);
+    }
+    if (!extracted?.extractable) return Response.json({ found: false, error: 'source_not_extractable', url }, { status: 422 });
 
     // Algunas páginas industriales son shells/SPA y su HTML directo no contiene
     // la ficha renderizada. Tavily ya obtuvo el contenido de la página; úsalo como
@@ -409,7 +454,7 @@ export default async function (req: Request) {
 
     // 8) Imagen: si no vino en la ficha, intentar og:image del HTML.
     let imageUrl = '';
-    if (!isPdf) {
+    if (!isPdf && bytes) {
       const raw = new TextDecoder().decode(bytes.slice(0, 50000));
       const m = raw.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
       if (m) imageUrl = m[1];
@@ -434,6 +479,7 @@ export default async function (req: Request) {
       component_type: template.type,
       component_type_label: template.label,
       specs,
+      basic_specs: computeBasicSpecs(sourceContent, extracted.text),
       specs_grouped: grouped,
       specs_other: others,
       part_derivation: derivation,

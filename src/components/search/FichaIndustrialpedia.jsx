@@ -48,6 +48,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const specs = Array.isArray(ficha?.specs) ? ficha.specs : [];
   const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
   const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
+  const basicSpecs = Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : [];
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type] || SOURCE_TYPE_LABELS.cse_configured;
 
   return (
@@ -115,7 +116,15 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
               </div>
               <div className="px-5 sm:px-6">
                 {specs.length === 0 && grouped.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-white/35">No hay especificaciones técnicas aceptadas por el Quality Gateway.</div>
+                  basicSpecs.length > 0 ? (
+                    <div>
+                      {basicSpecs.map((s, i) => (
+                        <SpecRow key={`basic-${i}`} label={s.attribute} value={s.value} verified={false} sourceUrl={ficha.source?.url} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-10 text-center text-xs text-white/35">No hay especificaciones técnicas aceptadas por el Quality Gateway.</div>
+                  )
                 ) : (
                   <>
                     {specs.map((s, i) => (

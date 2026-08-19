@@ -78,6 +78,15 @@ export default function GoogleResultCard({ result, query, onFicha }) {
         </div>
         <div className="min-w-0 flex-1">
           {result.description && <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>}
+          {Array.isArray(result.basic_specs) && result.basic_specs.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {result.basic_specs.map((s, i) => (
+                <span key={i} className="inline-flex items-center text-[10px] font-mono text-white/70 bg-white/[0.04] border border-white/10 rounded px-1.5 py-0.5">
+                  <span className="text-white/40 mr-1">{s.attribute}:</span>{s.value}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-white/45">
             <Globe className="w-3 h-3 shrink-0" />
             <span className="truncate">{result.display_link || result.url}</span>
