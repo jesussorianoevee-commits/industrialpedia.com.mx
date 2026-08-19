@@ -64,17 +64,17 @@ export function extractPlainText(text) {
   // "14 DI 24 V DC; 10 DO 24 V DC; 2 AI 0-10 V DC; power supply: DC 20.4-28.8 V DC".
   // Extraemos sólo patrones técnicos explícitos; el Quality Gateway sigue decidiendo.
   const industrialPatterns = [
-    [/\b(?:onboard|integrated|integrated\s+I\/O|E\/S\s+integradas)[^:;|]*?(?:I\/O|E\/S)[^:;|]*?:?\s*(\d+)\s*DI\s*([0-9.,]+\s*V\s*DC)/i, 'Entradas digitales'],
-    [/\b(\d+)\s*DI\s*([0-9.,]+\s*V\s*DC)\b/i, 'Entradas digitales'],
-    [/\b(\d+)\s*DO\s*([0-9.,]+\s*V\s*DC)\b/i, 'Salidas digitales'],
-    [/\b(\d+)\s*AI\s*([0-9.,]+\s*-\s*[0-9.,]+\s*V\s*DC)\b/i, 'Entradas analógicas'],
+    [/\b(?:onboard|integrated|integrated\s+I\/O|E\/S\s+integradas)[^:;|]*?(?:I\/O|E\/S)[^:;|]*?:?\s*(\d+)\s*DI\s*([0-9.,]+\s*V\s*DC)/i, 'Digital inputs'],
+    [/\b(\d+)\s*DI\s*([0-9.,]+\s*V\s*DC)\b/i, 'Digital inputs'],
+    [/\b(\d+)\s*DO\s*([0-9.,]+\s*V\s*DC)\b/i, 'Digital outputs'],
+    [/\b(\d+)\s*AI\s*([0-9.,]+\s*-\s*[0-9.,]+\s*V\s*DC)\b/i, 'Analog inputs'],
     [/(?:power supply|alimentaci[oó]n|supply voltage)\s*[:\-]?\s*(?:DC\s*)?([0-9.,]+\s*[-–]\s*[0-9.,]+\s*V\s*DC)/i, 'Alimentación'],
     [/(?:program\/data memory|program(?:a)?\/datos memory|memoria de (?:trabajo|programas\/datos))\s*[:\-]?\s*([0-9.,]+\s*(?:KB|kB|MB|GB))/i, 'Memoria']
   ];
   for (const [re, attribute] of industrialPatterns) {
     const m = raw.match(re);
     if (!m) continue;
-    const value = m[2] ? `${m[1]} ${m[2]}` : m[1];
+    const value = m[2] ? `${m[1]} ${attribute.includes('Digital inputs') ? 'DI' : attribute.includes('Digital outputs') ? 'DO' : attribute.includes('Analog inputs') ? 'AI' : ''} ${m[2]}`.replace(/\s+/g, ' ').trim() : m[1];
     if (value && !specTable.some((s) => s.attribute === attribute && s.value === value)) {
       specTable.push({ attribute, value });
     }
