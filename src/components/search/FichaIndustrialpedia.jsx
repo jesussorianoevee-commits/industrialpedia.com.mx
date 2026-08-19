@@ -21,13 +21,13 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
   const text = `${value}${unit ? ` ${unit}` : ''}`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,38%)_1fr] gap-3 py-3 border-b border-white/[0.055] last:border-b-0">
+    <div className="grid grid-cols-[minmax(0,40%)_1fr] gap-4 py-4 border-b border-white/[0.055] last:border-b-0">
       <div className="flex items-start gap-2 min-w-0">
-        <span className="text-[13px] leading-5 text-white/55 font-mono break-words">{label}</span>
+        <span className="text-[14px] sm:text-[15px] leading-6 text-white/55 font-mono break-words">{label}</span>
         <SourceBadge page={page} verified={verified} />
       </div>
       <div className="min-w-0 text-right">
-        <div className="text-[14px] leading-5 text-white/90 font-mono break-words">{text}</div>
+        <div className="text-[15px] sm:text-[16px] leading-6 text-white/90 font-mono break-words">{text}</div>
         {sourceUrl && (
           <a
             href={sourceUrl}
@@ -77,11 +77,11 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             <p className="text-[11px] text-white/35 text-center">No se pudo construir la ficha desde esta fuente.</p>
           </div>
         ) : !ficha ? null : (
-          <div className="p-4 sm:p-6 space-y-5">
-            <section className="rounded-xl border border-white/10 bg-[#10161d] p-4">
+          <div className="p-4 sm:p-6 space-y-6">
+            <section className="rounded-xl border border-white/10 bg-[#10161d] p-5 sm:p-6">
               <div className="flex items-start gap-4">
                 {ficha.image_url ? (
-                  <img src={ficha.image_url} alt="" className="h-20 w-20 rounded-lg object-contain bg-white shrink-0" />
+                  <img src={ficha.image_url} alt="" className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl object-contain bg-white shrink-0 border border-white/10" />
                 ) : (
                   <div className="h-20 w-20 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
                     <FileText className="w-6 h-6 text-white/20" />
@@ -104,10 +104,10 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             </section>
 
             <section className="rounded-xl border border-white/10 bg-[#0f151b] overflow-hidden">
-              <div className="px-4 sm:px-5 py-4 border-b border-white/10">
-                <h2 className="text-[15px] font-semibold tracking-[0.18em] text-white/70 font-mono">ESPECIFICACIONES</h2>
+              <div className="px-5 sm:px-6 py-5 border-b border-white/10">
+                <h2 className="text-[16px] sm:text-[17px] font-semibold tracking-[0.18em] text-white/75 font-mono">ESPECIFICACIONES</h2>
               </div>
-              <div className="px-4 sm:px-5">
+              <div className="px-5 sm:px-6">
                 {specs.length === 0 && grouped.length === 0 ? (
                   <div className="py-10 text-center text-xs text-white/35">No hay especificaciones técnicas aceptadas por el Quality Gateway.</div>
                 ) : (
