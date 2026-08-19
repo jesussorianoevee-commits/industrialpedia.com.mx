@@ -22,12 +22,38 @@ function extractIndustrialCompactSpecs(rawText) {
   return specs;
 }
 
+function isUnsafeExtractedPair(attribute, value) {
+  const a = String(attribute || '').trim();
+  const v = String(value || '').trim();
+  const combined = `${a} ${v}`;
+  return !a || !v ||
+    /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:text\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(combined) ||
+    /!\[|\]\(|\{\{|<\/?(?:script|style|template|noscript)\b/i.test(combined) ||
+    /^\s*\[[^\]]+\]\s*$/i.test(a);
+}
+
+function cleanExtractionText(text) {
+  return String(text || '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\((?:https?:\/\/|\/\/|blob:|data:)[^)]+\)/gi, ' ')
+    .replace(/\[[^\]]+\]\(javascript:[^)]+\)/gi, ' ')
+    .replace(/(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:text\/[^\s)]+|https?:\/\/localhost[^\s)]*)/gi, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n');
+}
+
 export function extractHTML(html) {
   const title = (html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [, ''])[1].trim()
     || (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [, ''])[1].trim();
-  const text = html
+  // Nunca extraer tablas desde código embebido: muchos sitios SPA contienen
+  // HTML/JSON de navegación dentro de <script>/<template>, que no es contenido
+  // técnico del producto y puede terminar pareciendo una especificación.
+  const cleanHtml = html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<template[\s\S]*?<\/template>/gi, '');
+  const text = cleanHtml
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
