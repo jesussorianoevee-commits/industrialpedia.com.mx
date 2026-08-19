@@ -291,6 +291,17 @@ export function extractAdjacentSpecs(text) {
 // Saneamiento de Markdown/URLs antes de extraer datos básicos: los snippets y
 // raw_content de Tavily llegan como Markdown con links de navegación que el
 // extractor confundiría con especificaciones ("[Careers](https:...").
+export function isUsableExternalImageUrl(value) {
+  const s = String(value || '').trim();
+  if (!/^https?:\/\//i.test(s)) return false;
+  try {
+    const u = new URL(s);
+    const host = u.hostname.toLowerCase();
+    if (!host || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host.endsWith('.localhost')) return false;
+    return true;
+  } catch { return false; }
+}
+
 export function stripMarkdownNoise(text) {
   return String(text || '')
     .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
