@@ -75,7 +75,7 @@ export default async function (req: Request) {
     // El comparador sólo puede evaluar compatibilidad si la ficha base tiene
     // especificaciones del Knowledge Core ya validadas/publicadas. basic_specs
     // no son suficientes para una decisión técnica.
-    const verifiedBaseSpecs = usableBaseSpecs.filter((s: any) => ['validated', 'published'].includes(s.validation_state));
+    const verifiedBaseSpecs = usableBaseSpecs.filter((s: any) => s.validation_state === 'published');
     if (!verifiedBaseSpecs.length) {
       return Response.json({
         base: { id: base.id, part_number: base.part_number, manufacturer_name: base.manufacturer_name, category: base.category, description: base.description, specs: [], image_url: base.image_url || '' },
@@ -106,7 +106,7 @@ export default async function (req: Request) {
     }
 
     // 1) Knowledge Core verificado: primero, ordenado por requisitos cumplidos.
-    const kcParts = await base44.asServiceRole.entities.Part.filter({ validation_state: { $in: ['validated', 'published'] } }, '-updated_date', 200).catch(() => []);
+    const kcParts = await base44.asServiceRole.entities.Part.filter({ validation_state: 'published' }, '-updated_date', 200).catch(() => []);
     const kcCandidates = await Promise.all(kcParts.filter((p: any) => norm(p.part_number) !== basePart && (!baseCategory || !p.category || norm(p.category) === baseCategory)).map((p: any) => materializeCandidate({ part_id: p.id, image_url: p.image_url }, 'knowledge_core')));
 
     // 2) DiscoveryIndex: candidatos descubiertos previamente con evidencia de fuente.
@@ -175,7 +175,7 @@ export default async function (req: Request) {
         image_url: base.image_url || ''
       },
       candidates_found: valid.length,
-      candidates_considered: candidates.length,
+      candidates_considered: valid.length,
       alternatives: selected,
       decision: selected.length === 0
         ? { state: 'insufficient', message: 'No se encontraron alternativas con evidencia técnica suficiente.' }

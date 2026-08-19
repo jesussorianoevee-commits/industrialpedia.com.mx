@@ -2,7 +2,7 @@
 // Sin respuestas generativas. Sin escrituras en base de datos.
 // Tavily es la capa de descubrimiento web; Industrialpedia conserva el filtrado y ranking.
 
-import { extractCompactSpecs, extractPlainText, extractTextSpecs, stripMarkdownNoise } from './extract.js';
+import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, stripMarkdownNoise } from './extract.js';
 
 const TIMEOUT_MS = 15000;
 
@@ -16,7 +16,8 @@ function extractBasicSpecs(snippet, rawContent) {
   const merged = [
     ...extractTextSpecs(clean),
     ...((extractPlainText(clean).specTable) || []),
-    ...extractCompactSpecs(clean)
+    ...extractCompactSpecs(clean),
+    ...extractValueFirstSpecs(clean)
   ];
   const seen = new Set();
   const out = [];
@@ -164,6 +165,23 @@ function isPartNumberQuery(q) {
   return tokens.length <= 3 && tokens.some((t) => /[A-Za-z]/.test(t) && /\d/.test(t));
 }
 
+// Extracción determinística de Part Number desde una consulta multi-token o
+// desde el título del resultado. No inventa PNs: sólo extrae tokens que
+// coinciden con el patrón estructural de un número de parte industrial.
+function extractPnFromQuery(q) {
+  const tokens = String(q || '').split(/\s+/);
+  for (const t of tokens) {
+    if (/^[A-Z]{1,4}-?\d[A-Z0-9-]{1,12}$/.test(t)) return t;
+  }
+  return '';
+}
+
+function resolvePartNumber(query, title) {
+  const queryPn = extractPnFromQuery(query);
+  if (queryPn) return queryPn;
+  return extractPartNumber('', title);
+}
+
 export async function tavilySearch(query, apiKey, options = {}) {
   if (!apiKey) return { results: [], error: 'tavily_not_configured', detail: 'Falta Apy_Tavly' };
   try {
@@ -231,7 +249,7 @@ export async function discoverTavilyIndustrial(query, apiKey) {
     const snippet = item.content || '';
     const brand = extractBrandFromContent(`${title} ${snippet}`, queryBrandTokens);
     const sourceType = classifySource(host, brand, queryBrandTokens, title);
-    const partNumber = partLike ? q : '';
+    const partNumber = partLike ? q : resolvePartNumber(q, title);
     const contentImage = extractImageFromContent(item.raw_content || item.content || '');
     const resultImages = Array.isArray(item.images)
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)

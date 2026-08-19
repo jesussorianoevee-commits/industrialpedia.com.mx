@@ -49,8 +49,12 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const specs = Array.isArray(ficha?.specs) ? ficha.specs : [];
   const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
   const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
+  const unverifiedSpecs = Array.isArray(ficha?.unverified_specs) ? ficha.unverified_specs : [];
   const basicSpecs = Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : [];
-  const specKeys = new Set(specs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`));
+  const specKeys = new Set([
+    ...specs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`),
+    ...unverifiedSpecs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`)
+  ]);
   const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute || '').toLowerCase()}|${String(s.value || '').toLowerCase()}`));
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type] || SOURCE_TYPE_LABELS.cse_configured;
 
@@ -119,16 +123,8 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                 <h2 className="text-[16px] sm:text-[17px] font-semibold tracking-[0.18em] text-white/75 font-mono">ESPECIFICACIONES</h2>
               </div>
               <div className="px-5 sm:px-6">
-                {specs.length === 0 && grouped.length === 0 ? (
-                  basicSpecs.length > 0 ? (
-                    <div>
-                      {basicSpecs.map((s, i) => (
-                        <SpecRow key={`basic-${i}`} label={s.attribute} value={s.value} verified={false} sourceUrl={ficha.source?.url} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-10 text-center text-xs text-white/35">No hay especificaciones técnicas aceptadas por el Quality Gateway.</div>
-                  )
+                {specs.length === 0 && grouped.length === 0 && unverifiedSpecs.length === 0 && basicSpecs.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-white/35">No hay especificaciones técnicas en esta fuente.</div>
                 ) : (
                   <>
                     {specs.map((s, i) => (
@@ -153,6 +149,22 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                         sourceUrl={g.evidence?.source_url || ficha.source?.url}
                       />
                     ) : null)}
+                    {unverifiedSpecs.length > 0 && (
+                      <div className="py-3 border-b border-white/[0.055]">
+                        <span className="text-[10px] uppercase tracking-wider text-white/30">Extraídas · no verificadas</span>
+                      </div>
+                    )}
+                    {unverifiedSpecs.map((s, i) => (
+                      <SpecRow
+                        key={`unverified-${i}`}
+                        label={s.attribute_name || s.attribute}
+                        value={s.normalized_value || s.original_value}
+                        unit={s.normalized_unit || s.original_unit}
+                        page={s.page}
+                        verified={false}
+                        sourceUrl={s.evidence?.source_url || ficha.source?.url}
+                      />
+                    ))}
                     {extraBasic.map((s, i) => (
                       <SpecRow key={`extra-${i}`} label={s.attribute} value={s.value} verified={false} sourceUrl={ficha.source?.url} />
                     ))}

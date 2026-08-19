@@ -162,6 +162,60 @@ export function extractCompactSpecs(text) {
   return specs;
 }
 
+// Especificaciones valor→atributo: formato común en listings de distribuidores
+// donde el valor aparece ANTES de la etiqueta ("25mm Piston", "M10 Rod",
+// "G 1/8 Port"). Determinístico: sólo extrae pares con unidad reconocida o
+// especificación de rosca, seguidos de una etiqueta capitalizada.
+export function extractValueFirstSpecs(text) {
+  const raw = String(text || '').replace(/\s+/g, ' ');
+  const specs = [];
+  const seen = new Set();
+
+  // Patrón 1: "25mm Piston" / "25 mm Stroke" → value=25 mm, attr=Piston
+  const re1 = /(\d+(?:[.,]\d+)?)\s*([a-zA-Z°µ%]{1,6})\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[a-zà-ÿ]+)?)/g;
+  let m;
+  while ((m = re1.exec(raw))) {
+    const unit = m[2].toLowerCase();
+    if (!COMPACT_UNIT_SET.has(unit)) continue;
+    const attr = m[3].trim();
+    if (attr.length < 2 || attr.length > 50) continue;
+    if (COMPACT_STOP.test(attr)) continue;
+    const val = `${m[1]} ${unit}`;
+    const key = `${attr.toLowerCase()}|${val.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    specs.push({ attribute: attr, value: val });
+  }
+
+  // Patrón 2: "M10 Rod" / "M10x1.5 Thread" → value=M10, attr=Rod (rosca métrica)
+  const re2 = /\b(M\d+(?:x\d+(?:\.\d+)?)?)\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[a-zà-ÿ]+)?)/g;
+  while ((m = re2.exec(raw))) {
+    const attr = m[2].trim();
+    if (attr.length < 2 || attr.length > 50) continue;
+    if (COMPACT_STOP.test(attr)) continue;
+    const val = m[1];
+    const key = `${attr.toLowerCase()}|${val.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    specs.push({ attribute: attr, value: val });
+  }
+
+  // Patrón 3: "G 1/8 Port" → value=G 1/8, attr=Port (rosca BSPP)
+  const re3 = /\b(G\s*\d+\/\d+)\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[a-zà-ÿ]+)?)/g;
+  while ((m = re3.exec(raw))) {
+    const attr = m[2].trim();
+    if (attr.length < 2 || attr.length > 50) continue;
+    if (COMPACT_STOP.test(attr)) continue;
+    const val = m[1].replace(/\s+/g, ' ');
+    const key = `${attr.toLowerCase()}|${val.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    specs.push({ attribute: attr, value: val });
+  }
+
+  return specs;
+}
+
 // Especificaciones por adyacencia: el layout más común en fichas de producto
 // (web/Markdown) coloca etiqueta y valor en líneas consecutivas:
 //   Payload

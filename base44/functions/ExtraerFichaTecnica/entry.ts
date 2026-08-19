@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -89,7 +89,8 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
         ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
         ...extractAdjacentSpecs(extracted.text),
         ...extractTextSpecs(extracted.text),
-        ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
+        ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`),
+        ...extractValueFirstSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
       ].filter((r: any, i: number, arr: any[]) => {
         const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
         return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
@@ -115,9 +116,10 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
         consultation_date: consultationDate,
         document_type: isPdf ? 'datasheet' : 'website'
       },
-      verified: false
+      verified: false,
+      gate_passed: gateSpec(spec).pass
     };
-  }).filter((spec: any) => gateSpec(spec).pass);
+  });
 }
 
 // Piso determinístico de datos básicos: si la extracción completa no logra
@@ -131,7 +133,8 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     ...extractAdjacentSpecs(clean),
     ...extractTextSpecs(clean),
     ...((extractPlainText(clean).specTable) || []),
-    ...extractCompactSpecs(clean)
+    ...extractCompactSpecs(clean),
+    ...extractValueFirstSpecs(clean)
   ];
   const seen = new Set<string>();
   const out: any[] = [];
@@ -248,7 +251,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
     ).catch(() => []);
     // CatalogProduct consume únicamente contenido que haya pasado el Quality Gateway.
     // Nunca materializar el texto crudo del PDF en description/search_text.
-    const catalogSpecs = Array.isArray(ficha.specs) ? ficha.specs.filter((s: any) => gateSpec(s).pass) : [];
+    const catalogSpecs = Array.isArray(ficha.specs) ? ficha.specs : [];
     const catalogDescription = safeText(ficha.product_name || pn, 1000);
     const catalogPayload = {
       manufacturer_name: ficha.manufacturer_name || '',
@@ -398,8 +401,12 @@ export default async function (req: Request) {
     }
 
     // 4) Especificaciones técnicas con evidencia. Semantic Resolver + Quality Gateway.
+    //    buildSpecs devuelve TODAS las specs extraídas con flag gate_passed:
+    //    las que pasan el Gateway se persisten como published; las que no, como incomplete.
     const consultationDate = new Date().toISOString();
-    let specs = buildSpecs(extracted, isPdf, url, consultationDate);
+    let allBuiltSpecs = buildSpecs(extracted, isPdf, url, consultationDate);
+    let specs = allBuiltSpecs.filter((s: any) => s.gate_passed);
+    let unverifiedSpecs = allBuiltSpecs.filter((s: any) => !s.gate_passed);
 
     // 4b) Fallback de adquisición: si la fuente era un shell/SPA y source_content
     //     no aportó specs aceptadas, obtener el contenido renderizado vía Tavily
@@ -409,7 +416,9 @@ export default async function (req: Request) {
       const richer = await tavilyExtractContent(url);
       if (richer && richer.length > (extracted.text || '').length) {
         mergeFallbackContent(extracted, richer);
-        specs = buildSpecs(extracted, isPdf, url, consultationDate);
+        allBuiltSpecs = buildSpecs(extracted, isPdf, url, consultationDate);
+        specs = allBuiltSpecs.filter((s: any) => s.gate_passed);
+        unverifiedSpecs = allBuiltSpecs.filter((s: any) => !s.gate_passed);
         tavilyExtractUsed = specs.length > 0;
       }
     }
@@ -490,6 +499,7 @@ export default async function (req: Request) {
       component_type: template.type,
       component_type_label: template.label,
       specs,
+      unverified_specs: unverifiedSpecs,
       basic_specs: computeBasicSpecs(sourceContent, extracted.text),
       specs_grouped: grouped,
       specs_other: others,
