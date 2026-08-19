@@ -42,9 +42,9 @@ export default function ResultCard({ result }) {
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
-      {isUsableImageUrl(result.image_url) && (
-        <div className="mb-3 flex gap-3">
-          <div className="w-20 h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+      <div className="mb-3 flex gap-3">
+        <div className="w-20 h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+          {isUsableImageUrl(result.image_url) ? (
             <img
               src={result.image_url}
               alt={result.part_number || ''}
@@ -52,7 +52,12 @@ export default function ResultCard({ result }) {
               loading="lazy"
               referrerPolicy="no-referrer"
             />
-          </div>
+          ) : (
+            <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">Sin imagen verificada</span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          {(result.description || result.source_title) && (
           {(result.description || result.source_title) && (
             <div className="min-w-0 flex-1">
               {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
