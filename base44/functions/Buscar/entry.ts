@@ -487,6 +487,13 @@ export default async function (req) {
         provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core',
         result_count: webCandidates.length
       },
+      web_results: webCandidates.slice(0, 50).map((w) => ({
+        title: w.discovery?.title || w.part.title || '',
+        url: w.discovery?.source_url || w.part.source_url || '',
+        snippet: w.discovery?.description || w.part.description || '',
+        source_type: w.discovery?.source_type || 'cse_configured',
+        provider: w.discovery?.source_provider || 'google'
+      })),
       facets: {
         manufacturers: Object.entries(mfCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
         categories: Object.entries(catCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
