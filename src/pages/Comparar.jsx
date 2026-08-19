@@ -10,8 +10,9 @@ const STATE = {
 };
 
 function val(s) { return `${s?.normalized_value || s?.original_value || ''}${s?.normalized_unit || s?.original_unit ? ` ${s.normalized_unit || s.original_unit}` : ''}`.trim() || 'No disponible'; }
+function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 function stateFor(base, alt) {
-  const a = alt.comparison?.differences?.find((d) => String(d.attribute).toLowerCase() === String(base.attribute_name || base.attribute).toLowerCase());
+  const a = alt.comparison?.differences?.find((d) => String(d.attribute_canonical || d.attribute).trim().toLowerCase().replace(/\s+/g, ' ') === canonical(base));
   if (!a) return 'equal';
   return a.state;
 }
@@ -34,6 +35,7 @@ export default function Comparar() {
 
   const base = data.base;
   const alternatives = data.alternatives || [];
+  const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
   const cols = [base, ...alternatives];
 
   return <div className="min-h-screen bg-[#0a0e12] grid-bg text-white">
@@ -43,10 +45,15 @@ export default function Comparar() {
     <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
       <section className="rounded-xl border border-white/10 bg-[#11161c] p-5">
         <div className="flex items-center justify-between gap-3"><div><h1 className="text-lg font-semibold">Comparación técnica</h1><p className="text-xs text-white/40 mt-1">Busca en tiempo real hasta 3 alternativas con evidencia técnica disponible.</p></div><span className="text-[10px] text-white/35">{data.candidates_considered} candidatos consultados</span></div>
-        <div className="mt-4 rounded-lg border border-[#47bcb6]/15 bg-[#47bcb6]/[0.03] p-3 text-xs text-white/55">{data.decision?.message}</div>
+        <div className={`mt-4 rounded-lg border p-3 text-xs ${notEvaluable ? 'border-amber-300/20 bg-amber-300/5 text-amber-200/80' : 'border-[#47bcb6]/15 bg-[#47bcb6]/[0.03] text-white/55'}`}>{data.decision?.message}</div>
       </section>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#10151b]">
+      {notEvaluable ? (
+        <section className="rounded-xl border border-amber-300/15 bg-amber-300/[0.025] p-5 text-sm text-white/55">
+          <div className="font-semibold text-amber-200/85">Compatibilidad no evaluable</div>
+          <p className="mt-2 text-xs leading-relaxed">La ficha base no tiene especificaciones verificadas en Knowledge Core. Las <code>basic_specs</code> no se utilizan para emitir una comparación técnica.</p>
+        </section>
+      ) : <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#10151b]">
         <div className="min-w-[760px]">
           <div className="grid" style={{gridTemplateColumns:`220px repeat(${cols.length}, minmax(190px, 1fr))`}}>
             <div className="p-4 border-b border-white/10 text-[10px] uppercase tracking-wider text-white/30">Componente</div>
@@ -68,8 +75,8 @@ export default function Comparar() {
             })}
           </div>)}
         </div>
-      </div>
-      <p className="text-[10px] text-white/25">Verde = mismo valor · amarillo = diferencia · gris = no disponible. La comparación no sustituye el datasheet y no declara automáticamente que una alternativa sea mejor.</p>
+      </div>}
+      {!notEvaluable && <p className="text-[10px] text-white/25">Verde = mismo valor · amarillo = diferencia · gris = no disponible. La comparación no sustituye el datasheet y no declara automáticamente que una alternativa sea mejor.</p>}
     </main>
   </div>;
 }
