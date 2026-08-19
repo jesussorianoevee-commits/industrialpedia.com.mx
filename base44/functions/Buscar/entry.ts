@@ -110,10 +110,10 @@ export default async function (req) {
     // todos los Parts y el scoring encontraba accidentalmente un Festo porque
     // compartía palabras genéricas como "electric" o "automation".
     // La recuperación debe ser relevante a la consulta ANTES del scoring.
+    let exactManufacturerQuery = false;
     if (q) {
       const qNormForMatch = normalizePartNumber(q);
       const qTokensForMatch = tokenize(q).map((t) => t.toLowerCase()).filter(Boolean);
-      let exactManufacturerQuery = false;
       try {
         const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
         const normalizedQuery = normalizeManufacturer(q);
@@ -328,9 +328,16 @@ export default async function (req) {
       try {
         const scan = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', SCAN_LIMIT);
         const seen = new Set(candidates.map((c) => c.part_id || c.id));
+        const scanTokens = tokenize(q).map((t) => t.toLowerCase()).filter(Boolean);
+        const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
         for (const p of scan) {
           const key = p.part_id || p.id;
-          if (!seen.has(key)) { candidates.push({ ...p, part_id: p.part_id || p.id }); seen.add(key); }
+          const haystack = [p.part_number, p.part_number_normalized, p.manufacturer_name, p.category, p.subcategory, p.title, p.description]
+            .filter(Boolean).join(' ').toLowerCase();
+          const relevant = exactManufacturerQuery
+            ? normalizeManufacturer(p.manufacturer_name) === normalizeManufacturer(q)
+            : scanTokens.length > 0 && scanTokens.every((token) => haystack.includes(token));
+          if (relevant && !seen.has(key)) { candidates.push({ ...p, part_id: p.part_id || p.id }); seen.add(key); }
         }
       } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
