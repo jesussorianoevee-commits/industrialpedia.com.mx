@@ -420,6 +420,11 @@ export default async function (req) {
     // A discovered candidate may be shown, but its state/source remain explicit and it never
     // contributes invented specifications.
     const indexedPartIds = new Set(candidates.map((p) => p.part_id).filter(Boolean));
+    for (const w of webCandidates) {
+      const webText = `${w.part.part_number || ''} ${w.part.manufacturer_name || ''} ${w.part.title || ''} ${w.part.description || ''}`.toLowerCase();
+      const hits = tokenize(q).filter((t) => webText.includes(t)).length;
+      if (isPartNo || hits > 0) scored.push(w);
+    }
     for (const d of discoveryCandidates) {
       if (d.part_id && indexedPartIds.has(d.part_id)) continue;
       const pseudoPart = {
@@ -532,7 +537,8 @@ export default async function (req) {
       results,
       web_discovery: {
         attempted: Boolean(q && !hasDirectQueryMatch),
-        provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core'
+        provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core',
+        result_count: webCandidates.length
       },
       facets: {
         manufacturers: Object.entries(mfCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
