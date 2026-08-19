@@ -232,6 +232,96 @@ export function isProductResultForManufacturer(item) {
   return PRODUCT_RESULT_TERMS.test(text) || /[A-Za-z]{1,6}[-_]?\d[A-Za-z0-9_-]{2,}/.test(text);
 }
 
+// Clasificación de tipo de contenido para ranking de calidad de fuentes web.
+// Determinística: basada en señales estructurales del título, descripción, URL
+// y datos ya extraídos (PN, specs). Un resultado industrial debe priorizar
+// producto/modelo > familia/catálogo > distribuidor > artículo > otro.
+// Los artículos/editoriales no se eliminan (pueden tener información técnica
+// útil) pero nunca superan a una fuente de producto/catálogo relevante.
+const PRODUCT_MODEL_LABELS = /(?:part number|order number|model number|model no\b|art[\.\s]*nr|article number|product number|\bmpn\b|\bsku\b|order code|bestellnummer|part no\b|model code)/i;
+const PRODUCT_FAMILY_SIGNALS = /(?:\bseries\b|\bfamily\b|\bfamilia\b|\bserie\b|\brange\b|product line|product family|product overview|product listing|product selector|catalog overview)/i;
+const DATASHEET_SIGNALS = /(?:datasheet|data sheet|hoja de datos|specifications?|technical data|technical specifications|ficha t[ée]cnica|spec sheet|product specifications)/i;
+const DISTRIBUTOR_BUY_SIGNALS = /(?:\bbuy\b|\bpurchase\b|comprar|precio|\bprice\b|in stock|disponible|add to cart|order now|distribuidor|distributor|authorized distributor|authorised distributor)/i;
+const ARTICLE_EDITORIAL_SIGNALS = /(?:\bblog\b|\barticle\b|art[íi]culo|noticias?|\bnews\b|\bpost\b|gu[íi]a|\btutorial\b|how to|c[óo]mo funcionan|qu[ée] es|what is|learn about|understanding|introduction to|overview of|benefits of|applications of|types of|que es un|que son los)/i;
+const PN_IN_TEXT = /\b[A-Z]{2,6}[-_]?\d{2,}[A-Z0-9-_/]*\b/;
+
+export function classifyContentType(item) {
+  const title = String(item?.title || '');
+  const snippet = String(item?.snippet || item?.content || item?.description || '');
+  const url = String(item?.url || '');
+  const text = `${title} ${snippet}`;
+  const sourceType = String(item?.source_type || '');
+  const isPdf = /\.pdf(?:$|[?#])/i.test(url) || Boolean(item?.is_pdf);
+
+  // PDF datasheets: máxima prioridad (documentación técnica verificable).
+  if (isPdf) return { type: 'datasheet', tier: 5 };
+
+  const isCorporate = CORPORATE_HARD_TERMS.test(text) ||
+    (CORPORATE_PAGE_TERMS.test(text) && !PRODUCT_RESULT_TERMS.test(text));
+  const hasExtractedPn = Boolean(item?.part_number && String(item.part_number).trim().length >= 3);
+  const hasProductModel = hasExtractedPn || PRODUCT_MODEL_LABELS.test(text) || PN_IN_TEXT.test(text);
+  const hasSpecs = Array.isArray(item?.basic_specs) && item.basic_specs.length > 0;
+  const hasFamily = PRODUCT_FAMILY_SIGNALS.test(text);
+  const hasDatasheet = DATASHEET_SIGNALS.test(text);
+  const hasDistributorBuy = DISTRIBUTOR_BUY_SIGNALS.test(text);
+  const isDistributorSource = sourceType === 'distributor';
+  const isOfficialSource = sourceType === 'official';
+
+  // Páginas corporativas: prioridad mínima (se filtran aparte, pero quedan como
+  // red de seguridad si alguna pasa los filtros).
+  if (isCorporate && !hasProductModel && !hasDatasheet) return { type: 'corporate', tier: 0 };
+
+  // Producto identificable: PN/modelo + contexto de producto (oficial,
+  // distribuidor, datasheet, compra o specs extraídas).
+  if (hasProductModel && (isOfficialSource || isDistributorSource || hasDatasheet || hasDistributorBuy || hasSpecs)) {
+    return { type: 'product_page', tier: 5 };
+  }
+
+  // Catálogo técnico / página de especificaciones.
+  if (hasDatasheet && (isOfficialSource || isDistributorSource || hasProductModel || hasSpecs)) {
+    return { type: 'technical_catalog', tier: 5 };
+  }
+
+  // Listado de distribuidor con señales de producto.
+  if (isDistributorSource && (hasDistributorBuy || hasProductModel || hasFamily || hasSpecs)) {
+    return { type: 'distributor_listing', tier: 4 };
+  }
+
+  // Familia de producto de fuente oficial/distribuidor.
+  if (hasFamily && (isOfficialSource || isDistributorSource)) {
+    return { type: 'product_family', tier: 4 };
+  }
+
+  // Producto identificable sin contexto fuerte de fuente (aún útil, pero por
+  // debajo de productos con respaldo oficial/distribuidor).
+  if (hasProductModel || hasSpecs) {
+    return { type: 'product_page', tier: 3 };
+  }
+
+  // Artículo/editorial: se conserva si tiene información técnica útil, pero
+  // nunca supera a una fuente de producto/catálogo relevante.
+  if (ARTICLE_EDITORIAL_SIGNALS.test(text) || ARTICLE_EDITORIAL_SIGNALS.test(url)) {
+    return { type: 'article_editorial', tier: 1 };
+  }
+
+  return { type: 'other_industrial', tier: 2 };
+}
+
+// Reordena resultados web por calidad de contenido. Productos/catálogos primero,
+// artículos/editoriales al final. Determinístico y generalizable: no depende de
+// un fabricante o producto concreto, solo de señales estructurales de contenido.
+export function rankIndustrialResults(results) {
+  const withTiers = results.map((r) => ({ r, tier: classifyContentType(r).tier }));
+  withTiers.sort((a, b) => {
+    if (b.tier !== a.tier) return b.tier - a.tier;
+    const sp = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
+    const spDiff = (sp[b.r.source_type] || 0) - (sp[a.r.source_type] || 0);
+    if (spDiff) return spDiff;
+    return (b.r.relevance_score || 0) - (a.r.relevance_score || 0);
+  });
+  return withTiers.map((x) => x.r);
+}
+
 // Extracción determinística de Part Number desde una consulta multi-token o
 // desde el título del resultado. No inventa PNs: sólo extrae tokens que
 // coinciden con el patrón estructural de un número de parte industrial.
@@ -384,15 +474,9 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     isLikelyIndustrialTavilyResult(r, q) &&
     (!manufacturerOnly || isProductResultForManufacturer(r))
   );
-  const sourcePriority = { official: 3, distributor: 2, web_discovery: 1, untrusted: 0 };
-  filtered.sort((a, b) => {
-    const priorityDiff = (sourcePriority[b.source_type] || 0) - (sourcePriority[a.source_type] || 0);
-    if (priorityDiff) return priorityDiff;
-    return (b.relevance_score || 0) - (a.relevance_score || 0);
-  });
   return {
     provider: 'tavily',
-    results: filtered.slice(0, 20),
+    results: rankIndustrialResults(filtered).slice(0, 20),
     telemetry: {
       configured: Boolean(apiKey),
       queries_made: queriesMade,
