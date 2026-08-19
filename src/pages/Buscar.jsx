@@ -120,11 +120,12 @@ export default function Buscar() {
     // Google recomienda configurar __gcse ANTES de cargar cse.js cuando se usa
     // renderización explícita. Esto evita la carrera que dejaba el panel vacío.
     const render = () => {
-      const google = window.google;
-      const api = google?.search?.cse?.element;
+      const api = window.google?.search?.cse?.element;
       const container = document.getElementById(containerId);
       if (!api || !container) return false;
       try {
+        // Evita duplicar el elemento cuando React remonta la página o cambia q.
+        container.innerHTML = '';
         api.render({
           div: containerId,
           tag: 'searchresults-only',
@@ -136,14 +137,13 @@ export default function Buscar() {
           }
         });
         const element = api.getElement?.(gname);
-        if (element) {
-          element.execute(q);
-          return true;
-        }
+        if (!element) return false;
+        element.execute(String(q));
+        return true;
       } catch (e) {
         console.warn('Industrialpedia Google CSE render:', e);
+        return false;
       }
-      return false;
     };
 
     const existingScript = document.getElementById(scriptId);
