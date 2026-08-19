@@ -28,8 +28,7 @@ export default function Buscar() {
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const suggestionTimer = useRef(null);
-  const kcReqId = useRef(0);
-  const googleReqId = useRef(0);
+  const searchReqId = useRef(0);
 
   const [ficha, setFicha] = useState(null);
   const [fichaLoading, setFichaLoading] = useState(false);
@@ -49,57 +48,52 @@ export default function Buscar() {
     });
   };
 
-  const runKnowledgeCore = useCallback(async (query, f) => {
-    const reqId = ++kcReqId.current;
+  const runSearch = useCallback(async (query, f) => {
+    const reqId = ++searchReqId.current;
     setKcLoading(true);
-    setKcData(null);
-    try {
-      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
-      const res = await base44.functions.invoke('Buscar', {
-        q: query,
-        filters: { manufacturers: f.manufacturers, categories: f.categories, has_specification: f.has_specification, validation_states },
-        limit: 25,
-        skip_web_discovery: true
-      });
-      if (kcReqId.current !== reqId) return;
-      setKcData(res.data);
-    } catch {
-      if (kcReqId.current !== reqId) return;
-      setKcData(null);
-    } finally {
-      if (kcReqId.current === reqId) setKcLoading(false);
-    }
-  }, []);
-
-  const runGoogle = useCallback(async (query) => {
-    const reqId = ++googleReqId.current;
     setGoogleLoading(true);
     setGoogleError(null);
+    setKcData(null);
     setGoogleData(null);
     try {
-      const res = await base44.functions.invoke('BuscarGoogle', { query });
-      if (googleReqId.current !== reqId) return;
-      setGoogleData(res.data);
-      if (res.data?.telemetry?.google_error) setGoogleError(res.data.telemetry.google_error);
+      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
+      const res = await base44.functions.invoke('IndustrialpediaSearch', {
+        q: query,
+        filters: {
+          manufacturers: f.manufacturers,
+          categories: f.categories,
+          has_specification: f.has_specification,
+          validation_states
+        },
+        limit: 25,
+        offset: 0
+      });
+      if (searchReqId.current !== reqId) return;
+      setKcData(res.data);
+      setGoogleData({ google_results: res.data?.web_results || [] });
     } catch (e) {
-      if (googleReqId.current !== reqId) return;
-      setGoogleError(e.message || 'Error en el descubrimiento Google');
+      if (searchReqId.current !== reqId) return;
+      setKcData(null);
       setGoogleData(null);
+      setGoogleError(e.message || 'Error en la búsqueda');
     } finally {
-      if (googleReqId.current === reqId) setGoogleLoading(false);
+      if (searchReqId.current === reqId) {
+        setKcLoading(false);
+        setGoogleLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     setInput(q);
     if (q) {
-      runKnowledgeCore(q, filters);
-      runGoogle(q);
+      runSearch(q, filters);
     } else {
       setKcData(null);
       setGoogleData(null);
+      setGoogleError(null);
     }
-  }, [q, filters, runKnowledgeCore, runGoogle]);
+  }, [q, filters, runSearch]);
 
   // Autocompletado determinístico: consulta únicamente nuestro Knowledge Core,
   // DiscoveryIndex y Manufacturer. Nunca llama Tavily/Google mientras se escribe.
