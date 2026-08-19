@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
-import { discoverGoogleIndustrial, brandTokensFromQuery } from '../../shared/googleCse.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento por Google CSE.
@@ -22,11 +22,11 @@ export default async function (req: Request) {
     const query = String(body.query || '').trim();
     if (!query) return Response.json({ error: 'query required' }, { status: 400 });
 
-    const apiKey = String(secrets.get('key=API_KEY') || '').trim().replace(/^["']|["']$/g, '').trim();
-    const cx = String(secrets.get('Industrialpediasearch') || '').trim().replace(/^["']|["']$/g, '').replace(/^cx=/i, '').trim();
+    const apiKey = String(secrets.get('Apy_Tavly') || '').trim().replace(/^["']|["']$/g, '').trim();
+
 
     // 1) Descubrimiento Google (1-2 consultas máximo, con fallback técnico si es necesario).
-    const discovery = await discoverGoogleIndustrial(query, apiKey, cx);
+    const discovery = await discoverTavilyIndustrial(query, apiKey);
 
     // 2) Chequeo ligero del Knowledge Core en paralelo: si ya tenemos la pieza
     //    verificada, la mostramos arriba como resultado verificado. Una sola
