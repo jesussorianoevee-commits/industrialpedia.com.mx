@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Globe, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
@@ -21,6 +21,13 @@ export default function GoogleResultCard({ result, query, onFicha }) {
   const [loading, setLoading] = useState(false);
   const [imageSrc, setImageSrc] = useState(isUsableImageUrl(result.image_url) ? result.image_url : '');
   const [err, setErr] = useState('');
+
+  // Sincroniza la imagen cuando llega un nuevo result (búsqueda consecutiva).
+  // Sin esto, React reutiliza el componente por key y la imagen stale de la
+  // búsqueda anterior persiste aunque result.image_url haya cambiado.
+  useEffect(() => {
+    setImageSrc(isUsableImageUrl(result.image_url) ? result.image_url : '');
+  }, [result.image_url]);
 
   const verFicha = async () => {
     setLoading(true);

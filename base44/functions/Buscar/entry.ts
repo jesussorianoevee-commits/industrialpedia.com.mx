@@ -385,7 +385,8 @@ export default async function (req) {
         manufacturer_name: d.manufacturer_name,
         category: '',
         description: [d.title || '', d.description || '', q].filter(Boolean).join(' '),
-        title: d.title || ''
+        title: d.title || '',
+        image_url: d.image_url || ''
       };
       const { score: rankedScore, match: rankedMatch } = scorePart(pseudoPart, q, []);
       const discoveryText = `${d.candidate_part_number || ''} ${d.manufacturer_name || ''} ${d.title || ''} ${d.description || ''} ${d.source_url || ''}`.toLowerCase();

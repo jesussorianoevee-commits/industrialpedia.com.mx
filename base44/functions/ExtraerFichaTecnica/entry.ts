@@ -292,6 +292,7 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       source_type: isPdf ? 'datasheet' : 'website',
       title: ficha.product_name || '',
       description: safeText(ficha.description, 500),
+      image_url: ficha.image_url || '',
       discovery_state: 'discovered',
       confidence: 0.6,
       last_seen: new Date().toISOString(),

@@ -3,6 +3,14 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 
+function isUsableImageUrl(value) {
+  if (!value || typeof value !== 'string') return false;
+  try {
+    const u = new URL(value);
+    return /^https?:$/.test(u.protocol);
+  } catch { return false; }
+}
+
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
   validated: { label: 'Validado', cls: 'text-[#5a9cd9] bg-[#5a9cd9]/10' },
@@ -34,7 +42,30 @@ export default function ResultCard({ result }) {
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
-      {(result.description || result.source_title) && (
+      {isUsableImageUrl(result.image_url) && (
+        <div className="mb-3 flex gap-3">
+          <div className="w-20 h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+            <img
+              src={result.image_url}
+              alt={result.part_number || ''}
+              className="w-full h-full object-contain p-1.5"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+          {(result.description || result.source_title) && (
+            <div className="min-w-0 flex-1">
+              {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
+                <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
+              )}
+              {result.description && (
+                <p className="text-white/55 text-xs leading-relaxed line-clamp-4">{result.description}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {!isUsableImageUrl(result.image_url) && (result.description || result.source_title) && (
         <div className="mb-3">
           {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
             <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
