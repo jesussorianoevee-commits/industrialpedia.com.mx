@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets, waitUntil } from 'base44:runtime';
-import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult } from '../../shared/tavilySearch.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 
@@ -26,6 +26,7 @@ export default async function (req: Request) {
 
     const apiKey = String(secrets.get('Apy_Tavly') || '').trim().replace(/^["']|["']$/g, '').trim();
     const queryNorm = query.toLowerCase().replace(/\s+/g, ' ').trim();
+    const manufacturerOnly = query.split(/\s+/).filter(Boolean).length === 1 && brandTokensFromQuery(query).length === 1;
 
     // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
     //    sin recurrir al buscador web. La base de datos es la fuente de verdad.
@@ -36,7 +37,10 @@ export default async function (req: Request) {
         { query_normalized: queryNorm }, '-created_date', 1
       );
       if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
-        const safeCachedResults = cachedRecs[0].results.filter((r: any) => isLikelyIndustrialTavilyResult(r, query));
+        const safeCachedResults = cachedRecs[0].results.filter((r: any) =>
+          isLikelyIndustrialTavilyResult(r, query) &&
+          (!manufacturerOnly || isProductResultForManufacturer(r))
+        );
         if (safeCachedResults.length) {
           discovery = { results: safeCachedResults, provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
           cached = true;
