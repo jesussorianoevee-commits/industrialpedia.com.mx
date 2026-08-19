@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUnsafeExtractedPair, isUsableExternalImageUrl, sanitizeExtractedPair, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, extractValueFirstSpecs, findPageFor, isUsableExternalImageUrl, sanitizeExtractedPair, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
