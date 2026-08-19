@@ -165,6 +165,16 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       const existingParts = await base44.asServiceRole.entities.Part.filter({ part_number_normalized: pnNorm }, 'updated_date', 1).catch(() => []);
       if (existingParts.length) {
         partId = existingParts[0].id;
+        // Completa datos faltantes del Part existente sin degradar información
+        // previamente almacenada. Esto permite que fichas históricas reciban
+        // la imagen demostrada por una nueva fuente sin crear otro Part.
+        const partPatch: any = {};
+        if (!existingParts[0].image_url && ficha.image_url) partPatch.image_url = ficha.image_url;
+        if (!existingParts[0].manufacturer_name && ficha.manufacturer_name) partPatch.manufacturer_name = ficha.manufacturer_name;
+        if (!existingParts[0].description && ficha.product_name) partPatch.description = safeText(ficha.product_name, 1000);
+        if (Object.keys(partPatch).length) {
+          await base44.asServiceRole.entities.Part.update(partId, partPatch).catch(() => {});
+        }
       } else {
         const createdPart = await base44.asServiceRole.entities.Part.create({
           manufacturer_name: ficha.manufacturer_name || '',
