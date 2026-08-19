@@ -104,6 +104,40 @@ export default async function (req) {
       } catch (e) { /* Part directo sigue siendo suficiente */ }
     }
 
+    // IMPORTANTE: Part.list() arriba se usa como respaldo del índice, pero nunca
+    // debe convertir todos los Parts de la base en candidatos de una consulta.
+    // Antes de este filtro, una búsqueda como "Schneider Electric" podía cargar
+    // todos los Parts y el scoring encontraba accidentalmente un Festo porque
+    // compartía palabras genéricas como "electric" o "automation".
+    // La recuperación debe ser relevante a la consulta ANTES del scoring.
+    if (q) {
+      const qNormForMatch = normalizePartNumber(q);
+      const qTokensForMatch = tokenize(q).map((t) => t.toLowerCase()).filter(Boolean);
+      let exactManufacturerQuery = false;
+      try {
+        const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        const normalizedQuery = normalizeManufacturer(q);
+        if (normalizedQuery) {
+          const manufacturers = await base44.asServiceRole.entities.Manufacturer.filter({ status: 'active' }, 'name', 500).catch(() => []);
+          exactManufacturerQuery = manufacturers.some((m) => normalizeManufacturer(m.name) === normalizedQuery);
+        }
+      } catch { /* si no hay catálogo de fabricantes, se usa coincidencia textual */ }
+
+      candidates = candidates.filter((p) => {
+        const pn = normalizePartNumber(p.part_number || p.part_number_normalized || '');
+        if (isPartNumberQueryForBuscar(q) || looksLikePartNumber(q)) return pn === qNormForMatch;
+        if (exactManufacturerQuery) {
+          const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+          return normalizeManufacturer(p.manufacturer_name) === normalizeManufacturer(q);
+        }
+        const haystack = [
+          p.part_number, p.part_number_normalized, p.manufacturer_name,
+          p.category, p.subcategory, p.title, p.description
+        ].filter(Boolean).join(' ').toLowerCase();
+        return qTokensForMatch.length > 0 && qTokensForMatch.every((token) => haystack.includes(token));
+      });
+    }
+
     // 2) Discovery Index: permite encontrar candidatos aún no publicados/validados.
     //    No ejecuta el crawler; consulta únicamente el índice persistido.
     const discoveryBase = {
