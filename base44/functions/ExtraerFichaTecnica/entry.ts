@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { waitUntil } from 'base44:runtime';
+import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
 import { extractHTML, extractPlainText, extractTextSpecs, findPageFor } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
@@ -37,6 +37,85 @@ function hostOf(url: string) {
 
 function safeText(s: string, max = 500) {
   return String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+// Fusión determinística de contenido secundario (Tavily raw_content / Extract).
+// Sólo alimenta candidatos; el Semantic Resolver + Quality Gateway siguen decidiendo.
+function mergeFallbackContent(extracted: any, content: string) {
+  const fallback = extractPlainText(content);
+  if (!fallback?.text) return;
+  if (fallback.text.length > (extracted.text || '').length) extracted.text = fallback.text;
+  if (fallback.specTable?.length) {
+    const merged = [...(extracted.specTable || []), ...fallback.specTable];
+    const seen = new Set();
+    extracted.specTable = merged.filter((s: any) => {
+      const key = `${String(s.attribute || '').trim().toLowerCase()}|${String(s.value || '').trim().toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+}
+
+// Tavily Extract: adquisición de contenido renderizado (bypassa shells/SPA y
+// bloqueos de bots). Devuelve el contenido textual de la URL, o '' si no disponible.
+async function tavilyExtractContent(url: string): Promise<string> {
+  const apiKey = String(secrets.get('Apy_Tavly') || '').trim().replace(/^["']|["']$/g, '').trim();
+  if (!apiKey) return '';
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    const res = await fetch('https://api.tavily.com/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ urls: url, extract_depth: 'advanced', format: 'markdown', timeout: 20 }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (!res.ok) return '';
+    const data = await res.json();
+    const results = Array.isArray(data?.results) ? data.results : [];
+    const hit = results.find((r: any) => r && (r.raw_content || r.content || r.text)) || null;
+    return String(hit?.raw_content || hit?.content || hit?.text || '');
+  } catch { return ''; }
+}
+
+// Construye specs a partir de un objeto extracted, aplicando Semantic Resolver +
+// Quality Gateway. Reutilizable para la extracción inicial y el fallback.
+function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDate: string) {
+  const rawSpecs = isPdf
+    ? extractStructuredSpecs(extracted)
+    : [
+        ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
+        ...extractTextSpecs(extracted.text)
+      ].filter((r: any, i: number, arr: any[]) => {
+        const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
+        return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
+      });
+  return rawSpecs.filter((r: any) => r.attribute && r.value).map((r: any) => {
+    const { value, unit } = splitValueUnit(r.value);
+    const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages || []);
+    const semantic = isTechnicalSpecification(r.attribute, r.value);
+    return {
+      attribute_name: safeText(r.attribute, 100),
+      attribute: safeText(r.attribute, 100),
+      original_value: safeText(r.value, 120),
+      normalized_value: value,
+      original_unit: unit,
+      normalized_unit: normalizeUnit(unit),
+      page: page || null,
+      evidence_text: `${r.attribute}: ${r.value}`,
+      semantic_role: semantic.role,
+      evidence: {
+        source_url: url,
+        page: page || null,
+        raw_text: safeText(`${r.attribute}: ${r.value}`, 200),
+        consultation_date: consultationDate,
+        document_type: isPdf ? 'datasheet' : 'website'
+      },
+      verified: false
+    };
+  }).filter((spec: any) => gateSpec(spec).pass);
 }
 
 async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: boolean) {
@@ -231,23 +310,7 @@ export default async function (req: Request) {
     // Algunas páginas industriales son shells/SPA y su HTML directo no contiene
     // la ficha renderizada. Tavily ya obtuvo el contenido de la página; úsalo como
     // evidencia de adquisición secundaria, sin saltarnos el Quality Gateway.
-    if (sourceContent) {
-      // Tavily puede tener el contenido útil aunque el HTML directo sea un shell/SPA.
-      // Siempre fusionamos sus candidatos con los del HTML y deduplicamos; no se
-      // sustituyen los datos y todo candidato sigue pasando Semantic Resolver + Gateway.
-      const fallback = extractPlainText(sourceContent);
-      if (fallback.text.length > extracted.text.length) extracted.text = fallback.text;
-      if (fallback.specTable?.length) {
-        const merged = [...(extracted.specTable || []), ...fallback.specTable];
-        const seen = new Set();
-        extracted.specTable = merged.filter((s: any) => {
-          const key = `${String(s.attribute || '').trim().toLowerCase()}|${String(s.value || '').trim().toLowerCase()}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-      }
-    }
+    if (sourceContent) mergeFallbackContent(extracted, sourceContent);
 
     // 3) Part Number: pista manual > candidatos estructurados > literal en la fuente.
     const candidates = extractCandidates(extracted.text, extracted.pages || [], extracted.blocks || [], extracted.tables || []);
@@ -278,41 +341,22 @@ export default async function (req: Request) {
       derivation = 'query_literal_in_source';
     }
 
-    // 4) Especificaciones técnicas con evidencia.
-    const rawSpecs = isPdf
-      ? extractStructuredSpecs(extracted)
-      : [
-          ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
-          ...extractTextSpecs(extracted.text)
-        ].filter((r: any, i: number, arr: any[]) => {
-          const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
-          return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
-        });
+    // 4) Especificaciones técnicas con evidencia. Semantic Resolver + Quality Gateway.
     const consultationDate = new Date().toISOString();
-    const specs = rawSpecs.filter((r: any) => r.attribute && r.value).map((r: any) => {
-      const { value, unit } = splitValueUnit(r.value);
-      const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages || []);
-      const semantic = isTechnicalSpecification(r.attribute, r.value);
-      return {
-        attribute_name: safeText(r.attribute, 100),
-        attribute: safeText(r.attribute, 100),
-        original_value: safeText(r.value, 120),
-        normalized_value: value,
-        original_unit: unit,
-        normalized_unit: normalizeUnit(unit),
-        page: page || null,
-        evidence_text: `${r.attribute}: ${r.value}`,
-        semantic_role: semantic.role,
-        evidence: {
-          source_url: url,
-          page: page || null,
-          raw_text: safeText(`${r.attribute}: ${r.value}`, 200),
-          consultation_date: consultationDate,
-          document_type: isPdf ? 'datasheet' : 'website'
-        },
-        verified: false
-      };
-    }).filter((spec: any) => gateSpec(spec).pass);
+    let specs = buildSpecs(extracted, isPdf, url, consultationDate);
+
+    // 4b) Fallback de adquisición: si la fuente era un shell/SPA y source_content
+    //     no aportó specs aceptadas, obtener el contenido renderizado vía Tavily
+    //     Extract y re-extraer. Todo candidato sigue pasando Semantic Resolver + Gateway.
+    let tavilyExtractUsed = false;
+    if (specs.length === 0) {
+      const richer = await tavilyExtractContent(url);
+      if (richer && richer.length > (extracted.text || '').length) {
+        mergeFallbackContent(extracted, richer);
+        specs = buildSpecs(extracted, isPdf, url, consultationDate);
+        tavilyExtractUsed = specs.length > 0;
+      }
+    }
 
     // 5) Fabricante: pista manual > marca de la consulta > derivación de dominio (solo si official).
     const host = hostOf(url);
