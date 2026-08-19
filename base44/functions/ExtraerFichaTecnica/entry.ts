@@ -147,7 +147,8 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       source_provider: 'tavily',
       catalog_state: 'identified',
       search_text: [pn, ficha.manufacturer_name, ficha.product_name, catalogSpecs.map((s: any) => `${s.attribute} ${s.original_value}`).join(' ')].filter(Boolean).join(' '),
-      last_seen: new Date().toISOString()
+      last_seen: new Date().toISOString(),
+      part_id: partId
     };
     let catalogId = '';
     if (existingCatalog.length) {
