@@ -7,6 +7,19 @@ const SOURCE_TYPE_LABELS = {
   cse_configured: 'Fuente web'
 };
 
+function isDisplayableSpec(spec) {
+  const attribute = String(spec?.attribute_name || spec?.attribute || spec?.label || '').trim();
+  const value = String(spec?.original_value || spec?.normalized_value || spec?.value || '').trim();
+  const combined = `${attribute} ${value}`;
+  if (!attribute || !value) return false;
+  // Defensa de UI: nunca renderizar recursos, Markdown, URLs, código o rutas de
+  // assets aunque una ficha histórica haya sido generada antes del saneador.
+  if (/!\[[^\]]*\]|\]\(|(?:https?:)?\/\/|javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\//i.test(combined)) return false;
+  if (/^(?:\/|\.\/|\.\.\/).*(?:\.(?:svg|gif|png|jpe?g|webp|ico)(?:[?#].*)?)$/i.test(value)) return false;
+  if (/(?:logo|logotype|brandmark|banner|favicon|navbar|navigation|search icon|location icon|contact icon|social icon|tracking pixel|sprite)/i.test(attribute) && /(?:\.(?:svg|gif|png|jpe?g|webp|ico)|\/images?\/|\/media\/|\/assets?\/)/i.test(value)) return false;
+  return true;
+}
+
 function SourceBadge({ page, verified }) {
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-mono shrink-0 ${verified
@@ -50,11 +63,11 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
     // Una ficha nueva no debe heredar el error de imagen de la ficha anterior.
     setImgError(false);
   }, [ficha?.image_url]);
-  const specs = Array.isArray(ficha?.specs) ? ficha.specs : [];
-  const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
-  const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
-  const unverifiedSpecs = Array.isArray(ficha?.unverified_specs) ? ficha.unverified_specs : [];
-  const basicSpecs = Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : [];
+  const specs = (Array.isArray(ficha?.specs) ? ficha.specs : []).filter(isDisplayableSpec);
+  const grouped = (Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : []).filter(isDisplayableSpec);
+  const verifiedSpecs = (Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : []).filter(isDisplayableSpec);
+  const unverifiedSpecs = (Array.isArray(ficha?.unverified_specs) ? ficha.unverified_specs : []).filter(isDisplayableSpec);
+  const basicSpecs = (Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : []).filter(isDisplayableSpec);
   const specKeys = new Set([
     ...specs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`),
     ...unverifiedSpecs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`)
