@@ -94,7 +94,7 @@ export async function tavilySearch(query, apiKey, options = {}) {
       topic: 'general',
       max_results: options.max_results || 10,
       include_answer: false,
-      include_raw_content: false,
+      include_raw_content: true,
       include_images: false,
       ...(options.include_domains?.length ? { include_domains: options.include_domains } : {})
     };
@@ -151,6 +151,7 @@ export async function discoverTavilyIndustrial(query, apiKey) {
       part_number: partNumber,
       product_name: title,
       description: snippet,
+      raw_content: item.raw_content || '',
       is_pdf: /\.pdf(?:$|[?#])/i.test(item.url || ''),
       provider: 'tavily',
       relevance_score: typeof item.score === 'number' ? item.score : null
