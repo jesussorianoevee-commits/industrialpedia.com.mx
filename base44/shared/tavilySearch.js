@@ -235,13 +235,13 @@ export async function tavilySearch(query, apiKey, options = {}) {
   }
 }
 
-export async function discoverTavilyIndustrial(query, apiKey) {
+export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
   const q = String(query || '').trim();
   if (!q) return { provider: 'none', results: [], telemetry: { configured: Boolean(apiKey), queries_made: 0, error: null, detail: null } };
 
   const queryBrandTokens = brandTokensFromQuery(q);
   const partLike = isPartNumberQuery(q);
-  const manufacturerOnly = isManufacturerOnlyQuery(q);
+  const manufacturerOnly = options.manufacturerOnly === true || isManufacturerOnlyQuery(q);
   // Para una marca sola, pedir explícitamente productos/componentes evita que
   // Tavily priorice la portada corporativa. Seguimos haciendo una sola consulta.
   const searchQuery = manufacturerOnly ? `${q} products industrial components catalog` : q;
