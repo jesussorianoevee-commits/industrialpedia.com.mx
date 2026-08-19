@@ -145,7 +145,7 @@ export function brandTokensFromQuery(query) {
   return tokens.filter((t, i) => tokens.indexOf(t) === i);
 }
 
-function classifySource(host, brand, queryBrandTokens, title = '') {
+export function classifySource(host, brand, queryBrandTokens, title = '', trustedOfficialDomains = []) {
   if (!host) return 'untrusted';
   if ([...TRUSTED_DISTRIBUTOR_DOMAINS].some((d) => domainMatches(host, d))) return 'distributor';
   const base = domainBaseToken(host);
@@ -155,14 +155,10 @@ function classifySource(host, brand, queryBrandTokens, title = '') {
   if (brand && normalizeBrand(brand) === base) return 'official';
   if (queryBrandTokens.some((t) => normalizeBrand(t) === base)) return 'official';
 
-  // Para búsquedas por número de parte no hay marca en la consulta. Si el título
-  // demuestra la misma marca que el dominio, tratamos la fuente como oficial.
-  // Esto evita priorizar micrositios/foros cuando Tavily encuentra el catálogo del fabricante.
-  const titleTokens = String(title || '').split(/[^A-Za-z0-9]+/).filter((t) => t.length >= 3);
-  if (titleTokens.some((t) => {
-    const n = normalizeBrand(t);
-    return n && (n === base || base.includes(n) || n.includes(base));
-  })) return 'official';
+  // Un dominio oficial debe estar demostrado por una lista de dominios oficiales
+  // previamente verificada o por coincidencia exacta con la marca. Nunca usamos el
+  // título de una página para convertir un distribuidor/tercero en "Fabricante oficial".
+  if (trustedOfficialDomains.some((d) => d && domainMatches(host, String(d).toLowerCase().replace(/^www\./, '')))) return 'official';
 
   return 'web_discovery';
 }
@@ -433,7 +429,7 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     const title = item.title || '';
     const snippet = item.content || '';
     const brand = extractBrandFromContent(`${title} ${snippet}`, queryBrandTokens);
-    const sourceType = classifySource(host, brand, queryBrandTokens, title);
+    const sourceType = classifySource(host, brand, queryBrandTokens, title, options.trustedOfficialDomains || []);
     const partNumber = partLike ? q : resolvePartNumber(q, title);
     const tavilyImages = Array.isArray(item.images)
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
