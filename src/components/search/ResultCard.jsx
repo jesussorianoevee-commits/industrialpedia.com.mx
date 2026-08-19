@@ -57,29 +57,14 @@ export default function ResultCard({ result }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          {(result.description || result.source_title) && (
-          {(result.description || result.source_title) && (
-            <div className="min-w-0 flex-1">
-              {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
-                <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
-              )}
-              {result.description && (
-                <p className="text-white/55 text-xs leading-relaxed line-clamp-4">{result.description}</p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-      {!isUsableImageUrl(result.image_url) && (result.description || result.source_title) && (
-        <div className="mb-3">
           {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
             <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
           )}
           {result.description && (
-            <p className="text-white/55 text-xs leading-relaxed">{result.description}</p>
+            <p className="text-white/55 text-xs leading-relaxed line-clamp-4">{result.description}</p>
           )}
         </div>
-      )}
+      </div>
       {result.discovery_state === 'discovered' && (
         <p className="text-white/35 text-[11px] mb-3">
           {result.part_number
