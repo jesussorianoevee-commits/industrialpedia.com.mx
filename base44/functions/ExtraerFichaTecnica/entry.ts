@@ -87,7 +87,8 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
     ? extractStructuredSpecs(extracted)
     : [
         ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
-        ...extractTextSpecs(extracted.text)
+        ...extractTextSpecs(extracted.text),
+        ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
       ].filter((r: any, i: number, arr: any[]) => {
         const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
         return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
@@ -313,6 +314,7 @@ export default async function (req: Request) {
     const manufacturerHint = String(body.manufacturer_hint || '').trim();
     const partNumberHint = String(body.part_number_hint || '').trim();
     const sourceContent = String(body.source_content || '').trim();
+    const imageUrlHint = String(body.image_url || '').trim();
     if (!url) return Response.json({ error: 'url required' }, { status: 400 });
 
     // 1) Adquisición de la fuente. Algunos fabricantes bloquean el fetch directo
@@ -452,9 +454,9 @@ export default async function (req: Request) {
     const template = detectComponentType(typeCorpus);
     const { grouped, others } = groupSpecsByTemplate(specs, template);
 
-    // 8) Imagen: si no vino en la ficha, intentar og:image del HTML.
-    let imageUrl = '';
-    if (!isPdf && bytes) {
+    // 8) Imagen: hint del resultado > og:image del HTML.
+    let imageUrl = imageUrlHint;
+    if (!imageUrl && !isPdf && bytes) {
       const raw = new TextDecoder().decode(bytes.slice(0, 50000));
       const m = raw.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
       if (m) imageUrl = m[1];

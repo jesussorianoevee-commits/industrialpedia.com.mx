@@ -135,21 +135,25 @@ export function extractTextSpecs(text) {
 // en snippets de catálogos industriales ("Piston diameter 25 mm", "Stroke 25 mm",
 // "Theoretical force 0.6 MPa"). Determinístico: sólo etiqueta capitalizada corta
 // seguida de un valor numérico con unidad de ingeniería reconocida.
-const COMPACT_UNIT_RE = '(?:mm|cm|km|m|n|kn|bar|mpa|kpa|psi|v|mv|kv|a|ma|ua|hz|khz|mhz|w|kw|mw|va|kg|g|mg|lb|nm|µm|μm|rpm|°c|°f|%|l|ml|ms|s|db)';
+const COMPACT_UNIT_SET = new Set(['mm','cm','km','m','n','kn','bar','mpa','kpa','psi','v','mv','kv','a','ma','ua','hz','khz','mhz','w','kw','mw','va','kg','g','mg','lb','nm','µm','μm','rpm','°c','°f','%','l','ml','ms','s','db','torr','pa','mbar','bar(g)','rpm','ips','in','ft','cfm','lpm','gpm']);
 const COMPACT_STOP = /^(at|with|of|in|on|for|to|en|de|para|con|por|the|a|an|y|and|or|del|la|el|las|los)$/i;
 export function extractCompactSpecs(text) {
   const raw = String(text || '').replace(/\s+/g, ' ');
   const specs = [];
-  const re = new RegExp(`([A-ZÀ-Ý][A-Za-zÀ-ÿ/]+(?:\\s+[A-Za-zÀ-ÿ/]+){0,5}?)\\s+(\\d+(?:[.,]\\d+)?\\s*${COMPACT_UNIT_RE})\\b`, 'gi');
+  // Atributo case-sensitive (empieza con mayúscula) para no consumir tokens en
+  // minúscula; unidad capturada de forma amplia y validada contra un Set.
+  const re = /([A-ZÀ-Ý][A-Za-zÀ-ÿ/]+(?:\s+[A-Za-zÀ-ÿ/]+){0,5}?)\s+(\d+(?:[.,]\d+)?)\s*([a-zA-Z°µ%]{1,6})\b/g;
   let m;
   while ((m = re.exec(raw))) {
     const head = m[1].trim();
-    if (!head || !/[A-ZÀ-Ý]/.test(head[0])) continue;
+    if (!head) continue;
     const words = head.split(/\s+/);
     while (words.length && COMPACT_STOP.test(words[words.length - 1])) words.pop();
     const attr = words.join(' ').trim();
     if (attr.length < 2 || attr.length > 50) continue;
-    const val = m[2].replace(/\s+/g, ' ').trim();
+    const unit = m[3].toLowerCase();
+    if (!COMPACT_UNIT_SET.has(unit)) continue;
+    const val = `${m[2]} ${unit}`;
     if (!specs.some((s) => s.attribute.toLowerCase() === attr.toLowerCase() && s.value === val)) {
       specs.push({ attribute: attr, value: val });
     }
