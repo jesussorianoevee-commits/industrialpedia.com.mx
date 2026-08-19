@@ -171,7 +171,7 @@ const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
   'arrow.com', 'avnet.com', 'octopart.com'
 ]);
 
-const SUSPICIOUS_HOST_TERMS = /(^|[.-])(repair|repairs|used|surplus|salvage|auction|classifieds|marketplace|forum|forums|blog|review|reviews)([.-]|$)/i;
+const SUSPICIOUS_HOST_TERMS = /(^|[.-])(repair|repairs|used|surplus|salvage|auction|classifieds|marketplace|forum|forums|blog|review|reviews|amazon|walmart|temu|wish|etsy)([.-]|$)/i;
 
 function looksLikePartNumberText(value) {
   const s = String(value || '').trim();
@@ -225,7 +225,12 @@ export function classifyIndustrialSource(r, manufacturerNames = [], trustedOffic
 
 export function isLikelyIndustrialResult(r) {
   const text = `${r.title || ''} ${r.snippet || ''} ${r.url || ''}`.toLowerCase();
-  return /datasheet|data.?sheet|catalog|product|part number|order(ing)? information|specification|manual|automation|industrial|sensor|valve|actuator|pneumatic|electrical|bearing|motor|plc|drive/.test(text);
+  // El buscador general puede devolver música, consumo y marketplaces aunque
+  // compartan una palabra con la consulta. Una fuente web debe demostrar
+  // contexto técnico/industrial; el dominio del marketplace nunca lo justifica.
+  if (SUSPICIOUS_HOST_TERMS.test(hostOf(r.url))) return false;
+  if (/(?:music|musica|song|cancion|bolero|movie|pelicula|recipe|receta|fashion|ropa|shoes?|zapatos?|celebrity|celebridad)/i.test(text)) return false;
+  return /datasheet|data.?sheet|catalog|product|part number|order(ing)? information|specification|manual|automation|industrial|sensor|valve|actuator|pneumatic|electrical|bearing|rodamiento|balero|motor|plc|drive/.test(text);
 }
 
 export function filterTrustedIndustrialResults(results, manufacturerNames = [], trustedOfficialDomains = []) {
