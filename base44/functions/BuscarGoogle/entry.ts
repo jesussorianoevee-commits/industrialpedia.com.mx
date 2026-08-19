@@ -3,6 +3,7 @@ import { secrets, waitUntil } from 'base44:runtime';
 import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
+import { isUsableProductImageCandidate, selectBestImage } from '../../shared/imageResolver.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
@@ -42,7 +43,10 @@ export default async function (req: Request) {
     } catch { /* fallback heurístico de una sola palabra */ }
 
     // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
-    //    sin recurrir al buscador web. La base de datos es la fuente de verdad.
+    //    sin recurrir al buscador web. La base sigue siendo la fuente de verdad,
+    //    pero los resultados cacheados pasan por las mismas defensas actuales de
+    //    relevancia e imágenes. Así una corrección del resolver no queda anulada
+    //    por datos viejos (por ejemplo un logo guardado antes del fix).
     let discovery: any = null;
     let cached = false;
     try {
@@ -50,10 +54,20 @@ export default async function (req: Request) {
         { query_normalized: queryNorm }, '-created_date', 1
       );
       if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
-        const safeCachedResults = cachedRecs[0].results.filter((r: any) =>
-          isLikelyIndustrialTavilyResult(r, query) &&
-          (!manufacturerOnly || isProductResultForManufacturer(r))
-        );
+        const safeCachedResults = cachedRecs[0].results
+          .filter((r: any) =>
+            isLikelyIndustrialTavilyResult(r, query) &&
+            (!manufacturerOnly || isProductResultForManufacturer(r))
+          )
+          .map((r: any) => {
+            const copy = { ...r };
+            if (!isUsableProductImageCandidate(copy.image_url, copy.title, copy.description || copy.snippet)) {
+              copy.image_url = '';
+              copy.image_method = '';
+              copy.image_confidence = 0;
+            }
+            return copy;
+          });
         if (safeCachedResults.length) {
           discovery = { results: safeCachedResults, provider: 'cache', telemetry: { configured: true, queries_made: 0, error: null, detail: null } };
           cached = true;
