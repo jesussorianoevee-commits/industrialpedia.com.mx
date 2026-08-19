@@ -7,6 +7,7 @@ import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTemplates.js';
 import { gateSpec } from '../../shared/qualityGateway.js';
+import { gateSpec } from '../../shared/qualityGateway.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -203,7 +204,7 @@ export default async function (req: Request) {
         },
         verified: false
       };
-    });
+    }).filter((spec: any) => gateSpec(spec).pass);
 
     // 5) Fabricante: pista manual > marca de la consulta > derivación de dominio (solo si official).
     const host = hostOf(url);
@@ -276,7 +277,7 @@ export default async function (req: Request) {
       part_number_normalized: partNumber ? normalizePartNumber(partNumber) : '',
       manufacturer_name: manufacturer,
       product_name: safeText(extracted.title, 300) || partNumber,
-      description: safeText(extracted.text, 800),
+      description: safeText(extracted.title, 300) || '',
       image_url: imageUrl,
       component_type: template.type,
       component_type_label: template.label,
