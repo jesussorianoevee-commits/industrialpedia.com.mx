@@ -7,6 +7,7 @@ import GoogleResultCard from '@/components/search/GoogleResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
+import SearchHistory from '@/components/search/SearchHistory';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
@@ -33,6 +34,20 @@ export default function Buscar() {
   const [ficha, setFicha] = useState(null);
   const [fichaLoading, setFichaLoading] = useState(false);
   const [fichaError, setFichaError] = useState(null);
+
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('industrialpedia_search_history') || '[]'); }
+    catch { return []; }
+  });
+
+  const saveToHistory = (term) => {
+    if (!term.trim()) return;
+    setHistory((prev) => {
+      const next = [term, ...prev.filter((s) => s !== term)].slice(0, 8);
+      try { localStorage.setItem('industrialpedia_search_history', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const runKnowledgeCore = useCallback(async (query, f) => {
     const reqId = ++kcReqId.current;
@@ -121,6 +136,7 @@ export default function Buscar() {
     e.preventDefault();
     const next = input.trim();
     if (next) {
+      saveToHistory(next);
       setSuggestions([]);
       setParams({ q: next });
     }
@@ -132,11 +148,10 @@ export default function Buscar() {
     navigate('/buscar');
   };
 
-  const kcResults = kcData?.results || [];
+  const kcResults = kcData?.knowledge_core_results || [];
+  const discoveryResults = kcData?.discovery_results || [];
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
   const googleResults = googleData?.google_results || [];
-  const googleTelemetry = googleData?.telemetry || {};
-  const kcHits = googleData?.knowledge_core_hits || [];
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
@@ -170,6 +185,7 @@ export default function Buscar() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         const value = s.partNumber || s.title;
+                        saveToHistory(value);
                         setSuggestions([]);
                         setInput(value);
                         setParams({ q: value });
@@ -206,7 +222,7 @@ export default function Buscar() {
             {!q ? 'Escribe una refacción industrial para buscarla.' : (
               <span className="flex items-center gap-2">
                 {(kcLoading || googleLoading) && <Loader2 className="w-3 h-3 animate-spin" />}
-                {kcLoading ? 'Buscando en Knowledge Core…' : googleLoading ? 'Descubriendo en la web…' : `${googleResults.length} resultado(s) web · ${kcResults.length} en Knowledge Core`}
+                {kcLoading ? 'Buscando en Knowledge Core…' : googleLoading ? 'Descubriendo fuentes…' : `${kcResults.length} en Knowledge Core · ${discoveryResults.length + googleResults.length} fuente(s) encontrada(s)`}
               </span>
             )}
           </div>
@@ -225,7 +241,16 @@ export default function Buscar() {
         )}
 
         {!q ? (
-          <EmptyState q={q} onReset={onReset} />
+          <div className="space-y-6">
+            <EmptyState q={q} onReset={onReset} />
+            {history.length > 0 && (
+              <SearchHistory
+                history={history}
+                onSelect={(term) => { setInput(term); setParams({ q: term }); }}
+                onClear={() => { setHistory([]); try { localStorage.removeItem('industrialpedia_search_history'); } catch {} }}
+              />
+            )}
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Knowledge Core verificado */}
@@ -242,28 +267,23 @@ export default function Buscar() {
               </section>
             )}
 
-            {/* Descubrimiento web */}
+            {/* Fuentes encontradas */}
             <section>
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] uppercase tracking-wider text-white/40">Descubrimiento web</div>
-                {googleTelemetry.queries_made ? <span className="text-[10px] text-white/30">{googleTelemetry.queries_made} consulta(s) API</span> : null}
-              </div>
-
-              {googleLoading ? (
+              <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Fuentes encontradas</div>
+              {googleLoading || kcLoading ? (
                 <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Buscando en la web…
+                  <Loader2 className="w-4 h-4 animate-spin" /> Descubriendo fuentes…
                 </div>
-              ) : googleError && googleResults.length === 0 ? (
+              ) : googleError && googleResults.length === 0 && discoveryResults.length === 0 ? (
                 <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
-                  <div className="text-sm text-amber-300/90 font-medium mb-1">El buscador web no respondió</div>
-                  <div className="text-xs text-white/50">Error técnico: {googleError}</div>
-                  {googleTelemetry.google_detail ? <div className="text-[11px] text-white/35 mt-2 break-words">Detalle Google: {googleTelemetry.google_detail}</div> : null}
-                  <div className="text-[11px] text-white/35 mt-1">El detalle anterior es la respuesta técnica del proveedor; no muestra la API key.</div>
+                  <div className="text-sm text-amber-300/90 font-medium mb-1">No se pudieron descubrir fuentes en este momento</div>
+                  <div className="text-xs text-white/50">Inténtalo de nuevo en unos segundos.</div>
                 </div>
-              ) : googleResults.length === 0 ? (
+              ) : discoveryResults.length === 0 && googleResults.length === 0 ? (
                 <div className="text-center py-8 text-white/40 text-xs">No se encontraron fuentes industriales para esta referencia.</div>
               ) : (
                 <div className="space-y-3">
+                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
                   {googleResults.map((r, i) => (
                     <GoogleResultCard key={`${r.url}-${i}`} result={r} query={q} onFicha={(f) => { setFicha(f); setFichaError(null); }} />
                   ))}

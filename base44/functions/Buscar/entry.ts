@@ -12,6 +12,23 @@ const DEFAULT_STATES = ['published', 'incomplete'];
 const ALLOWED_STATES = ['published', 'validated', 'incomplete'];
 const SCAN_LIMIT = 5000;
 
+// Términos genéricos que no deben usarse solos para justificar una coincidencia.
+// Si la consulta es "Schneider Electric", "electric" no debe hacer coincidir un
+// Part Festo que contenga "electric" en su descripción. El filtro exige TODOS
+// los tokens no-genéricos: "schneider" debe estar presente para que haya match.
+const GENERIC_QUERY_TERMS = new Set([
+  'electric', 'electrical', 'electronics', 'automation', 'product', 'products',
+  'component', 'components', 'industrial', 'part', 'parts', 'supply', 'power',
+  'control', 'system', 'systems', 'module', 'modules', 'device', 'devices',
+  'electrico', 'electrica', 'electronica', 'automatizacion', 'producto',
+  'productos', 'componente', 'componentes', 'refaccion', 'refacciones',
+  'repuesto', 'repuestos', 'sistema', 'sistemas', 'modulo', 'modulos',
+  'dispositivo', 'dispositivos', 'energia', 'potencia'
+]);
+function filterGenericTokens(tokens) {
+  return tokens.filter((t) => !GENERIC_QUERY_TERMS.has(String(t).toLowerCase()));
+}
+
 function pushGrp(m, k, v) { (m[k] = m[k] || []).push(v); }
 
 export default async function (req) {
@@ -113,7 +130,7 @@ export default async function (req) {
     let exactManufacturerQuery = false;
     if (q) {
       const qNormForMatch = normalizePartNumber(q);
-      const qTokensForMatch = tokenize(q).map((t) => t.toLowerCase()).filter(Boolean);
+      const qTokensForMatch = filterGenericTokens(tokenize(q).map((t) => t.toLowerCase()).filter(Boolean));
       try {
         const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
         const normalizedQuery = normalizeManufacturer(q);
@@ -328,7 +345,7 @@ export default async function (req) {
       try {
         const scan = await base44.asServiceRole.entities.SearchIndex.filter(base, '-updated_date', SCAN_LIMIT);
         const seen = new Set(candidates.map((c) => c.part_id || c.id));
-        const scanTokens = tokenize(q).map((t) => t.toLowerCase()).filter(Boolean);
+        const scanTokens = filterGenericTokens(tokenize(q).map((t) => t.toLowerCase()).filter(Boolean));
         const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
         for (const p of scan) {
           const key = p.part_id || p.id;
@@ -478,21 +495,16 @@ export default async function (req) {
     }
     if (q) scored = scored.filter((r) => r.score > 0 || r.specs.some((s) => s.__search_text_match));
 
-    scored.sort(rankComparator);
-
-    const total = scored.length;
-    const page = scored.slice(offset, offset + limit);
-
-    // 8) Facetas desde el conjunto completo (pre-paginación).
-    const mfCounts = {};
-    const catCounts = {};
-    scored.forEach((r) => {
-      if (r.part.manufacturer_name) mfCounts[r.part.manufacturer_name] = (mfCounts[r.part.manufacturer_name] || 0) + 1;
-      if (r.part.category) catCounts[r.part.category] = (catCounts[r.part.category] || 0) + 1;
-    });
+    // Separación estricta: Knowledge Core (Parts persistidos) vs DiscoveryIndex/
+    // Catalog/web (fuentes descubiertas). Un registro descubierto nunca aparece
+    // en la sección Knowledge Core, y viceversa.
+    const kcScored = scored.filter((r) => !r.discovery);
+    const discoveryScored = scored.filter((r) => Boolean(r.discovery));
+    kcScored.sort(rankComparator);
+    discoveryScored.sort(rankComparator);
 
     const unique = (arr) => [...new Set(arr.filter(Boolean))];
-    const results = page.map((r) => ({
+    const mapResult = (r) => ({
       id: r.part.part_id || null,
       catalog_id: r.part.catalog_id || null,
       discovery_id: r.discovery?.id || null,
@@ -504,7 +516,6 @@ export default async function (req) {
       image_url: r.part.image_url,
       validation_state: r.part.validation_state,
       match: r.match,
-      score: r.score,
       has_evidence: r.evidence.length > 0,
       evidence_count: r.evidence.length,
       source_ids: unique(r.specs.map((s) => s.source_id)),
@@ -520,30 +531,23 @@ export default async function (req) {
         unit: s.normalized_unit || s.original_unit,
         validated: s.validation_state === 'published' || s.validation_state === 'validated'
       }))
-    }));
+    });
+
+    const knowledge_core_results = kcScored.slice(0, limit).map(mapResult);
+    const discovery_results = discoveryScored.slice(0, limit).map(mapResult);
+
+    // Facetas desde Knowledge Core (pre-paginación).
+    const mfCounts = {};
+    const catCounts = {};
+    kcScored.forEach((r) => {
+      if (r.part.manufacturer_name) mfCounts[r.part.manufacturer_name] = (mfCounts[r.part.manufacturer_name] || 0) + 1;
+      if (r.part.category) catCounts[r.part.category] = (catCounts[r.part.category] || 0) + 1;
+    });
 
     return Response.json({
       q,
-      total,
-      offset,
-      limit,
-      states,
-      results,
-      web_discovery: {
-        attempted: Boolean(q && !hasDirectQueryMatch),
-        provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core',
-        result_count: webCandidates.length,
-        google_configured: Boolean(webTelemetry.google_configured),
-        google_error: webTelemetry.google_error || webTelemetry.google_fallback_error || null,
-        google_detail: webTelemetry.google_detail || null
-      },
-      web_results: webCandidates.slice(0, 50).map((w) => ({
-        title: w.discovery?.title || w.part.title || '',
-        url: w.discovery?.source_url || w.part.source_url || '',
-        snippet: w.discovery?.description || w.part.description || '',
-        source_type: w.discovery?.source_type || 'cse_configured',
-        provider: w.discovery?.source_provider || 'google'
-      })),
+      knowledge_core_results,
+      discovery_results,
       facets: {
         manufacturers: Object.entries(mfCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
         categories: Object.entries(catCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
