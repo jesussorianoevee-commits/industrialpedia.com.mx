@@ -49,7 +49,9 @@ export function gateSpec(spec) {
   const attribute = normalizeAttribute(spec.attribute_name);
   if (!spec.original_value) causes.push('empty original_value');
   if (!spec.evidence_text) causes.push('missing evidence_text');
-  if (!Number.isFinite(Number(spec.page)) || Number(spec.page) < 1) causes.push('missing evidence_page');
+  const hasPageEvidence = Number.isFinite(Number(spec.page)) && Number(spec.page) >= 1;
+  const hasWebEvidence = spec?.evidence?.document_type === 'website' && Boolean(spec?.evidence?.source_url);
+  if (!hasPageEvidence && !hasWebEvidence) causes.push('missing evidence_locator');
   if (spec.semantic_role !== 'TECHNICAL_SPECIFICATION') causes.push('technical_specification_role_not_demonstrated');
   if (NON_TECHNICAL_SPEC_ATTRIBUTES.has(attribute)) causes.push('non_technical_document_attribute');
   if (GRAPH_OR_DOCUMENT_PATTERNS.some((re) => re.test(String(spec.attribute_name || '')) || re.test(String(spec.original_value || '')))) {
