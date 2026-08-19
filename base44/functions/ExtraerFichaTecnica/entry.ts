@@ -205,6 +205,7 @@ export default async function (req: Request) {
     const query = String(body.query || '').trim();
     const manufacturerHint = String(body.manufacturer_hint || '').trim();
     const partNumberHint = String(body.part_number_hint || '').trim();
+    const sourceContent = String(body.source_content || '').trim();
     if (!url) return Response.json({ error: 'url required' }, { status: 400 });
 
     // 1) Adquisición de la fuente.
@@ -226,6 +227,15 @@ export default async function (req: Request) {
       return Response.json({ found: false, error: `extraction_failed: ${e?.message || e}`, url }, { status: 422 });
     }
     if (!extracted?.extractable) return Response.json({ found: false, error: extracted?.reason || 'source_not_extractable', url }, { status: 422 });
+
+    // Algunas páginas industriales son shells/SPA y su HTML directo no contiene
+    // la ficha renderizada. Tavily ya obtuvo el contenido de la página; úsalo como
+    // evidencia de adquisición secundaria, sin saltarnos el Quality Gateway.
+    if (sourceContent && (!extracted.text || extracted.text.length < 250 || !(extracted.specTable?.length))) {
+      const fallback = extractPlainText(sourceContent);
+      if (fallback.text.length > extracted.text.length) extracted.text = fallback.text;
+      if (fallback.specTable?.length) extracted.specTable = [...(extracted.specTable || []), ...fallback.specTable];
+    }
 
     // 3) Part Number: pista manual > candidatos estructurados > literal en la fuente.
     const candidates = extractCandidates(extracted.text, extracted.pages || [], extracted.blocks || [], extracted.tables || []);
