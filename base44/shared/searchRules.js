@@ -85,6 +85,39 @@ export function scorePart(part, q, specs) {
   return best;
 }
 
+// Filtro de relevancia para registros de DiscoveryIndex. Un registro persistido
+// puede tener datos contaminados (fabricante mal derivado, fuente no industrial).
+// Este filtro rechaza fuentes claramente no industriales (marketplaces, sitios de
+// música/películas, redes sociales) y contenido no industrial sin contexto técnico.
+// Es generalizable: no depende de un fabricante o producto concreto.
+const NON_INDUSTRIAL_HOSTS = /(?:^|[.])(amazon|ebay|mercadolibre|aliexpress|alibaba|walmart|temu|wish|etsy|imslp|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|reddit|quora|pinterest|blogspot|wordpress|medium|wikipedia|wikimedia|indeed|glassdoor|stackoverflow|stackexchange|pinterest)(?:[.]|$)/i;
+const NON_INDUSTRIAL_CONTENT = /(?:recipe|receta|food|comida|restaurant|restaurante|movie|pelicula|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|smartphone|iphone|gaming|video game|hotel|travel|turismo|viajes?|sports?|deportes?|celebrity|celebridad|crypto|loteria|lottery|juegos?|games?|boleros?\b|dances?|for orchestra|composition)/i;
+
+export function isLikelyIndustrialSource(url, title, description) {
+  let host = '';
+  try { host = new URL(url).hostname.toLowerCase(); } catch {}
+  if (host && NON_INDUSTRIAL_HOSTS.test(host)) return false;
+  const text = `${title || ''} ${description || ''}`;
+  if (NON_INDUSTRIAL_CONTENT.test(text) && !INDUSTRIAL_CONTEXT_TERMS.test(text)) return false;
+  return true;
+}
+
+// Gate determinístico de consultas no industriales. Una consulta claramente
+// no industrial (recetas, música, películas, moda, etc.) no debe producir
+// resultados del Knowledge Core ni del DiscoveryIndex, aunque registros viejos
+// de discovery tengan el texto de la consulta contaminando sus descripciones.
+// Es generalizable: no depende de un fabricante o producto concreto. Si la
+// consulta tiene contexto industrial explícito, no se considera no-industrial.
+const NON_INDUSTRIAL_QUERY_TERMS = /(?:recipe|receta|food|comida|restaurant|restaurante|cocina|movie|pelicula|music|musica|song|cancion|shoes?|zapatos?|clothing|ropa|fashion|cosmetics?|maquillaje|smartphone|iphone|ipad|gaming|video game|hotel|travel|turismo|viajes?|sports?|deportes?|celebrity|celebridad|crypto|cryptocurrency|loteria|lottery|juegos?|games?)/i;
+const INDUSTRIAL_CONTEXT_TERMS = /(?:industrial|automation|automatizacion|automatización|manufacturing|factory|fabrica|fábrica|electrical|electrico|electrónica|electronics|electronica|pneumatic|neumatic|neumático|hydraulic|hidraulic|hidráulico|sensor|valve|valvula|válvula|actuator|motor|bearing|rodamiento|balero|baleros|plc|drive|inverter|relay|rele|contactor|connector|conector|switch|interruptor|cylinder|cilindro|robot|robotics|servo|encoder|cnc|fanuc|siemens|festo|smc|balluff|eaton|omron|allen[- ]?bradley|rockwell|schneider|mitsubishi|yaskawa|keyence|ifm|sick|pepperl|turck|phoenix contact|power supply|datasheet|data sheet|specification|part number|order number|model number|refaccion|repuesto|componente industrial|technical|catalogo|catálogo)/i;
+
+export function isNonIndustrialQuery(q) {
+  const s = String(q || '').trim();
+  if (!s) return false;
+  if (INDUSTRIAL_CONTEXT_TERMS.test(s)) return false;
+  return NON_INDUSTRIAL_QUERY_TERMS.test(s);
+}
+
 // Comparador reproducible: relevancia desc, luego confianza del estado, luego part_number.
 export function rankComparator(a, b) {
   if (b.score !== a.score) return b.score - a.score;

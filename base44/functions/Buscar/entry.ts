@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
+import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator, isNonIndustrialQuery, isLikelyIndustrialSource } from '../../shared/searchRules.js';
 import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
@@ -49,6 +49,19 @@ export default async function (req) {
         duration_ms: 0,
         created_at: new Date().toISOString()
       }).catch(() => {});
+    }
+
+    // Gate de consultas no industriales: una consulta claramente no industrial
+    // (recetas, música, moda, etc.) no debe producir resultados del Knowledge Core
+    // ni del DiscoveryIndex, aunque registros viejos tengan texto contaminado.
+    // Es generalizable: si hay contexto industrial explícito, la consulta pasa.
+    if (q && isNonIndustrialQuery(q)) {
+      return Response.json({
+        q,
+        knowledge_core_results: [],
+        discovery_results: [],
+        facets: { manufacturers: [], categories: [] }
+      });
     }
 
     // Estados de validación: por defecto solo PUBLICADO.
@@ -198,11 +211,11 @@ export default async function (req) {
         discoveryCandidates = [...mergedDiscovery.values()];
       } catch (e) { /* keep manufacturer discovery candidates */ }
       const discoveryScan = await base44.asServiceRole.entities.DiscoveryIndex.filter(discoveryBase, '-updated_date', 5000).catch(() => []);
-      const dqTokens = tokenize(q);
+      const dqTokens = filterGenericTokens(tokenize(q).map((t) => t.toLowerCase()).filter(Boolean));
       const seenDiscovery = new Set(discoveryCandidates.map((d) => d.id));
       for (const d of discoveryScan) {
         const text = `${d.candidate_part_number || ''} ${d.manufacturer_name || ''} ${d.title || ''} ${d.description || ''}`.toLowerCase();
-        if (dqTokens.length && dqTokens.some((t) => text.includes(t)) && !seenDiscovery.has(d.id)) {
+        if (dqTokens.length && dqTokens.every((t) => text.includes(t)) && !seenDiscovery.has(d.id)) {
           discoveryCandidates.push(d); seenDiscovery.add(d.id);
         }
       }
@@ -220,6 +233,14 @@ export default async function (req) {
       }
       return queryTokensForDiscovery.length > 0 && queryTokensForDiscovery.every((token) => text.includes(token));
     });
+
+    // Filtro de relevancia para DiscoveryIndex: registros con fuentes no
+    // industriales (marketplaces, sitios de música/películas) o contenido no
+    // industrial no deben aparecer en resultados, aunque hayan sido persistidos
+    // anteriormente con datos contaminados. Es generalizable.
+    discoveryCandidates = discoveryCandidates.filter((d) =>
+      isLikelyIndustrialSource(d.source_url, d.title, d.description)
+    );
 
     // 3) DESCUBRIMIENTO WEB: si el Knowledge Core/DiscoveryIndex no tiene una
     //    coincidencia relevante, BUSCAR puede descubrir una fuente externa.
@@ -442,13 +463,13 @@ export default async function (req) {
         part_number_normalized: d.candidate_part_number_normalized,
         manufacturer_name: d.manufacturer_name,
         category: '',
-        description: [d.title || '', d.description || '', q].filter(Boolean).join(' '),
+        description: [d.title || '', d.description || ''].filter(Boolean).join(' '),
         title: d.title || '',
         image_url: d.image_url || ''
       };
       const { score: rankedScore, match: rankedMatch } = scorePart(pseudoPart, q, []);
       const discoveryText = `${d.candidate_part_number || ''} ${d.manufacturer_name || ''} ${d.title || ''} ${d.description || ''} ${d.source_url || ''}`.toLowerCase();
-      const queryTokens = tokenize(q);
+      const queryTokens = filterGenericTokens(tokenize(q).map((t) => t.toLowerCase()).filter(Boolean));
       const discoveryHits = queryTokens.filter((t) => discoveryText.includes(t)).length;
       const score = rankedScore > 0 ? rankedScore : (discoveryHits > 0 ? 250 + discoveryHits * 20 : 0);
       const match = rankedScore > 0 ? rankedMatch : (discoveryHits > 0 ? 'web_discovery_match' : 'none');
