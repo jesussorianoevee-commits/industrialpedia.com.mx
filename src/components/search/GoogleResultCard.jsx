@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { FileText, Globe, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
-import { Image } from '@/components/ui/image';
 import { base44 } from '@/api/base44Client';
 
 function isUsableImageUrl(value) {
