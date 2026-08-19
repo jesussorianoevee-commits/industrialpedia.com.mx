@@ -83,11 +83,22 @@ function isExcluded(host, title, snippet) {
 // Las páginas corporativas, perfiles sociales y páginas de empresa no son
 // fuentes de producto aunque el texto mencione automatización industrial.
 // Se filtran a nivel de descubrimiento para que tampoco lleguen a la ficha.
-const CORPORATE_ONLY_TERMS = /(?:about us|about the company|company profile|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|public company|company size|specialties|industry\s*[:\-]|website\s*[:\-]|employee|employees|linkedin)/i;
+const CORPORATE_ONLY_TERMS = /(?:about us|about the company|company profile|headquarters|locations?|careers?|jobs?|investor relations|investors|financials?|earnings?|annual report|quarterly report|press release|newsroom|contact us|our company|who we are|public company|company size|specialties|industry\s*[:\-]|website\s*[:\-]|employee|employees|linkedin|businesswire|stock price|shareholder|remote workstation|vpn|e-mail valero|energy corporation|refinery company|refining company)/i;
+
+// Señales duras de contenido corporativo que nunca deben convertirse en una
+// "fuente de producto", aunque la misma página también mencione "products",
+// "automation" u otra palabra técnica. El problema anterior era precisamente
+// permitir la página porque contenía una palabra de producto además de la
+// información corporativa.
+const CORPORATE_HARD_TERMS = /(?:investor relations|investors?|financials?|earnings?|annual report|quarterly report|shareholders?|stock price|press release|newsroom|businesswire|headquarters|company profile|company size|specialties|public company|remote workstation|vpn|careers?|jobs?|employee\s*(?:count|number|size)|energy corporation|refining company|refinery company)/i;
+
 export function isCorporateOnlyResult(item) {
   const host = hostOf(item?.url);
   const text = `${item?.title || ''} ${item?.snippet || item?.content || ''}`;
   if (EXCLUDE_HOST_PATTERNS.test(host)) return true;
+  // Estas señales son suficientes por sí mismas: no se relajan porque la página
+  // también contenga "product", "automation" o "industrial".
+  if (CORPORATE_HARD_TERMS.test(text)) return true;
   return CORPORATE_ONLY_TERMS.test(text) && !PRODUCT_RESULT_TERMS.test(text);
 }
 
@@ -206,12 +217,16 @@ function isManufacturerOnlyQuery(q) {
 // página corporativa del fabricante. Estas señales suelen corresponder a
 // "About us", oficinas, carreras, investor relations, etc. y no a una ficha
 // de producto o catálogo utilizable.
-const CORPORATE_PAGE_TERMS = /(?:about us|about the company|a global manufacturer|global manufacturer|company profile|corporate|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|sobre nosotros|la empresa|oficinas|ubicaciones|empleo|trabaja con nosotros)/i;
+const CORPORATE_PAGE_TERMS = /(?:about us|about the company|a global manufacturer|global manufacturer|company profile|corporate|headquarters|locations?|careers?|jobs?|investor relations|investors|financials?|earnings?|annual report|quarterly report|shareholders?|stock price|press release|newsroom|contact us|our company|who we are|public company|company size|specialties|industry\s*[:\-]|website\s*[:\-]|employee|employees|linkedin|businesswire|remote workstation|vpn|energy corporation|refining company|refinery company)/i;
 const PRODUCT_RESULT_TERMS = /(?:product|products|catalog|catalogue|datasheet|data sheet|part number|order number|model|series|pneumatic|electromechanical|electrical|automation|actuator|cylinder|valve|sensor|gripper|drive|motor|controller|plc|connector|fitting|regulator|filter|vacuum|component|refaccion|repuesto|componente)/i;
 
 export function isProductResultForManufacturer(item) {
   const text = `${item?.title || ''} ${item?.snippet || item?.content || ''} ${item?.url || ''}`;
-  if (CORPORATE_PAGE_TERMS.test(text)) return false;
+  // Para una consulta por fabricante, una página corporativa nunca cuenta como
+  // producto aunque también diga "products", "automation" o "industrial".
+  if (CORPORATE_PAGE_TERMS.test(text) || CORPORATE_HARD_TERMS.test(text)) return false;
+  // No basta con que el dominio sea el del fabricante: la página debe demostrar
+  // que representa un producto, catálogo, datasheet, modelo/serie o componente.
   return PRODUCT_RESULT_TERMS.test(text) || /[A-Za-z]{1,6}[-_]?\d[A-Za-z0-9_-]{2,}/.test(text);
 }
 
