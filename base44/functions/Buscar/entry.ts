@@ -485,7 +485,10 @@ export default async function (req) {
       web_discovery: {
         attempted: Boolean(q && !hasDirectQueryMatch),
         provider: q && !hasDirectQueryMatch ? 'google-first' : 'knowledge-core',
-        result_count: webCandidates.length
+        result_count: webCandidates.length,
+        google_configured: Boolean(web?.telemetry?.google_configured),
+        google_error: web?.telemetry?.google_error || web?.telemetry?.google_fallback_error || null,
+        google_detail: web?.telemetry?.google_detail || null
       },
       web_results: webCandidates.slice(0, 50).map((w) => ({
         title: w.discovery?.title || w.part.title || '',
