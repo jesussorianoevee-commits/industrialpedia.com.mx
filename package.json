@@ -9,6 +9,7 @@
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
+    "regression:gate": "node base44/tests/regressionGate.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
