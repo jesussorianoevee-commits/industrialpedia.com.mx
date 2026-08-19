@@ -98,6 +98,17 @@ async function duckduckgo(query) {
   } catch { return []; }
 }
 
+const NEGATIVE_RESULT_TERMS = [
+  'manual de usuario', 'user manual', 'curso', 'course', 'foro', 'forum',
+  'opiniones', 'reviews', 'review', 'job', 'jobs', 'empleo', 'careers',
+  'auction', 'auctioneer', 'used equipment', 'second hand', 'repair service'
+];
+
+function isNegativeResult(r) {
+  const text = `${r.title || ''} ${r.snippet || ''}`.toLowerCase();
+  return NEGATIVE_RESULT_TERMS.some((term) => text.includes(term));
+}
+
 function unique(results) {
   const seen = new Set();
   return results.filter((r) => {
@@ -118,7 +129,14 @@ export async function discoverIndustrialWeb(query) {
   // configurado con los dominios industriales del usuario, por lo que añadir
   // demasiadas palabras puede empeorar el recall. Solo usamos variantes si la
   // búsqueda literal no devuelve resultados.
-  const searchQueries = [q];
+  // Buscamos en paralelo con varias formas de la misma consulta. Esto no depende
+  // de una marca concreta: funciona igual para Festo, SMC, Balluff, Eaton,
+  // Siemens, SKF, Omron, Fanuc o cualquier otra referencia industrial.
+  const searchQueries = [...new Set([
+    q,
+    looksLikePartNumberText(q) ? `"${q}"` : `${q} industrial product`,
+    `${q} datasheet`
+  ])];
 
   const googleBatches = await Promise.all(searchQueries.map((term) => googleCustomSearch(term)));
   const googleResults = unique(googleBatches.flatMap((batch) => batch.results || []));
@@ -128,7 +146,7 @@ export async function discoverIndustrialWeb(query) {
 
   // Si la consulta literal no encontró nada, hacemos una segunda pasada orientada
   // a documentación industrial. Esto evita contaminar las búsquedas exactas de PN.
-  const googleFallbackQueries = [`${q} datasheet`, `${q} product catalog`];
+  const googleFallbackQueries = [`${q} product catalog`, `${q} specifications`, `${q} manufacturer`];
   const googleFallbackBatches = await Promise.all(googleFallbackQueries.map((term) => googleCustomSearch(term)));
   const googleFallback = unique(googleFallbackBatches.flatMap((batch) => batch.results || []));
   telemetry.google_fallback_error = googleFallbackBatches.find((batch) => batch.error)?.error || null;
@@ -154,6 +172,11 @@ const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
 ]);
 
 const SUSPICIOUS_HOST_TERMS = /(^|[.-])(repair|repairs|used|surplus|salvage|auction|classifieds|marketplace|forum|forums|blog|review|reviews)([.-]|$)/i;
+
+function looksLikePartNumberText(value) {
+  const s = String(value || '').trim();
+  return /[A-Za-z]/.test(s) && /\d/.test(s) && /[-_.\/]/.test(s);
+}
 
 function hostOf(url) {
   try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; }
@@ -207,6 +230,7 @@ export function isLikelyIndustrialResult(r) {
 
 export function filterTrustedIndustrialResults(results, manufacturerNames = [], trustedOfficialDomains = []) {
   return results
+    .filter((r) => !isNegativeResult(r))
     .map((r) => {
       const classified = classifyIndustrialSource(r, manufacturerNames, trustedOfficialDomains);
       // Los resultados de Google CSE provienen del conjunto de dominios que el
