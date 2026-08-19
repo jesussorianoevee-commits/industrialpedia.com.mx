@@ -7,6 +7,7 @@ import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTemplates.js';
 import { gateSpec } from '../../shared/qualityGateway.js';
+import { deriveProductIdentity } from '../../shared/productIdentity.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -497,6 +498,17 @@ export default async function (req: Request) {
       if (m && isUsableExternalImageUrl(m[1])) imageUrl = m[1];
     }
 
+    const productIdentity = deriveProductIdentity({
+      title: safeText(extracted.title, 300),
+      text: extracted.text,
+      query,
+      manufacturer_hint: manufacturer,
+      part_number_hint: partNumber,
+      source_url: url,
+      component_type: template.type,
+      component_type_label: template.label
+    });
+
     const ficha = {
       found: true,
       source: {
@@ -507,11 +519,12 @@ export default async function (req: Request) {
         title: safeText(extracted.title, 300),
         retrieved_date: consultationDate
       },
-      part_number: partNumber,
-      part_number_normalized: partNumber ? normalizePartNumber(partNumber) : '',
-      manufacturer_name: manufacturer,
-      product_name: safeText(extracted.title, 300) || partNumber,
-      description: safeText(extracted.title, 300) || '',
+      part_number: partNumber || productIdentity.part_number,
+      part_number_normalized: (partNumber || productIdentity.part_number) ? normalizePartNumber(partNumber || productIdentity.part_number) : '',
+      manufacturer_name: manufacturer || productIdentity.manufacturer,
+      product_name: productIdentity.short_description,
+      product_identity: productIdentity,
+      description: productIdentity.source_title || safeText(extracted.title, 300) || '',
       image_url: imageUrl,
       component_type: template.type,
       component_type_label: template.label,

@@ -58,12 +58,20 @@ export default function GoogleResultCard({ result, query, onFicha }) {
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0 flex-1">
-          {result.manufacturer_name && (
-            <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-wide truncate">{result.manufacturer_name}</div>
+          {result.product_identity?.manufacturer && (
+            <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-wide truncate">{result.product_identity.manufacturer}</div>
           )}
-          <div className="text-white font-semibold text-sm leading-snug truncate">{result.product_name || result.title || 'Producto encontrado'}</div>
-          {result.part_number && (
-            <div className="mt-0.5 text-xs font-mono text-white/60 truncate">{result.part_number}</div>
+          <div className={`text-sm font-semibold leading-snug truncate ${result.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>
+            {result.product_identity?.short_description || result.product_name || result.title || 'Producto encontrado'}
+          </div>
+          {result.product_identity?.variants?.length > 1 && (
+            <div className="mt-0.5 text-[10px] text-amber-400/80">{result.product_identity.variants.length} variantes detectadas</div>
+          )}
+          {result.product_identity?.part_number && (
+            <div className="mt-0.5 text-xs font-mono text-white/60 truncate">{result.product_identity.part_number}</div>
+          )}
+          {result.product_identity?.source_title && result.product_identity.source_title !== result.product_identity?.short_description && (
+            <div className="mt-1 text-[10px] text-white/25 truncate">Título de la fuente: {result.product_identity.source_title}</div>
           )}
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>

@@ -103,10 +103,16 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  {ficha.manufacturer_name && <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-[0.14em] truncate">{ficha.manufacturer_name}</div>}
-                  <h1 className="mt-1 text-base sm:text-lg font-semibold text-white leading-snug">{ficha.product_name || ficha.part_number || 'Producto'}</h1>
+                  {ficha.product_identity?.manufacturer && <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-[0.14em] truncate">{ficha.product_identity.manufacturer}</div>}
+                  <h1 className={`mt-1 text-base sm:text-lg font-semibold leading-snug ${ficha.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>{ficha.product_identity?.short_description || ficha.product_name || ficha.part_number || 'Producto'}</h1>
+                  {ficha.product_identity?.variants?.length > 1 && (
+                    <div className="mt-1 text-[11px] text-amber-400/80">{ficha.product_identity.variants.length} variantes: {ficha.product_identity.variants.join(', ')}</div>
+                  )}
                   {ficha.part_number && <div className="mt-1 text-xs font-mono text-white/55 break-all">{ficha.part_number}</div>}
                   {ficha.component_type_label && <div className="mt-2 text-[10px] uppercase tracking-wider text-white/35">{ficha.component_type_label}</div>}
+                  {ficha.product_identity?.source_title && ficha.product_identity.source_title !== (ficha.product_identity?.short_description || '') && (
+                    <div className="mt-2 text-[10px] text-white/25">Título de la fuente: {ficha.product_identity.source_title}</div>
+                  )}
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2 text-[10px]">

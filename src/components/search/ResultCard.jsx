@@ -36,7 +36,9 @@ export default function ResultCard({ result }) {
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0">
-          <div className="text-white font-semibold text-sm truncate">{result.part_number || result.title || 'Resultado encontrado'}</div>
+          <div className={`text-sm font-semibold truncate ${(result.part_number || result.product_identity?.identified) ? 'text-white' : 'text-white/50'}`}>
+            {result.part_number || result.product_identity?.short_description || 'Producto no identificado'}
+          </div>
           <div className="text-white/50 text-xs">{result.manufacturer_name || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}{result.category ? ` · ${result.category}` : ''}</div>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
@@ -58,7 +60,7 @@ export default function ResultCard({ result }) {
         </div>
         <div className="min-w-0 flex-1">
           {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
-            <div className="text-white/80 text-sm font-medium leading-snug mb-1">{result.source_title}</div>
+            <div className="text-white/25 text-[10px] leading-snug mb-1">Título de la fuente: {result.source_title}</div>
           )}
           {result.description && (
             <p className="text-white/55 text-xs leading-relaxed line-clamp-4">{result.description}</p>

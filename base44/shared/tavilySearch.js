@@ -3,6 +3,7 @@
 // Tavily es la capa de descubrimiento web; Industrialpedia conserva el filtrado y ranking.
 
 import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, stripMarkdownNoise } from './extract.js';
+import { deriveProductIdentity } from './productIdentity.js';
 
 const TIMEOUT_MS = 15000;
 
@@ -282,6 +283,14 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       const ogImage = await fetchOgImage(item.url);
       if (isUsableExternalImageUrl(ogImage)) imageUrl = ogImage;
     }
+    const identity = deriveProductIdentity({
+      title,
+      text: item.raw_content || snippet,
+      query: q,
+      manufacturer_hint: brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
+      part_number_hint: partNumber,
+      source_url: item.url
+    });
     return {
       title,
       url: item.url,
@@ -290,9 +299,10 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       source_type: sourceType,
       image_url: imageUrl,
       basic_specs: extractBasicSpecs(snippet, item.raw_content),
-      manufacturer_name: brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
-      part_number: partNumber,
-      product_name: title,
+      manufacturer_name: identity.manufacturer || brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
+      part_number: identity.part_number || partNumber,
+      product_name: identity.short_description,
+      product_identity: identity,
       description: snippet,
       raw_content: item.raw_content || '',
       is_pdf: /\.pdf(?:$|[?#])/i.test(item.url || ''),
