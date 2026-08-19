@@ -95,8 +95,21 @@ export function sanitizeResultIdentity(result, query) {
   if (!result || typeof result !== 'object') return result;
   const copy = { ...result };
 
+  // Una consulta que sea exactamente un fabricante conocido puede producir
+  // legítimamente manufacturer_name == query cuando la fuente es oficial.
+  // No confundir esa identidad demostrada con el caso contaminado en el que
+  // un término de categoría ("balero", "neum", "electric", etc.) fue copiado
+  // desde la consulta. Para fuentes oficiales, una coincidencia exacta se
+  // conserva; las reglas genéricas siguen bloqueando categorías/fracciones.
+  const normalizedQuery = normalize(query);
+  const normalizedManufacturer = normalize(copy.manufacturer_name);
+  const isOfficialExactManufacturer = copy.source_type === 'official'
+    && normalizedQuery
+    && normalizedManufacturer
+    && normalizedQuery === normalizedManufacturer;
+
   // manufacturer_name: descartar si deriva de la consulta o es genérico.
-  if (isQueryDerivedManufacturer(copy.manufacturer_name, query)) {
+  if (!isOfficialExactManufacturer && isQueryDerivedManufacturer(copy.manufacturer_name, query)) {
     const contaminated = copy.manufacturer_name;
     copy.manufacturer_name = '';
     // Limpiar product_name si fue construido desde el manufacturer contaminado.
