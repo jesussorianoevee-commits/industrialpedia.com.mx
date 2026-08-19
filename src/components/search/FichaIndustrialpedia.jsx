@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 
 const SOURCE_TYPE_LABELS = {
@@ -46,6 +46,10 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
 
 export default function FichaIndustrialpedia({ ficha, loading, error, onClose }) {
   const [imgError, setImgError] = useState(false);
+  useEffect(() => {
+    // Una ficha nueva no debe heredar el error de imagen de la ficha anterior.
+    setImgError(false);
+  }, [ficha?.image_url]);
   const specs = Array.isArray(ficha?.specs) ? ficha.specs : [];
   const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
   const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
