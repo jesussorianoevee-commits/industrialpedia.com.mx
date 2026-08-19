@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets, waitUntil } from 'base44:runtime';
-import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer } from '../../shared/tavilySearch.js';
+import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
@@ -57,6 +57,7 @@ export default async function (req: Request) {
       if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
         const safeCachedResults = cachedRecs[0].results
           .filter((r: any) =>
+            !isCorporateOnlyResult(r) &&
             isLikelyIndustrialTavilyResult(r, query) &&
             (!manufacturerOnly || isProductResultForManufacturer(r))
           )
