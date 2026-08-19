@@ -26,7 +26,20 @@ export default async function (req: Request) {
 
     const apiKey = String(secrets.get('Apy_Tavly') || '').trim().replace(/^["']|["']$/g, '').trim();
     const queryNorm = query.toLowerCase().replace(/\s+/g, ' ').trim();
-    const manufacturerOnly = query.split(/\s+/).filter(Boolean).length === 1 && brandTokensFromQuery(query).length === 1;
+    const queryTokens = query.split(/\s+/).filter(Boolean);
+    let manufacturerOnly = queryTokens.length === 1 && brandTokensFromQuery(query).length === 1;
+    // El catálogo de Manufacturer es la fuente de verdad cuando la consulta
+    // coincide exactamente con un fabricante. Esto cubre fabricantes de varias
+    // palabras (p. ej. Rockwell Automation / Schneider Electric) sin convertir
+    // consultas normales como "Festo cilindro" en búsquedas de fabricante.
+    try {
+      const normalize = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const qManufacturer = normalize(query);
+      if (qManufacturer) {
+        const manufacturers = await base44.asServiceRole.entities.Manufacturer.filter({ status: 'active' }, 'name', 500);
+        manufacturerOnly = manufacturers.some((m: any) => normalize(m.name) === qManufacturer);
+      }
+    } catch { /* fallback heurístico de una sola palabra */ }
 
     // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
     //    sin recurrir al buscador web. La base de datos es la fuente de verdad.
@@ -49,7 +62,7 @@ export default async function (req: Request) {
     } catch { /* cache miss → buscar en la web */ }
 
     if (!discovery) {
-      discovery = await discoverTavilyIndustrial(query, apiKey);
+      discovery = await discoverTavilyIndustrial(query, apiKey, { manufacturerOnly });
       // Guardar en cache (sin raw_content para no exceder el tamaño del registro).
       const trimmed = discovery.results.map((r: any) => {
         const rest: any = { ...r };
