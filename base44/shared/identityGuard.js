@@ -85,6 +85,12 @@ export function isInvalidPartNumber(partNumber) {
   if (!pn) return false;
   // Un PN debe contener al menos un dígito para ser válido.
   if (!/\d/.test(pn)) return true;
+  // Identificadores documentales/electrónicos que suelen aparecer en datasheets
+  // pero no representan por sí solos un producto: referencias VREF, estándares
+  // JEP/JESD/IEC/ISO y valores eléctricos aislados como 20V o 5A.
+  if (/^VREF\d*$/i.test(pn)) return true;
+  if (/^(?:JEP|JESD|IEC|ISO|MIL)[-_]?\d/i.test(pn)) return true;
+  if (/^\d+(?:\.\d+)?(?:V|MV|KV|A|MA|HZ|KHZ|MHZ|W|MW|OHM|KOHM)$/i.test(pn)) return true;
   return false;
 }
 
