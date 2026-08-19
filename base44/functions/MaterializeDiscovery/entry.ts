@@ -17,12 +17,6 @@ function manufacturerFrom(discovery, query, url, title, knownManufacturers = [])
     .find((m) => corpus.includes(String(m.name).toLowerCase()));
   if (known) return known.name;
 
-  // Si la propia consulta contiene una marca y la fuente la repite, también es
-  // evidencia suficiente. No confundimos términos técnicos con fabricante.
-  const qTokens = String(query || '').trim().split(/\s+/).filter(Boolean);
-  const qBrand = qTokens.find((t) => t.length >= 3 && /[a-z]/i.test(t) && !/^\d/.test(t) && corpus.includes(t.toLowerCase()));
-  if (qBrand) return qBrand;
-
   // Solo una fuente oficial puede demostrar fabricante por su propio dominio.
   // En un distribuidor NO usamos el dominio del distribuidor como fabricante.
   if (discovery.source_trust === 'official') {
