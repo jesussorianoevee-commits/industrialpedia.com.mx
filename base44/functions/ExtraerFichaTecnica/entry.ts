@@ -494,12 +494,17 @@ export default async function (req: Request) {
     };
 
     // 9) Alimentación asíncrona del Knowledge Core (no bloquea la respuesta).
-    const persistence = await feedKnowledgeCore(base44, ficha, url, isPdf);
+    // waitUntil mantiene vivo el trabajo después de devolver la ficha al usuario.
+    // Los IDs de persistencia no se conocen todavía; el estado se marca como queued.
+    waitUntil(
+      feedKnowledgeCore(base44, ficha, url, isPdf).catch(() => ({ queued: false }))
+    );
     ficha.persistence = {
-      saved: Boolean(persistence?.queued),
-      part_id: persistence?.part_id || '',
-      catalog_id: persistence?.catalog_id || '',
-      discovery_id: persistence?.discovery_id || ''
+      saved: false,
+      queued: true,
+      part_id: '',
+      catalog_id: '',
+      discovery_id: ''
     };
 
     return Response.json(ficha);
