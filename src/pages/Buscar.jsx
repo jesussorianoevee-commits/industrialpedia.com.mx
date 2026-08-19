@@ -76,12 +76,12 @@ export default function Buscar() {
     }
   }, [q, filters, runKnowledgeCore, runGoogle]);
 
-  // Autocompletado con debounce: usa BuscarGoogle para descubrir productos mientras
-  // el usuario escribe. No ejecuta una búsqueda Google por cada carácter.
+  // Autocompletado determinístico: consulta únicamente nuestro Knowledge Core,
+  // DiscoveryIndex y Manufacturer. Nunca llama Tavily/Google mientras se escribe.
   useEffect(() => {
     const term = input.trim();
     if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
-    if (term.length < 3 || term === q.trim()) {
+    if (term.length < 2 || term === q.trim()) {
       setSuggestions([]);
       setSuggestionsLoading(false);
       return;
@@ -89,12 +89,12 @@ export default function Buscar() {
     suggestionTimer.current = setTimeout(async () => {
       setSuggestionsLoading(true);
       try {
-        const res = await base44.functions.invoke('BuscarGoogle', { query: term });
-        const items = (res.data?.google_results || []).slice(0, 6).map((r) => ({
-          title: r.product_name || r.title || 'Producto',
+        const res = await base44.functions.invoke('SugerenciasBuscar', { q: term });
+        const items = (res.data?.suggestions || []).slice(0, 8).map((r) => ({
+          title: r.text || 'Producto',
           partNumber: r.part_number || '',
-          manufacturer: r.manufacturer_name || '',
-          image: r.image_url || '',
+          manufacturer: r.manufacturer || '',
+          image: r.image || '',
           result: r
         }));
         setSuggestions(items);
@@ -103,7 +103,7 @@ export default function Buscar() {
       } finally {
         setSuggestionsLoading(false);
       }
-    }, 450);
+    }, 180);
     return () => suggestionTimer.current && clearTimeout(suggestionTimer.current);
   }, [input, q]);
 
