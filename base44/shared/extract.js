@@ -50,8 +50,7 @@ export function sanitizeExtractedPair(attribute, value) {
   // siguen siendo válidos en especificaciones normales.
   const RESOURCE_SIGNAL = /(?:logo|logotype|brandmark|banner|hero|carousel|slider|icon|favicon|header|footer|navbar|navigation|menu|search|location|contact|careers|privacy|terms|login|account|social|share|print|image|picture|asset|tracking|pixel|sprite|arrow|chevron|button|badge|certificate|certified|award|javascript|void\s*\(\s*0\s*\))/i;
   const RESOURCE_PATH = /(?:\/images?\/|\/assets?\/|\/media\/|\/icons?\/|\/logos?\/|\/headers?\/|\/footers?\/|\.(?:svg|gif|png|jpe?g|webp|ico)(?:[?#]|$))/i;
-  if ((RESOURCE_SIGNAL.test(rawA) || RESOURCE_SIGNAL.test(rawV)) &&
-      (RESOURCE_SIGNAL.test(rawCombined) || RESOURCE_PATH.test(rawCombined))) return null;
+  if ((RESOURCE_SIGNAL.test(rawA) || RESOURCE_SIGNAL.test(rawV)) && RESOURCE_PATH.test(rawCombined)) return null;
 
   // Limpieza conservadora de Markdown residual sin convertir una fila inválida
   // en conocimiento: si después de limpiar no queda una etiqueta/valor útil,
