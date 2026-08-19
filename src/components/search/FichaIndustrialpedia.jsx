@@ -176,7 +176,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                       />
                     ))}
                     {extraBasic.map((s, i) => (
-                      <SpecRow key={`extra-${i}`} label={s.attribute} value={s.value} verified={false} sourceUrl={ficha.source?.url} />
+                      <SpecRow key={`extra-${i}`} label={s.attribute} value={s.value} unit={undefined} page={undefined} verified={false} sourceUrl={ficha.source?.url} />
                     ))}
                   </>
                 )}
@@ -196,6 +196,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                       label={s.attribute_name || s.attribute}
                       value={s.normalized_value || s.original_value}
                       unit={s.normalized_unit || s.original_unit}
+                      page={s.page}
                       verified
                       sourceUrl={ficha.source?.url}
                     />
