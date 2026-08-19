@@ -38,6 +38,14 @@ function isRejectableImage(url, alt = '', context = '') {
   return false;
 }
 
+// Validación reutilizable para resultados cacheados. La búsqueda y la ficha deben
+// compartir exactamente la misma regla para no permitir que una imagen antigua
+// (por ejemplo un logo) reaparezca después de que el resolver ya la rechaza.
+export function isUsableProductImageCandidate(url, alt = '', context = '') {
+  if (!isUsableExternalImageUrl(url)) return false;
+  return !isRejectableImage(url, alt, context);
+}
+
 function resolveRelativeUrl(url, baseUrl) {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
