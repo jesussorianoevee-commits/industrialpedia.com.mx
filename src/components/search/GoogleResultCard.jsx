@@ -81,7 +81,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
               onError={() => setImageSrc('')}
             />
           ) : (
-            <div className="text-[10px] uppercase tracking-wider text-white/20 text-center px-2">Imagen del producto</div>
+            <div className="text-[10px] uppercase tracking-wider text-white/20 text-center px-2">Sin imagen verificada</div>
           )}
         </div>
         <div className="min-w-0 flex-1">
