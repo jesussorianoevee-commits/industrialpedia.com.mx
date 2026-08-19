@@ -555,11 +555,12 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     !isExcluded(hostOf(r.url), r.title, r.snippet, r.url) &&
     !isCorporateOnlyResult(r) &&
     isLikelyIndustrialTavilyResult(r, q) &&
+    isQueryRelevantIndustrialResult(r, q) &&
     (!manufacturerOnly || isProductResultForManufacturer(r))
   );
   return {
     provider: 'tavily',
-    results: rankIndustrialResults(filtered).slice(0, 20),
+    results: rankIndustrialResults(filtered, q).slice(0, 20),
     telemetry: {
       configured: Boolean(apiKey),
       queries_made: queriesMade,
