@@ -159,6 +159,7 @@ export default async function (req) {
 
     const isPartNo = looksLikePartNumber(q);
     const queryTokensForDiscovery = tokenize(q);
+    const skipWebDiscovery = body.skip_web_discovery === true;
     const hasDirectQueryMatch = candidates.some((p) => {
       const text = [p.part_number, p.part_number_normalized, p.manufacturer_name, p.category, p.subcategory, p.description, p.title]
         .filter(Boolean).join(' ').toLowerCase();
@@ -179,7 +180,7 @@ export default async function (req) {
     //    (Bing API si está configurada; DuckDuckGo HTML como fallback), sin IA.
     //    El resultado externo se registra en DiscoveryIndex y se muestra como
     //    "encontrado en fuente"; nunca se inventan especificaciones.
-    if (q && !hasDirectQueryMatch) {
+    if (!skipWebDiscovery && q && !hasDirectQueryMatch) {
       try {
         const webQuery = isPartNo ? q : `${q} industrial products part number catalog`;
         const web = await discoverIndustrialWeb(webQuery);
