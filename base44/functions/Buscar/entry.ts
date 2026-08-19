@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator } from '../../shared/searchRules.js';
-import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults, manufacturerTokensFromQuery } from '../../shared/webDiscovery.js';
+import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
 // 'published' (revalidacion en curso), se incluye 'incomplete' para que
@@ -64,6 +64,7 @@ export default async function (req) {
     let candidates = [];
     let discoveryCandidates = [];
     let catalogCandidates = [];
+    let webCandidates = [];
 
     // Fuente primaria de recuperación: Part + SearchIndex. SearchIndex acelera,
     // pero BUSCAR nunca depende de que el índice esté perfecto para funcionar.
@@ -223,17 +224,20 @@ export default async function (req) {
 
           // Si aún no conocemos la marca en la base, derivamos candidatos de marca
           // desde todos los tokens de la consulta, excluyendo términos técnicos y PNs.
-          if (!manufacturerNames.length) {
-            manufacturerNames = manufacturerTokensFromQuery(q, looksLikePartNumber);
-          } else {
-            const queryBrandTokens = manufacturerTokensFromQuery(q, looksLikePartNumber);
-            manufacturerNames = [...new Set([...manufacturerNames, ...queryBrandTokens])];
-          }
+          // No inferimos una fuente oficial a partir de palabras arbitrarias de la
+          // consulta. Si la marca no está registrada, solo un CrawlSource aprobado
+          // puede otorgar confianza oficial; así evitamos falsos positivos por prefijos.
         } catch (e) { /* los distribuidores conocidos siguen disponibles */ }
 
         const industrialMatches = web.results.filter(isLikelyIndustrialResult);
         const candidateResults = industrialMatches.length ? industrialMatches : web.results;
         const industrial = filterTrustedIndustrialResults(candidateResults, manufacturerNames, trustedOfficialDomains).slice(0, 50);
+        // CRÍTICO DE RENDIMIENTO: no persistimos DiscoveryIndex/CatalogProduct ni
+        // invocamos MaterializeDiscovery dentro de la petición del usuario. Con 50
+        // resultados eso puede generar cientos de llamadas secuenciales y timeout.
+        // Primero devolvemos resultados web reales; la persistencia queda para un
+        // proceso de ingestión separado.
+        const seenWeb = new Set();
         for (const r of industrial) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
@@ -254,6 +258,16 @@ export default async function (req) {
             document_id: '',
             source_trust: r.source_type
           };
+          const webKey = String(r.url || '').replace(/#.*$/, '').toLowerCase();
+          if (!webKey || seenWeb.has(webKey)) continue;
+          seenWeb.add(webKey);
+          webCandidates.push({
+            part: { part_number: candidatePn, part_number_normalized: candidatePn ? normalizePartNumber(candidatePn) : '', manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : '', category: '', description: r.snippet || r.title || '', title: r.title || host, image_url: '' },
+            specs: [], evidence: [], score: isPartNo ? 1000 : 250,
+            match: isPartNo ? 'web_exact_query' : 'web_discovery_match',
+            discovery: { id: null, source_url: r.url, document_url: r.url, title: r.title || host, description: r.snippet || '', discovery_state: 'discovered', manufacturer_name: manufacturerNames.length === 1 ? manufacturerNames[0] : '', source_type: r.source_type, source_provider: web.provider }
+          });
+          continue;
           const existing = await base44.asServiceRole.entities.DiscoveryIndex.filter({ source_url: r.url }, 'updated_date', 1).catch(() => []);
           let discoveryId = existing[0]?.id || null;
           if (existing.length) {
