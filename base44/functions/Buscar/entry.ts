@@ -125,7 +125,7 @@ export default async function (req) {
 
       candidates = candidates.filter((p) => {
         const pn = normalizePartNumber(p.part_number || p.part_number_normalized || '');
-        if (isPartNumberQueryForBuscar(q) || looksLikePartNumber(q)) return pn === qNormForMatch;
+        if (looksLikePartNumber(q)) return pn === qNormForMatch;
         if (exactManufacturerQuery) {
           const normalizeManufacturer = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
           return normalizeManufacturer(p.manufacturer_name) === normalizeManufacturer(q);
