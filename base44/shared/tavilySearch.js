@@ -87,6 +87,28 @@ function extractBrandFromContent(content, queryBrandTokens) {
   return hit || '';
 }
 
+function extractImageFromContent(content) {
+  const text = String(content || '');
+  const markdown = text.match(/!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/i);
+  if (markdown?.[1]) return markdown[1];
+  const html = text.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i);
+  return html?.[1] || '';
+}
+
+async function fetchOgImage(url) {
+  try {
+    const r = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0 Industrialpedia/1.0', 'Accept': 'text/html,application/xhtml+xml' }
+    }, 5000);
+    if (!r.ok) return '';
+    const html = (await r.text()).slice(0, 500000);
+    const m = html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["'](https?:\/\/[^"']+)["']/i)
+      || html.match(/<meta[^>]+content=["'](https?:\/\/[^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i);
+    return m?.[1] || '';
+  } catch { return ''; }
+}
+
 function isPartNumberQuery(q) {
   const v = String(q || '').trim();
   if (!v) return false;
@@ -116,7 +138,12 @@ export async function tavilySearch(query, apiKey, options = {}) {
     const body = await r.text().catch(() => '');
     if (!r.ok) return { results: [], error: `tavily_http_${r.status}`, detail: body.slice(0, 500) };
     const data = JSON.parse(body);
-    return { results: Array.isArray(data.results) ? data.results : [], error: null, detail: null };
+    return {
+      results: Array.isArray(data.results) ? data.results : [],
+      images: Array.isArray(data.images) ? data.images : [],
+      error: null,
+      detail: null
+    };
   } catch (e) {
     if (e?.name === 'AbortError') return { results: [], error: 'tavily_timeout', detail: 'La consulta excedió el tiempo límite' };
     return { results: [], error: `tavily_exception_${e?.name || 'unknown'}`, detail: String(e?.message || '').slice(0, 500) };
