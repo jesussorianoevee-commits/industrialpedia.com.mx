@@ -241,7 +241,11 @@ export async function discoverTavilyIndustrial(query, apiKey) {
 
   const queryBrandTokens = brandTokensFromQuery(q);
   const partLike = isPartNumberQuery(q);
-  const batch = await tavilySearch(q, apiKey, { max_results: 10 });
+  const manufacturerOnly = isManufacturerOnlyQuery(q);
+  // Para una marca sola, pedir explícitamente productos/componentes evita que
+  // Tavily priorice la portada corporativa. Seguimos haciendo una sola consulta.
+  const searchQuery = manufacturerOnly ? `${q} products industrial components catalog` : q;
+  const batch = await tavilySearch(searchQuery, apiKey, { max_results: 10 });
   let queriesMade = 1;
   let primaryError = batch.error;
   let primaryDetail = batch.detail;
