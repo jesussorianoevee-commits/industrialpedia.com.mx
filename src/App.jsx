@@ -10,6 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from '@/pages/Home';
 import Buscar from '@/pages/Buscar';
 import Parte from '@/pages/Parte';
+import Comparar from '@/pages/Comparar';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/buscar" element={<Buscar />} />
         <Route path="/parte/:id" element={<Parte />} />
+        <Route path="/comparar/:id" element={<Comparar />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
