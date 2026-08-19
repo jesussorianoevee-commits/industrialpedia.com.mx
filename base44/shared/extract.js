@@ -22,22 +22,57 @@ function extractIndustrialCompactSpecs(rawText) {
   return specs;
 }
 
+// Saneamiento de pares atributo→valor antes de que lleguen al Semantic Resolver,
+// Quality Gateway, persistencia o UI. La extracción puede recibir HTML/Markdown
+// transformado en texto (por ejemplo: "![logo](//site/image.svg)") y ese contenido
+// NUNCA es una especificación técnica aunque el extractor de origen lo haya puesto
+// en una fila de tabla. Esta capa es la frontera única contra ese tipo de contaminación.
+export function sanitizeExtractedPair(attribute, value) {
+  const rawA = String(attribute || '').trim();
+  const rawV = String(value || '').trim();
+  if (!rawA || !rawV) return null;
+
+  // Rechazar la señal original antes de limpiarla: si contiene Markdown de imagen,
+  // enlace, HTML embebido o una URL, queremos descartar la fila, no "arreglarla"
+  // convirtiéndola accidentalmente en una especificación.
+  const rawCombined = `${rawA} ${rawV}`;
+  if (/[!]?\[[^\]]*\]\s*\(/i.test(rawCombined) ||
+      /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(rawCombined) ||
+      /(?:https?:)?\/\//i.test(rawCombined)) return null;
+
+  // El extractor puede separar una URL protocol-relative en otra celda o dejar
+  // sólo la ruta del asset. Ninguna de esas formas puede ser un valor técnico.
+  if (/^(?:https?:)?\/\//i.test(rawV) ||
+      /^(?:\/|\.\/|\.\.\/).*(?:\.(?:svg|gif|png|jpe?g|webp|ico)(?:[?#].*)?)$/i.test(rawV)) return null;
+
+  // Assets de interfaz, navegación y branding. Se rechazan sólo cuando la fila
+  // tiene señales de recurso; términos técnicos como "mounting" o "connection"
+  // siguen siendo válidos en especificaciones normales.
+  const RESOURCE_SIGNAL = /(?:logo|logotype|brandmark|banner|hero|carousel|slider|icon|favicon|header|footer|navbar|navigation|menu|search|location|contact|careers|privacy|terms|login|account|social|share|print|image|picture|asset|tracking|pixel|sprite|arrow|chevron|button|badge|certificate|certified|award|javascript|void\s*\(\s*0\s*\))/i;
+  const RESOURCE_PATH = /(?:\/images?\/|\/assets?\/|\/media\/|\/icons?\/|\/logos?\/|\/headers?\/|\/footers?\/|\.(?:svg|gif|png|jpe?g|webp|ico)(?:[?#]|$))/i;
+  if ((RESOURCE_SIGNAL.test(rawA) || RESOURCE_SIGNAL.test(rawV)) &&
+      (RESOURCE_SIGNAL.test(rawCombined) || RESOURCE_PATH.test(rawCombined))) return null;
+
+  // Limpieza conservadora de Markdown residual sin convertir una fila inválida
+  // en conocimiento: si después de limpiar no queda una etiqueta/valor útil,
+  // se descarta.
+  const clean = (s) => String(s)
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/[`*_>#]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const a = clean(rawA);
+  const v = clean(rawV);
+  if (!a || !v || a.length > 100 || v.length > 200) return null;
+  if (/^\s*\[[^\]]+\]\s*$/i.test(a)) return null;
+  if (/^(?:s\/f|n\/a|none|null|undefined)$/i.test(v)) return null;
+
+  return { attribute: a, value: v };
+}
+
 export function isUnsafeExtractedPair(attribute, value) {
-  const a = String(attribute || '').trim();
-  const v = String(value || '').trim();
-  const combined = `${a} ${v}`;
-  return !a || !v ||
-    // Recursos, código y URLs nunca son una especificación técnica.
-    /(?:javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\/|localhost(?:[:/]|$)|127\.0\.0\.1|0\.0\.0\.0)/i.test(combined) ||
-    /(?:https?:)?\/\//i.test(combined) ||
-    /(?:cloudfront\.net|amazonaws\.com|googleusercontent\.com|gstatic\.com|cdn\.)/i.test(combined) ||
-    // Incluye Markdown partido por saltos de línea: "![Image 1]" +
-    // "(https://...)" ya no puede llegar al Quality Gateway como spec.
-    /!\[|\]\(|\[\[[^\]]*\]\(/i.test(combined) ||
-    /\{\{|<\/?(?:script|style|template|noscript)\b/i.test(combined) ||
-    /^\s*\[[^\]]+\]\s*$/i.test(a) ||
-    /^\s*\([^)]*(?:https?:)?\/\//i.test(v) ||
-    /\b(?:search|our locations|contact|careers|privacy policy|terms|login|sign in|menu|home|footer)\b/i.test(a) && /(?:icon|image|url|https?|\/)/i.test(combined);
+  return !sanitizeExtractedPair(attribute, value);
 }
 
 // El contenido Markdown de Tavily puede llegar envuelto en varias líneas y con
