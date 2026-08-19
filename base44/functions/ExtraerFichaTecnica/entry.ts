@@ -151,6 +151,9 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     if (!attr || !val || !/\d/.test(val)) continue;
     if (isUnsafeExtractedPair(attr, val)) continue;
     if (BASIC_BLOCK.test(attr)) continue;
+    // basic_specs es sólo una vista rápida de datos técnicos encontrados.
+    // Nunca debe convertirse en un cajón de datos corporativos/documentales.
+    if (!isTechnicalSpecification(attr, val).ok) continue;
     const key = `${attr}|${val}`.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -439,8 +442,14 @@ export default async function (req: Request) {
     //    las que pasan el Gateway se persisten como published; las que no, como incomplete.
     const consultationDate = new Date().toISOString();
     let allBuiltSpecs = buildSpecs(extracted, isPdf, url, consultationDate);
+    // Una ficha sólo debe mostrar candidatos que sean técnicamente reconocibles.
+    // Los pares documentales/corporativos (Website, Industry, Company size,
+    // Headquarters, Type, Specialties, etc.) se conservan en la adquisición para
+    // trazabilidad, pero NO se presentan como "especificaciones".
     let specs = allBuiltSpecs.filter((s: any) => s.gate_passed);
-    let unverifiedSpecs = allBuiltSpecs.filter((s: any) => !s.gate_passed);
+    let unverifiedSpecs = allBuiltSpecs.filter((s: any) =>
+      !s.gate_passed && isTechnicalSpecification(s.attribute_name, s.original_value).ok
+    );
 
     // 4b) Fallback de adquisición: si la fuente era un shell/SPA y source_content
     //     no aportó specs aceptadas, obtener el contenido renderizado vía Tavily
@@ -452,7 +461,9 @@ export default async function (req: Request) {
         mergeFallbackContent(extracted, richer);
         allBuiltSpecs = buildSpecs(extracted, isPdf, url, consultationDate);
         specs = allBuiltSpecs.filter((s: any) => s.gate_passed);
-        unverifiedSpecs = allBuiltSpecs.filter((s: any) => !s.gate_passed);
+        unverifiedSpecs = allBuiltSpecs.filter((s: any) =>
+          !s.gate_passed && isTechnicalSpecification(s.attribute_name, s.original_value).ok
+        );
         tavilyExtractUsed = specs.length > 0;
       }
     }
