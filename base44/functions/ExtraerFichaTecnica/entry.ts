@@ -281,7 +281,13 @@ export default async function (req: Request) {
     // 4) Especificaciones técnicas con evidencia.
     const rawSpecs = isPdf
       ? extractStructuredSpecs(extracted)
-      : ((extracted.specTable && extracted.specTable.length) ? extracted.specTable : extractTextSpecs(extracted.text));
+      : [
+          ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
+          ...extractTextSpecs(extracted.text)
+        ].filter((r: any, i: number, arr: any[]) => {
+          const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
+          return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
+        });
     const consultationDate = new Date().toISOString();
     const specs = rawSpecs.filter((r: any) => r.attribute && r.value).map((r: any) => {
       const { value, unit } = splitValueUnit(r.value);
