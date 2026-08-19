@@ -100,6 +100,7 @@ export function extractPlainText(text) {
     }
   }
 
+  specTable.push(...extractAdjacentSpecs(raw));
   return { title: '', text: raw, specTable, extractable: true };
 }
 
@@ -157,6 +158,48 @@ export function extractCompactSpecs(text) {
     if (!specs.some((s) => s.attribute.toLowerCase() === attr.toLowerCase() && s.value === val)) {
       specs.push({ attribute: attr, value: val });
     }
+  }
+  return specs;
+}
+
+// Especificaciones por adyacencia: el layout más común en fichas de producto
+// (web/Markdown) coloca etiqueta y valor en líneas consecutivas:
+//   Payload
+//   5 kg
+//   Reach
+//   886.5 mm
+// Determinístico: sólo extrae pares que aparecen literalmente en líneas
+// adyacentes. No inventa datos. Conservador: la etiqueta no contiene dígitos
+// ni inicia con stop-words; el valor inicia con dígito y es corto (≤3 palabras)
+// sin palabras de prosa.
+const ADJACENT_LABEL_STOP = /^(specifications?|general|description|features|overview|details?|characteristics|properties|technical data|information|related products?|see also|menu|footer|copyright|all rights reserved|home|back|next|previous|share|print|download|resources?|documentation|support|contact|company|about|reviews|comments|qty|quantity|price|add to cart|buy now|in stock|out of stock|sku|model|series|brand|manufacturer|category|origin|warranty|shipping)$/i;
+const ADJACENT_LABEL_PREFIX_STOP = /^(?:the|a|an|this|these|those|some|any|our|your|its|all|each|every|no|both|such|that|which|what|when|where|how|why|who|from|with|for|and|but|or|nor|so|yet)\b/i;
+const ADJACENT_VALUE_STOP = /\b(?:the|a|an|with|for|and|of|to|in|is|are|includes|has|have|that|this|which|from|by|at|on|or|as|be|been|was|were|will|would|can|could|should|may|might|must|shall|do|does|did|not|no|yes)\b/i;
+export function extractAdjacentSpecs(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.replace(/^[\s>*#-]+/, '').replace(/[*_`]/g, '').trim()).filter(Boolean);
+  const specs = [];
+  const seen = new Set();
+  for (let i = 0; i < lines.length - 1; i++) {
+    const label = lines[i];
+    const value = lines[i + 1];
+    if (label.length < 2 || label.length > 60) continue;
+    if (label.split(/\s+/).length > 5) continue;
+    if (/\d/.test(label)) continue;
+    if (/[.!?]$/.test(label)) continue;
+    if (ADJACENT_LABEL_PREFIX_STOP.test(label)) continue;
+    if (ADJACENT_LABEL_STOP.test(label)) continue;
+    if (value.length > 60) continue;
+    if (value.split(/\s+/).length > 3) continue;
+    if (!/^\d/.test(value)) continue;
+    if (/[.!?]$/.test(value)) continue;
+    if (ADJACENT_VALUE_STOP.test(value)) continue;
+    const attr = label.replace(/[:：-]\s*$/, '').trim();
+    const val = value.replace(/[,;]$/, '').trim();
+    const key = `${attr.toLowerCase()}|${val.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    specs.push({ attribute: attr, value: val });
+    if (specs.length >= 25) break;
   }
   return specs;
 }

@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil, secrets } from 'base44:runtime';
 import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
-import { extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
+import { extractAdjacentSpecs, extractCompactSpecs, extractHTML, extractPlainText, extractTextSpecs, findPageFor, stripMarkdownNoise } from '../../shared/extract.js';
 import { extractCandidates, selectPartNumber } from '../../shared/knowledgeBuilder.js';
 import { normalizePartNumber, normalizeUnit, splitValueUnit } from '../../shared/normalize.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
@@ -87,6 +87,7 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
     ? extractStructuredSpecs(extracted)
     : [
         ...(Array.isArray(extracted.specTable) ? extracted.specTable : []),
+        ...extractAdjacentSpecs(extracted.text),
         ...extractTextSpecs(extracted.text),
         ...extractCompactSpecs(`${extracted.title || ''} ${extracted.text || ''}`)
       ].filter((r: any, i: number, arr: any[]) => {
@@ -127,6 +128,7 @@ const BASIC_BLOCK = /(?:catalog|folder|page|figure|table|revision|document|liter
 function computeBasicSpecs(sourceContent: string, extractedText: string) {
   const clean = stripMarkdownNoise(`${extractedText || ''}\n${sourceContent || ''}`);
   const merged = [
+    ...extractAdjacentSpecs(clean),
     ...extractTextSpecs(clean),
     ...((extractPlainText(clean).specTable) || []),
     ...extractCompactSpecs(clean)

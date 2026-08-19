@@ -50,6 +50,8 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const grouped = Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : [];
   const verifiedSpecs = Array.isArray(ficha?.knowledge_core_verified_specs) ? ficha.knowledge_core_verified_specs : [];
   const basicSpecs = Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : [];
+  const specKeys = new Set(specs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`));
+  const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute || '').toLowerCase()}|${String(s.value || '').toLowerCase()}`));
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type] || SOURCE_TYPE_LABELS.cse_configured;
 
   return (
@@ -151,6 +153,9 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                         sourceUrl={g.evidence?.source_url || ficha.source?.url}
                       />
                     ) : null)}
+                    {extraBasic.map((s, i) => (
+                      <SpecRow key={`extra-${i}`} label={s.attribute} value={s.value} verified={false} sourceUrl={ficha.source?.url} />
+                    ))}
                   </>
                 )}
               </div>
