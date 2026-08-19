@@ -1,4 +1,5 @@
 import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
+import { Image } from '@/components/ui/image';
 
 const SOURCE_TYPE_LABELS = {
   official: 'Fabricante oficial',
@@ -81,7 +82,12 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             <section className="rounded-xl border border-white/10 bg-[#10161d] p-5 sm:p-6">
               <div className="flex items-start gap-4">
                 {ficha.image_url ? (
-                  <img src={ficha.image_url} alt="" className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl object-contain bg-white shrink-0 border border-white/10" />
+                  <Image
+                    src={ficha.image_url}
+                    alt=""
+                    fittingType="fit"
+                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10"
+                  />
                 ) : (
                   <div className="h-20 w-20 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
                     <FileText className="w-6 h-6 text-white/20" />

@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "_": {
+      "type": "string",
+      "details": {}
+    }
+  },
+  "required": [],
+  "name": "_ui_temp_check"
+}
