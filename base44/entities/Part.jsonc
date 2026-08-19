@@ -26,6 +26,15 @@
     "image_url": {
       "type": "string"
     },
+    "image_source_url": {
+      "type": "string"
+    },
+    "image_method": {
+      "type": "string"
+    },
+    "image_confidence": {
+      "type": "number"
+    },
     "validation_state": {
       "type": "string",
       "enum": [

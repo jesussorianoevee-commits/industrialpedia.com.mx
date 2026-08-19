@@ -4,6 +4,7 @@
 
 import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, stripMarkdownNoise } from './extract.js';
 import { deriveProductIdentity } from './productIdentity.js';
+import { selectBestImage } from './imageResolver.js';
 
 const TIMEOUT_MS = 15000;
 
@@ -160,6 +161,20 @@ async function fetchOgImage(url) {
   } catch { return ''; }
 }
 
+// Fetch completo del HTML de una página para resolución de imágenes (JSON-LD,
+// og:image, <img>). Usado sólo como fallback cuando el contenido de Tavily
+// no aportó una imagen con evidencia suficiente.
+async function fetchPageHtml(url) {
+  try {
+    const r = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0 Industrialpedia/1.0', 'Accept': 'text/html,application/xhtml+xml' }
+    }, 5000);
+    if (!r.ok) return '';
+    return (await r.text()).slice(0, 500000);
+  } catch { return ''; }
+}
+
 function isPartNumberQuery(q) {
   const v = String(q || '').trim();
   if (!v) return false;
@@ -273,16 +288,9 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     const brand = extractBrandFromContent(`${title} ${snippet}`, queryBrandTokens);
     const sourceType = classifySource(host, brand, queryBrandTokens, title);
     const partNumber = partLike ? q : resolvePartNumber(q, title);
-    const contentImage = extractImageFromContent(item.raw_content || item.content || '');
-    const resultImages = Array.isArray(item.images)
+    const tavilyImages = Array.isArray(item.images)
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
       : [];
-    const sourceImage = resultImages[0] || '';
-    let imageUrl = [item.image_url, sourceImage, contentImage].find(isUsableExternalImageUrl) || '';
-    if (!imageUrl) {
-      const ogImage = await fetchOgImage(item.url);
-      if (isUsableExternalImageUrl(ogImage)) imageUrl = ogImage;
-    }
     const identity = deriveProductIdentity({
       title,
       text: item.raw_content || snippet,
@@ -291,6 +299,31 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       part_number_hint: partNumber,
       source_url: item.url
     });
+    const imgCtx = {
+      manufacturer: identity.manufacturer,
+      partNumber: identity.part_number || partNumber,
+      query: q,
+      source_url: item.url
+    };
+    let resolved = selectBestImage({
+      markdown: item.raw_content || item.content || '',
+      tavily_image_url: item.image_url,
+      tavily_images: tavilyImages,
+      product_context: imgCtx
+    });
+    let imageUrl = resolved?.image_url || '';
+    if (!imageUrl) {
+      const html = await fetchPageHtml(item.url);
+      if (html) {
+        resolved = selectBestImage({
+          html,
+          tavily_image_url: item.image_url,
+          tavily_images: tavilyImages,
+          product_context: imgCtx
+        }) || resolved;
+        if (resolved?.image_url) imageUrl = resolved.image_url;
+      }
+    }
     return {
       title,
       url: item.url,
@@ -298,6 +331,9 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
       snippet,
       source_type: sourceType,
       image_url: imageUrl,
+      image_method: resolved?.method || '',
+      image_confidence: resolved?.confidence || 0,
+      image_source_url: resolved?.source_url || item.url,
       basic_specs: extractBasicSpecs(snippet, item.raw_content),
       manufacturer_name: identity.manufacturer || brand || (queryBrandTokens.length === 1 ? queryBrandTokens[0] : ''),
       part_number: identity.part_number || partNumber,

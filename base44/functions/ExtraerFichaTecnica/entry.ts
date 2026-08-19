@@ -8,6 +8,7 @@ import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTemplates.js';
 import { gateSpec } from '../../shared/qualityGateway.js';
 import { deriveProductIdentity } from '../../shared/productIdentity.js';
+import { selectBestImage } from '../../shared/imageResolver.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -176,7 +177,14 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
         // previamente almacenada. Esto permite que fichas históricas reciban
         // la imagen demostrada por una nueva fuente sin crear otro Part.
         const partPatch: any = {};
-        if (!existingParts[0].image_url && ficha.image_url) partPatch.image_url = ficha.image_url;
+        const oldImgConfidence = Number(existingParts[0].image_confidence || 0);
+        const newImgConfidence = Number(ficha.image_confidence || 0);
+        if (ficha.image_url && (!existingParts[0].image_url || newImgConfidence >= oldImgConfidence)) {
+          partPatch.image_url = ficha.image_url;
+          partPatch.image_source_url = ficha.image_source_url || url;
+          partPatch.image_method = ficha.image_method || '';
+          partPatch.image_confidence = newImgConfidence;
+        }
         if (!existingParts[0].manufacturer_name && ficha.manufacturer_name) partPatch.manufacturer_name = ficha.manufacturer_name;
         if (!existingParts[0].description && ficha.product_name) partPatch.description = safeText(ficha.product_name, 1000);
         if (Object.keys(partPatch).length) {
@@ -190,6 +198,9 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
           category: ficha.component_type || '',
           description: safeText(ficha.product_name || pn, 1000),
           image_url: ficha.image_url || '',
+          image_source_url: ficha.image_source_url || '',
+          image_method: ficha.image_method || '',
+          image_confidence: ficha.image_confidence || 0,
           validation_state: 'processed'
         });
         partId = createdPart.id;
@@ -277,6 +288,9 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       name: ficha.product_name || pn,
       description: catalogDescription,
       image_url: ficha.image_url || '',
+      image_source_url: ficha.image_source_url || '',
+      image_method: ficha.image_method || '',
+      image_confidence: ficha.image_confidence || 0,
       product_url: url,
       datasheet_url: isPdf ? url : '',
       source_type: ficha.source_type === 'official' ? 'official' : 'distributor',
@@ -310,6 +324,8 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
       title: ficha.product_name || '',
       description: safeText(ficha.description, 500),
       image_url: ficha.image_url || '',
+      image_method: ficha.image_method || '',
+      image_confidence: ficha.image_confidence || 0,
       discovery_state: 'discovered',
       confidence: 0.6,
       last_seen: new Date().toISOString(),
@@ -490,13 +506,25 @@ export default async function (req: Request) {
     const template = detectComponentType(typeCorpus);
     const { grouped, others } = groupSpecsByTemplate(specs, template);
 
-    // 8) Imagen: hint del resultado > og:image del HTML.
-    let imageUrl = isUsableExternalImageUrl(imageUrlHint) ? imageUrlHint : '';
-    if (!imageUrl && !isPdf && bytes) {
-      const raw = new TextDecoder().decode(bytes.slice(0, 50000));
-      const m = raw.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || raw.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      if (m && isUsableExternalImageUrl(m[1])) imageUrl = m[1];
+    // 8) Imagen: resolver dedicado que recopila candidatos de JSON-LD Product,
+    //    HTML <img>, og:image y Markdown; valida contra logos/banners/iconos
+    //    y selecciona el de mayor evidencia de pertenecer al producto.
+    let htmlContent = '';
+    if (!isPdf && bytes) {
+      htmlContent = new TextDecoder().decode(bytes.slice(0, 500000));
     }
+    const resolvedImage = selectBestImage({
+      html: htmlContent,
+      markdown: sourceContent || '',
+      tavily_image_url: imageUrlHint,
+      product_context: {
+        manufacturer: manufacturer || '',
+        partNumber: partNumber || '',
+        query,
+        source_url: url
+      }
+    });
+    let imageUrl = resolvedImage?.image_url || '';
 
     const productIdentity = deriveProductIdentity({
       title: safeText(extracted.title, 300),
@@ -526,6 +554,9 @@ export default async function (req: Request) {
       product_identity: productIdentity,
       description: productIdentity.source_title || safeText(extracted.title, 300) || '',
       image_url: imageUrl,
+      image_method: resolvedImage?.method || '',
+      image_confidence: resolvedImage?.confidence || 0,
+      image_source_url: resolvedImage?.source_url || url,
       component_type: template.type,
       component_type_label: template.label,
       specs,

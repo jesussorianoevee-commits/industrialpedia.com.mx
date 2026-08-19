@@ -43,6 +43,12 @@
     "image_url": {
       "type": "string"
     },
+    "image_method": {
+      "type": "string"
+    },
+    "image_confidence": {
+      "type": "number"
+    },
     "discovery_state": {
       "type": "string",
       "enum": [
