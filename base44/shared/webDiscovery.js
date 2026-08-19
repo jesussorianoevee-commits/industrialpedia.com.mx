@@ -195,6 +195,16 @@ export function isLikelyIndustrialResult(r) {
 
 export function filterTrustedIndustrialResults(results, manufacturerNames = [], trustedOfficialDomains = []) {
   return results
-    .map((r) => ({ ...r, source_type: classifyIndustrialSource(r, manufacturerNames, trustedOfficialDomains) }))
-    .filter((r) => r.source_type === 'official' || r.source_type === 'distributor');
+    .map((r) => {
+      const classified = classifyIndustrialSource(r, manufacturerNames, trustedOfficialDomains);
+      // Los resultados de Google CSE provienen del conjunto de dominios que el
+      // propietario configuró en el motor. Si todavía no tenemos ese dominio
+      // materializado en Manufacturer/CrawlSource, no debemos perder el resultado;
+      // lo mostramos como "fuente CSE configurada", nunca como "oficial".
+      const source_type = classified === 'untrusted' && r.provider === 'google'
+        ? 'cse_configured'
+        : classified;
+      return { ...r, source_type };
+    })
+    .filter((r) => r.source_type === 'official' || r.source_type === 'distributor' || r.source_type === 'cse_configured');
 }
