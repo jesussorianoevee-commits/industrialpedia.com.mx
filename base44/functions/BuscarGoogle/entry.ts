@@ -4,6 +4,7 @@ import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavil
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
+import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
@@ -66,6 +67,9 @@ export default async function (req: Request) {
               copy.image_method = '';
               copy.image_confidence = 0;
             }
+            copy.basic_specs = Array.isArray(copy.basic_specs)
+              ? copy.basic_specs.filter((s: any) => isTechnicalSpecification(s?.attribute, s?.value).ok).slice(0, 4)
+              : [];
             return copy;
           });
         if (safeCachedResults.length) {
