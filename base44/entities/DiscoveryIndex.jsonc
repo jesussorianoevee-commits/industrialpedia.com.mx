@@ -14,6 +14,9 @@
     "source_url": {
       "type": "string"
     },
+    "source_url_normalized": {
+      "type": "string"
+    },
     "document_url": {
       "type": "string"
     },
@@ -28,10 +31,16 @@
       ],
       "default": "other"
     },
+    "source_provider": {
+      "type": "string"
+    },
     "title": {
       "type": "string"
     },
     "description": {
+      "type": "string"
+    },
+    "image_url": {
       "type": "string"
     },
     "discovery_state": {
@@ -59,8 +68,6 @@
     }
   },
   "required": [
-    "candidate_part_number",
-    "candidate_part_number_normalized",
     "discovery_state"
   ]
 }

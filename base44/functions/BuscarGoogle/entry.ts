@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { secrets } from 'base44:runtime';
+import { secrets, waitUntil } from 'base44:runtime';
 import { discoverTavilyIndustrial, brandTokensFromQuery } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
+import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
@@ -109,6 +110,14 @@ export default async function (req: Request) {
           }
         } catch { /* ignore */ }
       }
+    }
+
+    // 3) Persistencia asíncrona en DiscoveryIndex (no bloquea la respuesta).
+    //    Cada resultado descubierto queda en la base: URL, título, descripción,
+    //    fabricante/PN sólo si están demostrados, imagen, proveedor y estado.
+    //    CatalogProduct se materializa después, al abrir la ficha, con evidencia.
+    if (Array.isArray(discovery.results) && discovery.results.length) {
+      waitUntil(persistDiscoveryResults(base44, discovery.results).catch(() => {}));
     }
 
     return Response.json({
