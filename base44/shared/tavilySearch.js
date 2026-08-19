@@ -167,6 +167,24 @@ function isPartNumberQuery(q) {
   return tokens.length <= 3 && tokens.some((t) => /[A-Za-z]/.test(t) && /\d/.test(t));
 }
 
+function isManufacturerOnlyQuery(q) {
+  const tokens = String(q || '').trim().split(/\s+/).filter(Boolean);
+  return tokens.length === 1 && brandTokensFromQuery(q).length === 1 && !isPartNumberQuery(q);
+}
+
+// Las búsquedas por fabricante deben descubrir productos/componentes, no la
+// página corporativa del fabricante. Estas señales suelen corresponder a
+// "About us", oficinas, carreras, investor relations, etc. y no a una ficha
+// de producto o catálogo utilizable.
+const CORPORATE_PAGE_TERMS = /(?:about us|about the company|a global manufacturer|global manufacturer|company profile|corporate|headquarters|locations?|careers?|jobs?|investor relations|investors|press release|newsroom|contact us|our company|who we are|sobre nosotros|la empresa|oficinas|ubicaciones|empleo|trabaja con nosotros)/i;
+const PRODUCT_RESULT_TERMS = /(?:product|products|catalog|catalogue|datasheet|data sheet|part number|order number|model|series|pneumatic|electromechanical|electrical|automation|actuator|cylinder|valve|sensor|gripper|drive|motor|controller|plc|connector|fitting|regulator|filter|vacuum|component|refaccion|repuesto|componente)/i;
+
+function isProductResultForManufacturer(item) {
+  const text = `${item?.title || ''} ${item?.snippet || item?.content || ''} ${item?.url || ''}`;
+  if (CORPORATE_PAGE_TERMS.test(text)) return false;
+  return PRODUCT_RESULT_TERMS.test(text) || /[A-Za-z]{1,6}[-_]?\d[A-Za-z0-9_-]{2,}/.test(text);
+}
+
 // Extracción determinística de Part Number desde una consulta multi-token o
 // desde el título del resultado. No inventa PNs: sólo extrae tokens que
 // coinciden con el patrón estructural de un número de parte industrial.
