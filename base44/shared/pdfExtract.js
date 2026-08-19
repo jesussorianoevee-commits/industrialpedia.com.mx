@@ -2,6 +2,7 @@
 // Sin IA/OCR externo. Usa PDF.js/unpdf para conservar texto + geometría + orden de lectura.
 // Contrato: pages, blocks, tables, specTable, text y totalPages.
 import { getDocumentProxy } from 'npm:unpdf';
+import { sanitizeExtractedPair } from './extract.js';
 
 const Y_TOLERANCE = 3;
 // Minimum horizontal whitespace used to separate PDF text runs into visual cells.
@@ -303,9 +304,11 @@ export function extractStructuredSpecs(extracted) {
   const out = [];
   for (const row of extracted?.specTable || []) {
     if (!row.attribute || row.ambiguous_value || !row.value || !/\d/.test(row.value)) continue;
+    const clean = sanitizeExtractedPair(row.attribute, row.value);
+    if (!clean) continue;
     out.push({
-      attribute: row.attribute,
-      value: row.value,
+      attribute: clean.attribute,
+      value: clean.value,
       page: row.page,
       bbox: row.bbox,
       attribute_bbox: row.attribute_bbox,
@@ -322,9 +325,11 @@ export function extractStructuredSpecs(extracted) {
   for (const block of extracted?.blocks || []) {
     const m = block.text.match(/^(.{2,80}?)\s*[:：]\s*([^:]{1,80})$/);
     if (!m || !/\d/.test(m[2])) continue;
+    const cleanPair = sanitizeExtractedPair(m[1], m[2]);
+    if (!cleanPair) continue;
     out.push({
-      attribute: cleanText(m[1]),
-      value: cleanText(m[2]),
+      attribute: cleanPair.attribute,
+      value: cleanPair.value,
       page: block.page,
       bbox: block.bbox,
       attribute_bbox: block.bbox,
