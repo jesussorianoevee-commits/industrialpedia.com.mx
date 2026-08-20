@@ -83,7 +83,7 @@ export default function Parte() {
           ? Object.entries(rawSpecs)
           : fallbackSpecs.map((s) => [s.attribute || s.attribute_name, { value: s.value, unit: s.unit }]);
         const specList = specEntries
-          .filter(([attribute]) => attribute)
+          .filter(([attribute, raw]) => attribute && raw !== null && raw !== undefined && raw !== '')
           .map(([attribute, raw]) => {
             const isObject = raw && typeof raw === 'object' && !Array.isArray(raw);
             const value = isObject ? (raw.value ?? null) : raw;
