@@ -3,8 +3,8 @@
 // consulta o términos genéricos del dominio industrial.
 //
 // Determinístico: sin IA, sin LLM, sin listas específicas de productos.
-// Generalizable: las reglas se basan en categorías semánticas, no en palabras
-// o fabricantes concretos.
+// Generalizable: las reglas se basan en categorías semánticas, no en productos.
+import { getSourcePolicy } from './sourceRegistry.js';
 
 // Términos genéricos del dominio industrial que NUNCA deben usarse como
 // manufacturer_name: son categorías, componentes, conceptos o fragmentos
@@ -122,7 +122,14 @@ export function sanitizeResultIdentity(result, query) {
     officialIdentityEvidence = evidenceText.includes(normalizedManufacturer)
       || (domainToken && domainToken === normalizedManufacturer);
   }
-  const isOfficialExactManufacturer = officialIdentityEvidence;
+  const isKnownManufacturerQuery = !!getSourcePolicy(query);
+  const isOfficialExactManufacturer = officialIdentityEvidence || (
+    copy.source_type === 'official'
+    && normalizedQuery
+    && normalizedManufacturer
+    && normalizedQuery === normalizedManufacturer
+    && isKnownManufacturerQuery
+  );
 
   // manufacturer_name: descartar si deriva de la consulta o es genérico.
   if (!isOfficialExactManufacturer && isQueryDerivedManufacturer(copy.manufacturer_name, query)) {
