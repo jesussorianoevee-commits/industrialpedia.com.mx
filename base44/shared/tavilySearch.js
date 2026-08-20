@@ -57,7 +57,7 @@ const TRUSTED_DISTRIBUTOR_DOMAINS = new Set([
   'masterelectronics.com', 'futureelectronics.com', 'digikey.ca', 'digikey.mx'
 ]);
 
-const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|ebay|mercadolibre|aliexpress|alibaba|amazon|walmart|temu|wish|etsy|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit|merriam-webster|wordreference|thesaurus|collinsdictionary|dictionary\.cambridge|cambridgedictionary)(?:[.]|$)/i;
+const EXCLUDE_HOST_PATTERNS = /(?:^|[.])(reddit|quora|youtube|youtu\.be|vimeo|facebook|instagram|tiktok|twitter|x\.com|linkedin|ebay|mercadolibre|aliexpress|alibaba|amazon|walmart|temu|wish|etsy|scribd|blogspot|wordpress|medium|wikipedia|wikimedia|pinterest|indeed|glassdoor|stackoverflow|stackexchange|repairfaq|fix\.com|ifixit|merriam-webster|wordreference|thesaurus|collinsdictionary|dictionary\.cambridge|cambridgedictionary)(?:[.]|$)/i;
 const DICTIONARY_URL_PATTERNS = /(?:\/dictionary\/|\/diccionario\/|\/definition\/|\/definicion\/|\/define\b|\/translate\/|\/traducir\/|\/synonyms\/|\/sinonimos\/)/i;
 const EXCLUDE_TEXT_TERMS = [
   'foro', 'forum', 'curso', 'course', 'tutorial', 'opinion', 'opiniones',
