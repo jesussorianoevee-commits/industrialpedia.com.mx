@@ -3,6 +3,7 @@ import { isNonIndustrialQuery, isLikelyIndustrialSource, looksLikePartNumber } f
 import { sanitizeResultIdentity } from '../shared/identityGuard.js';
 import { isTechnicalSpecification } from '../shared/semanticResolver.js';
 import { sanitizeExtractedPair } from '../shared/extract.js';
+import { expandCatalogResults } from '../shared/tavilySearch.js';
 
 const tests = [
   ['balero', false], ['rodamiento', false], ['sensor', false], ['encoder', false],
@@ -45,5 +46,28 @@ assert.equal(sanitizeExtractedPair('javascript:void(0);', '5'), null);
 assert.deepEqual(sanitizeExtractedPair('Stroke', '25 mm'), { attribute: 'Stroke', value: '25 mm' });
 assert.deepEqual(sanitizeExtractedPair('Supply voltage', '24 V DC'), { attribute: 'Supply voltage', value: '24 V DC' });
 assert.deepEqual(sanitizeExtractedPair('Contact force', '5 N'), { attribute: 'Contact force', value: '5 N' });
+
+// Catálogo/familia: el documento solo aparece si demuestra una o más partes.
+const catalogWithPart = expandCatalogResults([{
+  title: 'Festo VUVS product catalog',
+  url: 'https://www.festo.com/catalog/vuvs',
+  source_type: 'official',
+  manufacturer_name: 'Festo',
+  snippet: 'Festo electrovalve catalog',
+  raw_content: 'Festo electrovalve — Part number: VUVS-LK20-M32C-AD-G18-1C1\\n24 V DC'
+}], 'electrovalvula festo');
+assert.equal(catalogWithPart.length, 1);
+assert.equal(catalogWithPart[0].part_number, 'VUVS-LK20-M32C-AD-G18-1C1');
+assert.equal(catalogWithPart[0].catalog_source, true);
+
+const catalogWithoutPart = expandCatalogResults([{
+  title: 'Festo pneumatic product catalog',
+  url: 'https://www.festo.com/catalog/pneumatic',
+  source_type: 'official',
+  manufacturer_name: 'Festo',
+  snippet: 'Product overview and catalog',
+  raw_content: 'Festo pneumatic product families and applications. No order numbers on this page.'
+}], 'electrovalvula festo');
+assert.equal(catalogWithoutPart.length, 0);
 
 console.log('REGRESSION_GATE_OK');
