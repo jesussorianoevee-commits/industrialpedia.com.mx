@@ -117,7 +117,7 @@ export default function ResultCard({ result }) {
       <div className="flex flex-wrap gap-2">
         {result.id ? (
           <Link
-            to={`/parte/${result.id}`}
+            to={`/parte/${result.id}${result.part_number ? `?pn=${encodeURIComponent(result.part_number)}` : ''}`}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
             Ver componente <ArrowRight className="w-3 h-3" />
