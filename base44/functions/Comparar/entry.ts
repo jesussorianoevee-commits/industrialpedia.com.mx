@@ -27,8 +27,21 @@ export default async function (req: Request) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const partId = String(body.part_id || '').trim();
-    if (!partId) return Response.json({ error: 'part_id required' }, { status: 400 });
+    let partId = String(body.part_id || '').trim();
+    const partNumber = String(body.part_number || '').trim();
+    if (!partId && !partNumber) return Response.json({ error: 'part_id or part_number required' }, { status: 400 });
+
+    // Parte.jsx puede navegar con un identificador de la capa Base44 durante
+    // la transición. El comparador debe resolver siempre el UUID canónico de
+    // Supabase antes de invocar el RPC, usando el número de parte como fallback.
+    if (partNumber) {
+      const lookupUrl = `${SUPABASE_URL}/rest/v1/parts?select=id&part_number=eq.${encodeURIComponent(partNumber)}&limit=1`;
+      const lookupResponse = await fetch(lookupUrl, {
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` }
+      });
+      const lookup = await lookupResponse.json().catch(() => []);
+      if (lookupResponse.ok && Array.isArray(lookup) && lookup[0]?.id) partId = String(lookup[0].id);
+    }
 
     const response = await fetch(RPC_URL, {
       method: 'POST',
