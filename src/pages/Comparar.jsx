@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 const STATE = {
   compatible: { label: 'Compatible con los datos disponibles', cls: 'text-[#47bcb6] bg-[#47bcb6]/10 border-[#47bcb6]/20', icon: ShieldCheck },
@@ -34,8 +34,8 @@ export default function Comparar() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await base44.functions.invoke('Comparar', { part_id: id, part_number: partNumberHint });
-        setData(res.data);
+        const result = await compareIndustrialpedia(id, partNumberHint, 3);
+        setData(result);
       } catch (e) { setError(e?.message || 'No se pudo ejecutar el comparador.'); }
     })();
   }, [id, partNumberHint]);
