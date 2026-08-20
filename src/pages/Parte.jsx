@@ -19,6 +19,13 @@ function groupBy(list, keyFn) {
   return m;
 }
 
+function isTechnicalDisplaySpec(spec) {
+  const attribute = String(spec?.attribute_name || spec?.attribute || '').trim();
+  if (!attribute) return false;
+  // Inventario/comercio no pertenece a la ficha técnica de una refacción.
+  return !/^(?:stock|inventory|availability|available|in stock|out of stock|quantity|qty|price|cost|msrp|list price|sale price|lead time|delivery|shipping|order status|cart|sku)$/i.test(attribute);
+}
+
 export default function Parte() {
   const { id } = useParams();
   const [part, setPart] = useState(null);
@@ -36,7 +43,8 @@ export default function Parte() {
         const p = await base44.entities.Part.get(id);
         setPart(p);
 
-        const specList = await base44.entities.Specification.filter({ part_id: id }, '-updated_date', 200);
+        const rawSpecList = await base44.entities.Specification.filter({ part_id: id }, '-updated_date', 200);
+        const specList = rawSpecList.filter(isTechnicalDisplaySpec);
         setSpecs(specList);
 
         const specIds = specList.map((s) => s.id);
