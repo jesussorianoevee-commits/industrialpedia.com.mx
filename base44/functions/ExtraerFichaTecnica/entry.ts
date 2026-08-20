@@ -9,6 +9,7 @@ import { detectComponentType, groupSpecsByTemplate } from '../../shared/fichaTem
 import { gateSpec } from '../../shared/qualityGateway.js';
 import { deriveProductIdentity } from '../../shared/productIdentity.js';
 import { selectBestImage } from '../../shared/imageResolver.js';
+import { getSourcePolicy, classifyRegisteredDomain } from '../../shared/sourceRegistry.js';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -35,6 +36,27 @@ async function fetchWithTimeout(url: string) {
 
 function hostOf(url: string) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+
+// Never trust an inherited `official` flag by itself. A cached/search result can
+// carry a stale classification, so the ficha re-validates the actual URL against
+// the auditable manufacturer registry before displaying "Fabricante oficial".
+function sanitizeFichaSourceType(url: string, claimedType: any, manufacturer: string) {
+  const claimed = String(claimedType || '').toLowerCase();
+  if (claimed !== 'official') return claimed || 'cse_configured';
+
+  const host = hostOf(url);
+  const policy = getSourcePolicy(manufacturer);
+  const registered = classifyRegisteredDomain(host, policy);
+  if (registered === 'official' || registered === 'authorized_distributor') return registered;
+
+  // For manufacturers not yet present in the registry, accept only an exact
+  // registrable-domain match (never a substring such as "festo" in a distributor).
+  const hostBase = host.split('.')[0].toLowerCase();
+  const manufacturerBase = String(manufacturer || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (manufacturerBase && hostBase === manufacturerBase) return 'official';
+
+  return 'web_discovery';
 }
 
 function safeText(s: string, max = 500) {
