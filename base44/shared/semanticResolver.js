@@ -5,7 +5,7 @@
 const PART_LABELS = new Set([
   'part number', 'part no', 'part no.', 'part #', 'p/n', 'pn',
   'ordering number', 'order number', 'order no', 'order code',
-  'model number', 'model no', 'product number', 'mpn', 'mfr part',
+  'model number', 'model no', 'product number', 'article number', 'material number', 'material no', 'material #', 'mpn', 'mfr part',
   'manufacturer part', 'manufacturer part number', 'orderable part number'
 ]);
 
