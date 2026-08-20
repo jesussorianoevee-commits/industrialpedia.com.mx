@@ -50,7 +50,7 @@ export default function Comparar() {
 
   return <div className="min-h-screen bg-[#0a0e12] grid-bg text-white">
     <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur border-b border-white/10 px-4 py-3">
-      <div className="max-w-6xl mx-auto flex items-center gap-3"><Link to={`/parte/${id}${partNumberHint ? `?pn=${encodeURIComponent(partNumberHint)}` : ''}`} className="text-white/55 hover:text-white"><ArrowLeft className="w-4 h-4" /></Link><div><div className="text-[10px] uppercase tracking-[0.18em] text-white/35">COMPARAR</div><div className="font-mono text-sm text-white/80">{base.part_number}</div></div></div>
+      <div className="max-w-6xl mx-auto flex items-center gap-3"><button type="button" onClick={() => window.history.back()} className="text-white/55 hover:text-white"><ArrowLeft className="w-4 h-4" /></button><div><div className="text-[10px] uppercase tracking-[0.18em] text-white/35">COMPARAR</div><div className="font-mono text-sm text-white/80">{base.part_number}</div></div></div>
     </header>
     <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
       <section className="rounded-xl border border-white/10 bg-[#11161c] p-5">
