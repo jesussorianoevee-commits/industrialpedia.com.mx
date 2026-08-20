@@ -1,13 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe } from 'lucide-react';
+import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
 import GoogleResultCard from '@/components/search/GoogleResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
-import SearchHistory from '@/components/search/SearchHistory';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
@@ -271,13 +270,6 @@ export default function Buscar() {
         {!q ? (
           <div className="space-y-6">
             <EmptyState q={q} onReset={onReset} />
-            {history.length > 0 && (
-              <SearchHistory
-                history={history}
-                onSelect={(term) => { setInput(term); setParams({ q: term }); }}
-                onClear={() => { setHistory([]); try { localStorage.removeItem('industrialpedia_search_history'); } catch {} }}
-              />
-            )}
           </div>
         ) : (
           <div className="space-y-6">
