@@ -41,6 +41,31 @@ function safeText(s: string, max = 500) {
   return String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
 }
 
+// Clave canónica para deduplicar especificaciones provenientes de múltiples
+// extractores. La unidad se normaliza para tratar "25 A" y "25 a" como el
+// mismo dato, sin confundir unidades distintas (p. ej. A vs mA).
+function canonicalSpecKey(attribute: any, value: any) {
+  const attr = String(attribute || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const rawValue = String(value || '').replace(/\s+/g, ' ').trim();
+  const { value: numericValue, unit } = splitValueUnit(rawValue);
+  const normalizedUnit = normalizeUnit(unit).toLowerCase();
+  const normalizedValue = numericValue
+    ? numericValue.replace(/\s/g, '').replace(',', '.').toLowerCase()
+    : rawValue.toLowerCase();
+  return `${attr}|${normalizedValue}|${normalizedUnit}`;
+}
+
+function dedupeSpecCandidates(specs: any[]) {
+  const seen = new Set<string>();
+  return specs.filter((s: any) => {
+    const key = canonicalSpecKey(s?.attribute, s?.value);
+    if (!key || key === '| |') return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 // Fusión determinística de contenido secundario (Tavily raw_content / Extract).
 // Sólo alimenta candidatos; el Semantic Resolver + Quality Gateway siguen decidiendo.
 function mergeFallbackContent(extracted: any, content: string) {
