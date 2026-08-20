@@ -387,7 +387,7 @@ export function isQueryRelevantIndustrialResult(item, query) {
 // identificadores de parte demostrados por etiquetas estructurales (Part Number,
 // Model, Order Number, etc.). Si la fuente no demuestra ningún PN, se descarta.
 // Esto evita mostrar "el catálogo" como resultado sin inventar un producto.
-const CATALOG_SOURCE_SIGNALS = /(?:catalog(?:ue)?|product\s+(?:catalog|listing|overview|selector)|product\s+family|product\s+line|\bseries\b|\bfamily\b|\brange\b)/i;
+const CATALOG_SOURCE_SIGNALS = /(?:catalog(?:ue)?|product\s+(?:catalog|listing|overview|selector)|product\s+family|product\s+line|products?\s*(?:&|and)\s*components|products?\s+(?:selection|portfolio|range|overview|listing)|manufacturer\s+(?:products?|catalog)|\bseries\b|\bfamily\b|\brange\b)/i;
 
 function isCatalogLikeResult(item) {
   const text = `${item?.title || ''} ${item?.snippet || item?.content || ''} ${item?.url || ''}`;
