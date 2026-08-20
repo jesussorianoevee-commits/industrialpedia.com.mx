@@ -201,6 +201,8 @@ export default async function (req: Request) {
       source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains, sourcePolicy)
     })).filter((r: any) =>
       (r.source_type === 'official' || r.source_type === 'authorized_distributor' || r.source_type === 'distributor' || r.source_type === 'web_discovery') &&
+      isLikelyIndustrialTavilyResult(r, query) &&
+      isQueryRelevantIndustrialResult(r, query) &&
       (!sourcePolicy || sourcePolicy.official.concat(sourcePolicy.authorized_distributors).some((d: string) => hostOf(r.url) === d || hostOf(r.url).endsWith(`.${d}`)))
     );
 
