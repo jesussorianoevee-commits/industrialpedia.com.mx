@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SOURCE_REGISTRY, getSourcePolicy, allAuthorizedDomains, registryKey } from '../../shared/sourceRegistry.js';
+import { isLikelyIndustrialTavilyResult, isQueryRelevantIndustrialResult, rankIndustrialResults } from '../../shared/tavilySearch.js';
+import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 
 /**
  * Industrialpedia Search API v1
@@ -80,11 +82,26 @@ export default async function (req: Request) {
     const kc = kcResponse?.data || {};
     const web = webResponse?.data || {};
 
+    // Boundary gate: IndustrialpediaSearch is the public search contract, so no
+    // provider/cache result reaches the UI without the same deterministic
+    // industrial-relevance and identity checks. This is intentionally duplicated
+    // at the API boundary to prevent stale cache/provider output from bypassing
+    // the current rules.
+    const safeWebResults = Array.isArray(web.google_results)
+      ? rankIndustrialResults(
+          web.google_results
+            .filter((r: any) => isLikelyIndustrialTavilyResult(r, q))
+            .filter((r: any) => isQueryRelevantIndustrialResult(r, q))
+            .map((r: any) => sanitizeResultIdentity(r, q)),
+          q
+        ).slice(0, limit)
+      : [];
+
     return Response.json({
       q,
       knowledge_core_results: Array.isArray(kc.knowledge_core_results) ? kc.knowledge_core_results : [],
       discovery_results: Array.isArray(kc.discovery_results) ? kc.discovery_results : [],
-      web_results: Array.isArray(web.google_results) ? web.google_results : [],
+      web_results: safeWebResults,
       facets: kc.facets || { manufacturers: [], categories: [] },
       meta: {
         api_version: '1.0',
