@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { SOURCE_REGISTRY, getSourcePolicy, allAuthorizedDomains, registryKey } from '../../shared/sourceRegistry.js';
 
 /**
  * Industrialpedia Search API v1
@@ -44,10 +45,16 @@ export default async function (req: Request) {
     const limit = Math.min(parseInt(body.limit, 10) || 25, 100);
     const offset = parseInt(body.offset, 10) || 0;
 
-    // API v1 is deliberately a thin orchestration boundary in this first step.
-    // Existing deterministic search engines remain unchanged, which means this
-    // migration does not alter ranking/relevance behavior while the frontend is
-    // decoupled from their implementation details.
+    // Resolve only an explicitly registered manufacturer. We never infer a
+    // manufacturer from an arbitrary query token. This registry is also the
+    // source of truth for domains that may be searched as official/authorized.
+    const normalizedQuery = registryKey(q);
+    const registeredManufacturer = Object.keys(SOURCE_REGISTRY)
+      .sort((a, b) => b.length - a.length)
+      .find((name) => normalizedQuery === name || normalizedQuery.startsWith(`${name} `));
+    const sourcePolicy = registeredManufacturer ? getSourcePolicy(registeredManufacturer) : null;
+    const includeDomains = sourcePolicy ? allAuthorizedDomains(sourcePolicy) : [];
+
     const [kcResponse, webResponse] = await Promise.all([
       base44.functions.invoke('Buscar', {
         q,
@@ -63,7 +70,11 @@ export default async function (req: Request) {
         offset,
         skip_web_discovery: true
       }),
-      base44.functions.invoke('BuscarGoogle', { query: q })
+      base44.functions.invoke('BuscarGoogle', {
+        query: q,
+        include_domains: includeDomains,
+        source_policy: sourcePolicy
+      })
     ]);
 
     const kc = kcResponse?.data || {};
@@ -77,7 +88,13 @@ export default async function (req: Request) {
       facets: kc.facets || { manufacturers: [], categories: [] },
       meta: {
         api_version: '1.0',
-        providers: ['knowledge_core', 'discovery', 'web_discovery']
+        providers: ['knowledge_core', 'discovery', 'web_discovery'],
+        source_policy: sourcePolicy ? {
+          manufacturer: sourcePolicy.manufacturer,
+          official_domains: sourcePolicy.official,
+          authorized_distributor_domains: sourcePolicy.authorized_distributors
+        } : null
+      }
       }
     });
   } catch (error) {
