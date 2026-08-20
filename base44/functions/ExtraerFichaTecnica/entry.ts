@@ -74,13 +74,7 @@ function mergeFallbackContent(extracted: any, content: string) {
   if (fallback.text.length > (extracted.text || '').length) extracted.text = fallback.text;
   if (fallback.specTable?.length) {
     const merged = [...(extracted.specTable || []), ...fallback.specTable];
-    const seen = new Set();
-    extracted.specTable = merged.filter((s: any) => {
-      const key = `${String(s.attribute || '').trim().toLowerCase()}|${String(s.value || '').trim().toLowerCase()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    extracted.specTable = dedupeSpecCandidates(merged);
   }
 }
 
@@ -181,9 +175,9 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     ...extractCompactSpecs(clean),
     ...extractValueFirstSpecs(clean)
   ];
-  const seen = new Set<string>();
   const out: any[] = [];
-  for (const s of merged) {
+  const deduped = dedupeSpecCandidates(merged);
+  for (const s of deduped) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
     const val = String(s.value || '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
@@ -193,9 +187,6 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
     // basic_specs es sólo una vista rápida de datos técnicos encontrados.
     // Nunca debe convertirse en un cajón de datos corporativos/documentales.
     if (!isTechnicalSpecification(attr, val).ok) continue;
-    const key = `${attr}|${val}`.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
     out.push({ attribute: attr, value: val });
     if (out.length >= 6) break;
   }
