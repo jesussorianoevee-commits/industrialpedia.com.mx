@@ -41,14 +41,8 @@ export default function Parte() {
         // La ficha debe leer el mismo Knowledge Core que BUSCAR.
         // No volver a consultar entidades legacy de Base44 para el componente.
         let p = null;
-        try {
-          const apiResponse = await getPartIndustrialpedia(id);
-          p = apiResponse?.part || null;
-        } catch {
-          // Candidate records are intentionally not exposed through the public
-          // Supabase RPC. For authenticated Base44 users, resolve the candidate
-          // through the existing Search API instead of weakening that boundary.
-          if (partNumberHint) {
+        if (partNumberHint) {
+          try {
             const searchResponse = await base44.functions.invoke('IndustrialpediaSearch', {
               q: partNumberHint,
               filters: { validation_states: ['published', 'validated', 'incomplete', 'candidate'] },
@@ -57,6 +51,16 @@ export default function Parte() {
             });
             const results = searchResponse?.data?.knowledge_core_results || [];
             p = results.find((r) => r.id === id || r.part_number === partNumberHint) || null;
+          } catch {
+            p = null;
+          }
+        }
+        if (!p) {
+          try {
+            const apiResponse = await getPartIndustrialpedia(id);
+            p = apiResponse?.part || null;
+          } catch {
+            p = null;
           }
         }
         if (!p) throw new Error('part_not_found');
