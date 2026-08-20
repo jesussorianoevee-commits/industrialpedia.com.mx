@@ -385,7 +385,7 @@ export function isQueryRelevantIndustrialResult(item, query) {
 // 3) autoridad de la fuente y 4) score del proveedor. Un PDF irrelevante ya no puede
 // quedar arriba solo por ser PDF. Determinístico y generalizable.
 export function rankIndustrialResults(results, query = '') {
-  const sourcePriority = { official: 4, distributor: 3, web_discovery: 1, untrusted: 0 };
+  const sourcePriority = { official: 5, authorized_distributor: 4, distributor: 3, web_discovery: 1, untrusted: 0 };
   const withScores = results.map((r) => ({
     r,
     queryScore: queryRelevanceScore(r, query),
