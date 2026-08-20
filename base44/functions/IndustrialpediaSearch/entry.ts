@@ -95,7 +95,6 @@ export default async function (req: Request) {
           authorized_distributor_domains: sourcePolicy.authorized_distributors
         } : null
       }
-      }
     });
   } catch (error) {
     return Response.json({
