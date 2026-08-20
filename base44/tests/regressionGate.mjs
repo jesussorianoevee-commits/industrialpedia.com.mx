@@ -37,6 +37,10 @@ assert.equal(isTechnicalSpecification('Supply voltage', '24 V DC').ok, true);
 assert.equal(isTechnicalSpecification('Industry', 'Automation Machinery Manufacturing').ok, false);
 assert.equal(isTechnicalSpecification('Headquarters', 'Paris').ok, false);
 assert.equal(isTechnicalSpecification('Website', 'https://example.com').ok, false);
+assert.equal(isTechnicalSpecification('Stock', '00062920 in').ok, false);
+assert.equal(isTechnicalSpecification('SKU', '00062920').ok, false);
+assert.equal(isTechnicalSpecification('Quantity', '25').ok, false);
+assert.equal(isTechnicalSpecification('Price', '$120').ok, false);
 
 // Ficha técnica: assets/Markdown/URLs nunca pueden convertirse en specs.
 assert.equal(sanitizeExtractedPair('![APC logo toggle]', '//www.se.com/us/en/assets/v2/739/media/202251/APC_logo_toggle.svg'), null);
