@@ -33,7 +33,9 @@ export default async function (req: Request) {
     const queryTokens = query.split(/\s+/).filter(Boolean);
     let manufacturerOnly = queryTokens.length === 1 && brandTokensFromQuery(query).length === 1;
     const normalizedRegistryQuery = query.toLowerCase().replace(/[^a-z0-9+ ]/g, '').replace(/\s+/g, ' ').trim();
-    const sourcePolicy = getSourcePolicy(normalizedRegistryQuery);
+    const sourcePolicy = body.source_policy && typeof body.source_policy === 'object'
+      ? body.source_policy
+      : getSourcePolicy(normalizedRegistryQuery);
     let trustedOfficialDomains: string[] = [];
     // El catálogo de Manufacturer es la fuente de verdad cuando la consulta
     // coincide exactamente con un fabricante. Esto cubre fabricantes de varias
