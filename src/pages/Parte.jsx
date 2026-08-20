@@ -137,8 +137,6 @@ export default function Parte() {
         <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
           <ArrowLeft className="w-4 h-4" /> Volver a BUSCAR
         </button>
-          <ArrowLeft className="w-4 h-4" /> Volver a BUSCAR
-        </Link>
       </header>
 
       <main className="px-4 py-5 max-w-2xl mx-auto space-y-4">
