@@ -12,6 +12,10 @@ function isDisplayableSpec(spec) {
   const value = String(spec?.original_value || spec?.normalized_value || spec?.value || '').trim();
   const combined = `${attribute} ${value}`;
   if (!attribute || !value) return false;
+  // Datos comerciales/logísticos no son especificaciones técnicas de la refacción.
+  // No deben aparecer en la ficha aunque una fuente los entregue como pares
+  // atributo/valor (por ejemplo: Stock 00062920 in).
+  if (/^(?:stock|inventory|availability|available|in stock|out of stock|quantity|qty|price|cost|msrp|list price|sale price|lead time|delivery|shipping|order status|cart|sku)$/i.test(attribute)) return false;
   // Defensa de UI: nunca renderizar recursos, Markdown, URLs, código o rutas de
   // assets aunque una ficha histórica haya sido generada antes del saneador.
   if (/!\[[^\]]*\]|\]\(|(?:https?:)?\/\/|javascript\s*:|void\s*\(\s*0\s*\)|blob:\/\/|data:(?:text|image)\//i.test(combined)) return false;
