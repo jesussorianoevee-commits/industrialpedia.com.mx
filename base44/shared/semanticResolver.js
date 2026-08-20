@@ -120,7 +120,8 @@ export function isTechnicalSpecification(attribute, value) {
   if (!a || !v) return { ok: false, role: 'UNKNOWN', reason: 'missing_attribute_or_value' };
 
   const nonTechnical = [
-    /^product[ ]+folder[ ]+links?$/i, /^catalog(?:[ ]+(?:number|no|#))?$/i, /^military$/i,
+    /^(?:stock|inventory|availability|available|in stock|out of stock|quantity|qty|price|cost|msrp|list price|sale price|lead time|delivery|shipping|order status|cart|sku)$/i,
+    /^(?:product[ ]+folder[ ]+links?|catalog(?:[ ]+(?:number|no|#))?|military)$/i,
     /^typical[ ]+characteristics?$/i, /^\d+(?:\.\d+)*[ ]+typical[ ]+characteristics?/i,
     /^scale$/i, /^revision(?:[ ]+history)?$/i, /^document[ ]+(?:number|no|#)$/i,
     /^literature[ ]+(?:number|no|#)$/i, /(?:^|[^a-z])(top|bottom|middle)[ ]+trace(?:$|[^a-z])/i,
