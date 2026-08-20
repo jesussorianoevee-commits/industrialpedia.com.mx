@@ -2,28 +2,43 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SOURCE_REGISTRY, getSourcePolicy, allAuthorizedDomains, registryKey } from '../../shared/sourceRegistry.js';
 import { isLikelyIndustrialTavilyResult, isQueryRelevantIndustrialResult, rankIndustrialResults } from '../../shared/tavilySearch.js';
 import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
+import { searchIndustrialpedia, INDUSTRIALPEDIA_API_VERSION } from '../../shared/supabaseIndustrialpediaApi.js';
 
-/**
- * Industrialpedia Search API v1
- *
- * Stable application-level search contract.
- * The frontend talks only to this function; implementation providers remain
- * behind the API so the search engine can be migrated out of Base44 later
- * without changing the UI contract.
- *
- * Request:
- * { q, filters?, limit?, offset? }
- *
- * Response:
- * {
- *   q,
- *   knowledge_core_results,
- *   discovery_results,
- *   web_results,
- *   facets,
- *   meta: { api_version, providers }
- * }
- */
+function mapSupabaseResult(r: any) {
+  return {
+    id: r.part_id || null,
+    part_number: r.part_number || '',
+    manufacturer_name: r.manufacturer || '',
+    category: r.category || '',
+    description: r.description || r.name || '',
+    title: r.name || r.part_number || '',
+    image_url: '',
+    validation_state: r.status === 'verified' ? 'published' : r.status || 'incomplete',
+    match: r.match_type || 'candidate',
+    has_evidence: false,
+    evidence_count: 0,
+    spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
+    source_ids: [],
+    discovery_state: null,
+    source_url: null,
+    document_url: null,
+    top_specs: r.specifications
+      ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]: any) => ({
+          attribute,
+          value: typeof value === 'object' && value !== null ? value.value ?? value : value,
+          unit: typeof value === 'object' && value !== null ? value.unit ?? null : null,
+          validated: true
+        }))
+      : [],
+    api_match_type: r.match_type || null,
+    api_score: r.score ?? null,
+    quantity_match_state: r.quantity_match_state || null,
+    quantity_difference: r.quantity_difference ?? null,
+    quantity_difference_unit: r.quantity_difference_unit || null,
+    classification_code: r.classification_code || null
+  };
+}
+
 export default async function (req: Request) {
   try {
     const base44 = createClientFromRequest(req);
@@ -34,22 +49,38 @@ export default async function (req: Request) {
     const q = String(body.q || '').trim();
     if (!q) {
       return Response.json({
-        q: '',
-        knowledge_core_results: [],
-        discovery_results: [],
-        web_results: [],
+        q: '', knowledge_core_results: [], discovery_results: [], web_results: [],
         facets: { manufacturers: [], categories: [] },
-        meta: { api_version: '1.0', providers: [] }
+        meta: { api_version: INDUSTRIALPEDIA_API_VERSION, providers: ['supabase_knowledge_core'] }
       });
     }
 
     const filters = body.filters || {};
-    const limit = Math.min(parseInt(body.limit, 10) || 25, 100);
-    const offset = parseInt(body.offset, 10) || 0;
+    const limit = Math.min(parseInt(body.limit, 10) || 25, 50);
+    const requestedManufacturers = Array.isArray(filters.manufacturers) ? filters.manufacturers : [];
+    const manufacturer = requestedManufacturers.length === 1 ? requestedManufacturers[0] : '';
 
-    // Resolve only an explicitly registered manufacturer. We never infer a
-    // manufacturer from an arbitrary query token. This registry is also the
-    // source of truth for domains that may be searched as official/authorized.
+    // PRIMARY SOURCE: frozen Supabase Industrialpedia API v8.
+    // Base44 is now only the application/UI layer; it does not reimplement
+    // Knowledge Core search logic here.
+    const api = await searchIndustrialpedia(q, limit, manufacturer);
+    let knowledgeCore = Array.isArray(api.results) ? api.results.map(mapSupabaseResult) : [];
+
+    const allowedStates = Array.isArray(filters.validation_states) && filters.validation_states.length
+      ? new Set(filters.validation_states)
+      : new Set(['published', 'validated', 'incomplete']);
+    const categories = Array.isArray(filters.categories) ? new Set(filters.categories) : null;
+    const onlySpecs = Boolean(filters.has_specification);
+
+    knowledgeCore = knowledgeCore.filter((r) => {
+      if (r.validation_state && !allowedStates.has(r.validation_state)) return false;
+      if (categories?.size && !categories.has(r.category)) return false;
+      if (onlySpecs && !r.spec_count) return false;
+      return true;
+    });
+
+    // Web discovery remains outside the frozen API. It is explicitly presented as
+    // discovery/evidence, never as Knowledge Core truth.
     const normalizedQuery = registryKey(q);
     const registeredManufacturer = Object.keys(SOURCE_REGISTRY)
       .sort((a, b) => b.length - a.length)
@@ -57,55 +88,46 @@ export default async function (req: Request) {
     const sourcePolicy = registeredManufacturer ? getSourcePolicy(registeredManufacturer) : null;
     const includeDomains = sourcePolicy ? allAuthorizedDomains(sourcePolicy) : [];
 
-    const [kcResponse, webResponse] = await Promise.all([
-      base44.functions.invoke('Buscar', {
-        q,
-        filters: {
-          manufacturers: Array.isArray(filters.manufacturers) ? filters.manufacturers : [],
-          categories: Array.isArray(filters.categories) ? filters.categories : [],
-          has_specification: Boolean(filters.has_specification),
-          validation_states: Array.isArray(filters.validation_states)
-            ? filters.validation_states
-            : ['published', 'validated', 'incomplete']
-        },
-        limit,
-        offset,
-        skip_web_discovery: true
-      }),
-      base44.functions.invoke('BuscarGoogle', {
+    let webResults: any[] = [];
+    try {
+      const webResponse = await base44.functions.invoke('BuscarGoogle', {
         query: q,
         include_domains: includeDomains,
         source_policy: sourcePolicy
-      })
-    ]);
+      });
+      const web = webResponse?.data || {};
+      webResults = Array.isArray(web.google_results)
+        ? rankIndustrialResults(
+            web.google_results
+              .filter((r: any) => isLikelyIndustrialTavilyResult(r, q))
+              .filter((r: any) => isQueryRelevantIndustrialResult(r, q))
+              .map((r: any) => sanitizeResultIdentity(r, q)),
+            q
+          ).slice(0, limit)
+        : [];
+    } catch {
+      webResults = [];
+    }
 
-    const kc = kcResponse?.data || {};
-    const web = webResponse?.data || {};
-
-    // Boundary gate: IndustrialpediaSearch is the public search contract, so no
-    // provider/cache result reaches the UI without the same deterministic
-    // industrial-relevance and identity checks. This is intentionally duplicated
-    // at the API boundary to prevent stale cache/provider output from bypassing
-    // the current rules.
-    const safeWebResults = Array.isArray(web.google_results)
-      ? rankIndustrialResults(
-          web.google_results
-            .filter((r: any) => isLikelyIndustrialTavilyResult(r, q))
-            .filter((r: any) => isQueryRelevantIndustrialResult(r, q))
-            .map((r: any) => sanitizeResultIdentity(r, q)),
-          q
-        ).slice(0, limit)
-      : [];
+    const manufacturers: Record<string, number> = {};
+    const cats: Record<string, number> = {};
+    knowledgeCore.forEach((r) => {
+      if (r.manufacturer_name) manufacturers[r.manufacturer_name] = (manufacturers[r.manufacturer_name] || 0) + 1;
+      if (r.category) cats[r.category] = (cats[r.category] || 0) + 1;
+    });
 
     return Response.json({
       q,
-      knowledge_core_results: Array.isArray(kc.knowledge_core_results) ? kc.knowledge_core_results : [],
-      discovery_results: Array.isArray(kc.discovery_results) ? kc.discovery_results : [],
-      web_results: safeWebResults,
-      facets: kc.facets || { manufacturers: [], categories: [] },
+      knowledge_core_results: knowledgeCore,
+      discovery_results: [],
+      web_results: webResults,
+      facets: {
+        manufacturers: Object.entries(manufacturers).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+        categories: Object.entries(cats).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
+      },
       meta: {
-        api_version: '1.0',
-        providers: ['knowledge_core', 'discovery', 'web_discovery'],
+        api_version: INDUSTRIALPEDIA_API_VERSION,
+        providers: ['supabase_knowledge_core', 'web_discovery'],
         source_policy: sourcePolicy ? {
           manufacturer: sourcePolicy.manufacturer,
           official_domains: sourcePolicy.official,
@@ -116,7 +138,7 @@ export default async function (req: Request) {
   } catch (error) {
     return Response.json({
       error: error?.message || String(error),
-      meta: { api_version: '1.0', providers: [] }
+      meta: { api_version: INDUSTRIALPEDIA_API_VERSION, providers: [] }
     }, { status: 500 });
   }
 }
