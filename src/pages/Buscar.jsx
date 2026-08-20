@@ -18,6 +18,7 @@ export default function Buscar() {
   const [input, setInput] = useState(q);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
@@ -158,6 +159,7 @@ export default function Buscar() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onFocus={() => setShowHistory(true)}
             placeholder="Ej: DSNU-25-25-PPV-A, 6ES7214-1AG40-0XB0, cilindro Festo…"
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-1.5"
             autoFocus
@@ -165,6 +167,38 @@ export default function Buscar() {
           <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-sm font-semibold px-4 py-1.5 rounded-full transition-colors">
             Buscar
           </button>
+
+          {showHistory && history.length > 0 && input.trim().length < 3 && !(input.trim() !== q.trim() && suggestions.length > 0) && (
+            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/40">
+                  <Clock className="w-3 h-3" /> Búsquedas recientes
+                </div>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setHistory([]); try { localStorage.removeItem('industrialpedia_search_history'); } catch {} }}
+                  className="text-[10px] text-white/30 hover:text-white/60"
+                >
+                  Limpiar
+                </button>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {history.map((term, i) => (
+                  <button
+                    key={`${term}-${i}`}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { setInput(term); setShowHistory(false); setParams({ q: term }); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-white/5 last:border-0 hover:bg-white/5"
+                  >
+                    <Search className="w-3.5 h-3.5 text-white/30 shrink-0" />
+                    <span className="text-sm text-white/75 truncate">{term}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {input.trim().length >= 3 && input.trim() !== q.trim() && (suggestionsLoading || suggestions.length > 0) && (
             <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
