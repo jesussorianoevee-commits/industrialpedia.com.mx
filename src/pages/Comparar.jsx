@@ -98,15 +98,29 @@ export default function Comparar() {
       </section>
 
       {notEvaluable ? <section className="rounded-xl border border-amber-300/15 bg-amber-300/[0.025] p-5 text-sm text-white/55"><div className="font-semibold text-amber-200/85">Compatibilidad no evaluable</div><p className="mt-2 text-xs leading-relaxed">La ficha base no tiene especificaciones verificadas suficientes en Knowledge Core.</p></section> : <>
-        <section className="mb-4 grid gap-3 md:grid-cols-3">
-          {alternatives.map((c, i) => {
+        <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div><h2 className="text-sm font-semibold text-white/90">Mapa de compatibilidad</h2><p className="mt-1 text-[11px] text-white/35">Cada alternativa se evalúa directamente contra el componente base.</p></div>
+            <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-white/25">BASE → ALTERNATIVAS</span>
+          </div>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
+              {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
+              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">COMPONENTE BASE</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || 'Fabricante no indicado'}</div></div>
+            </div>
+            <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
+            <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
+              {alternatives.map((c, i) => {
             const meta = statusMeta(c); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} SPECS</span></div>
               <div className="mt-3 text-xs text-white/50">Compatibilidad</div>
               <div className="mt-1 text-sm font-semibold text-white/80">{meta.short}</div>
+              <div className="mt-2 text-[9px] text-white/30">Comparado contra: <span className="font-mono text-white/50">{base.part_number}</span></div>
             </div>;
           })}
+            </div>
+          </div>
         </section>
 
         <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
