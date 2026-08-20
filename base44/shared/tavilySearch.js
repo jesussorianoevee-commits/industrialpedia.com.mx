@@ -436,7 +436,7 @@ function extractDemonstratedCatalogParts(item, query) {
   return out;
 }
 
-function expandCatalogResults(results, query) {
+export function expandCatalogResults(results, query) {
   const expanded = [];
   for (const item of results || []) {
     if (!isCatalogLikeResult(item)) {
