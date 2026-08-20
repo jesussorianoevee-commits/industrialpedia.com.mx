@@ -109,10 +109,20 @@ export function sanitizeResultIdentity(result, query) {
   // conserva; las reglas genéricas siguen bloqueando categorías/fracciones.
   const normalizedQuery = normalize(query);
   const normalizedManufacturer = normalize(copy.manufacturer_name);
-  const isOfficialExactManufacturer = copy.source_type === 'official'
-    && normalizedQuery
-    && normalizedManufacturer
-    && normalizedQuery === normalizedManufacturer;
+  // A source being classified as official is not enough to trust an exact
+  // manufacturer_name copied from the query. The manufacturer must also be
+  // evidenced by the result itself (title/snippet/product identity) or by the
+  // URL domain. This prevents category queries such as "electrovalvula" from
+  // becoming a fake manufacturer even when the result is an official site.
+  let officialIdentityEvidence = false;
+  if (copy.source_type === 'official' && normalizedQuery && normalizedManufacturer && normalizedQuery === normalizedManufacturer) {
+    const evidenceText = normalize(`${copy.title || ''} ${copy.snippet || ''} ${copy.description || ''} ${copy.product_name || ''} ${copy.product_identity?.short_description || ''}`);
+    const urlHost = (() => { try { return new URL(String(copy.url || '')).hostname.toLowerCase().replace(/^www\\./, ''); } catch { return ''; } })();
+    const domainToken = normalize(urlHost.split('.')[0] || '');
+    officialIdentityEvidence = evidenceText.includes(normalizedManufacturer)
+      || (domainToken && domainToken === normalizedManufacturer);
+  }
+  const isOfficialExactManufacturer = officialIdentityEvidence;
 
   // manufacturer_name: descartar si deriva de la consulta o es genérico.
   if (!isOfficialExactManufacturer && isQueryDerivedManufacturer(copy.manufacturer_name, query)) {
