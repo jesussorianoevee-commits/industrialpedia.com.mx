@@ -74,8 +74,16 @@ export default function Parte() {
         };
         setPart(normalizedPart);
 
+        // La API canónica devuelve specifications; resultados antiguos de Base44
+        // pueden traer únicamente top_specs. Normalizamos ambos contratos aquí
+        // para no perder datos técnicos durante la transición.
         const rawSpecs = p.specifications && typeof p.specifications === 'object' ? p.specifications : {};
-        const specList = Object.entries(rawSpecs)
+        const fallbackSpecs = Array.isArray(p.top_specs) ? p.top_specs : [];
+        const specEntries = Object.keys(rawSpecs).length > 0
+          ? Object.entries(rawSpecs)
+          : fallbackSpecs.map((s) => [s.attribute || s.attribute_name, { value: s.value, unit: s.unit }]);
+        const specList = specEntries
+          .filter(([attribute]) => attribute)
           .map(([attribute, raw]) => {
             const isObject = raw && typeof raw === 'object' && !Array.isArray(raw);
             const value = isObject ? (raw.value ?? null) : raw;
