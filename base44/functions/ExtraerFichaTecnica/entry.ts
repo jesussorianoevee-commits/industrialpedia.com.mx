@@ -628,13 +628,19 @@ export default async function (req: Request) {
       component_type_label: template.label
     });
 
+    const effectiveSourceType = sanitizeFichaSourceType(
+      url,
+      body.source_type || 'cse_configured',
+      manufacturer || productIdentity.manufacturer || ''
+    );
+
     const ficha = {
       found: true,
       ambiguous_source: ambiguousMultiProductSource,
       source: {
         url,
         domain: host,
-        source_type: body.source_type || 'cse_configured',
+        source_type: effectiveSourceType,
         is_pdf: isPdf,
         title: safeText(extracted.title, 300),
         retrieved_date: consultationDate
