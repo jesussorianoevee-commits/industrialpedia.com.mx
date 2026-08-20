@@ -146,9 +146,9 @@ export function brandTokensFromQuery(query) {
   return tokens.filter((t, i) => tokens.indexOf(t) === i);
 }
 
-export function classifySource(host, brand, queryBrandTokens, title = '', trustedOfficialDomains = []) {
+export function classifySource(host, brand, queryBrandTokens, title = '', trustedOfficialDomains = [], sourcePolicy = null) {
   if (!host) return 'untrusted';
-  const registered = classifyRegisteredDomain(host, options.sourcePolicy);
+  const registered = classifyRegisteredDomain(host, sourcePolicy);
   if (registered) return registered;
   if ([...TRUSTED_DISTRIBUTOR_DOMAINS].some((d) => domainMatches(host, d))) return 'distributor';
   const base = domainBaseToken(host);
