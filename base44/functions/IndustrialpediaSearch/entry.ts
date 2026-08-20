@@ -8,6 +8,9 @@ function mapSupabaseResult(r: any) {
     manufacturer_name: r.manufacturer || '',
     category: r.category || '',
     description: r.description || r.name || '',
+    // Keep the full technical payload so the ficha can render the same
+    // specifications returned by the Knowledge Core search result.
+    specifications: r.specifications && typeof r.specifications === 'object' ? r.specifications : {},
     title: r.name || r.part_number || '',
     image_url: '',
     validation_state: r.status === 'verified' ? 'published' : r.status || 'incomplete',
