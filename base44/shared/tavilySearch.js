@@ -4,7 +4,8 @@
 
 import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSpecs, extractValueFirstSpecs, isUsableExternalImageUrl, isUnsafeExtractedPair, stripMarkdownNoise } from './extract.js';
 import { deriveProductIdentity } from './productIdentity.js';
-import { isTechnicalSpecification } from './semanticResolver.js';
+import { extractCandidates } from './knowledgeBuilder.js';
+import { classifyIdentifier, isTechnicalSpecification } from './semanticResolver.js';
 import { selectBestImage } from './imageResolver.js';
 import { classifyRegisteredDomain } from './sourceRegistry.js';
 
@@ -381,6 +382,104 @@ export function isQueryRelevantIndustrialResult(item, query) {
   return queryRelevanceScore(item, q) > 0;
 }
 
+// Una fuente documental puede descubrir partes, pero no debe aparecer como si
+// fuera una parte. Para catálogos/familias/listados extraemos únicamente
+// identificadores de parte demostrados por etiquetas estructurales (Part Number,
+// Model, Order Number, etc.). Si la fuente no demuestra ningún PN, se descarta.
+// Esto evita mostrar "el catálogo" como resultado sin inventar un producto.
+const CATALOG_SOURCE_SIGNALS = /(?:catalog(?:ue)?|product\s+(?:catalog|listing|overview|selector)|product\s+family|product\s+line|\bseries\b|\bfamily\b|\brange\b)/i;
+
+function isCatalogLikeResult(item) {
+  const text = `${item?.title || ''} ${item?.snippet || item?.content || ''} ${item?.url || ''}`;
+  return CATALOG_SOURCE_SIGNALS.test(text);
+}
+
+function normalizeCandidateKey(value) {
+  return String(value || '').trim().toUpperCase().replace(/[\\s\\-_.\\/]/g, '');
+}
+
+function queryContextTokens(query) {
+  return String(query || '').toLowerCase().split(/[^a-z0-9áéíóúüñ]+/i).filter((t) => t.length >= 3 && !GENERIC_TERMS.has(t));
+}
+
+function extractDemonstratedCatalogParts(item, query) {
+  const content = String(item?.raw_content || item?.snippet || item?.content || '');
+  if (!content) return [];
+
+  const candidates = extractCandidates(content, [content], [], []);
+  const queryTokens = queryContextTokens(query);
+  const sourceText = normalizeSearchText(`${item?.title || ''} ${content}`);
+  const seen = new Set();
+  const out = [];
+
+  for (const candidate of candidates) {
+    const semantic = classifyIdentifier(candidate);
+    if (semantic.role !== 'PART_NUMBER' || !semantic.demonstrated) continue;
+    const value = String(candidate.text || '').trim();
+    const key = normalizeCandidateKey(value);
+    if (!key || seen.has(key)) continue;
+
+    // La fuente completa debe ser compatible con la consulta y el contexto local
+    // del candidato debe contener al menos una señal no genérica de la búsqueda.
+    // Para una consulta exacta de PN, esa coincidencia es suficiente.
+    if (!isPartNumberQuery(String(query || '')) && queryTokens.length) {
+      const local = normalizeSearchText(candidate.context_text || '');
+      const localHit = queryTokens.some((t) => local.includes(t));
+      const sourceHit = queryTokens.some((t) => sourceText.includes(t));
+      if (!sourceHit || !localHit) continue;
+    }
+
+    seen.add(key);
+    out.push({ value, context_text: candidate.context_text || '', page: candidate.page || null });
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+function expandCatalogResults(results, query) {
+  const expanded = [];
+  for (const item of results || []) {
+    if (!isCatalogLikeResult(item)) {
+      expanded.push(item);
+      continue;
+    }
+
+    const parts = extractDemonstratedCatalogParts(item, query);
+    // Un catálogo sin una parte demostrada no es un resultado de BUSCAR.
+    if (!parts.length) continue;
+
+    for (const part of parts) {
+      const identity = deriveProductIdentity({
+        title: item.title || '',
+        text: `${part.context_text}\\n${item.raw_content || item.snippet || item.content || ''}`,
+        query,
+        manufacturer_hint: item.manufacturer_name || '',
+        part_number_hint: part.value,
+        source_url: item.url
+      });
+      expanded.push({
+        ...item,
+        title: identity.short_description || `${item.title} · ${part.value}`,
+        product_name: identity.short_description || `${item.product_name || ''} ${part.value}`.trim(),
+        product_identity: identity,
+        manufacturer_name: identity.manufacturer || item.manufacturer_name || '',
+        part_number: part.value,
+        description: part.context_text || item.description || item.snippet || '',
+        catalog_source: true,
+        catalog_source_title: item.title || '',
+        catalog_source_page: part.page,
+        // Una imagen genérica del catálogo no se atribuye automáticamente a una
+        // variante concreta. Sólo conservamos la imagen si el resolver ya la
+        // demostró contra el contexto del PN.
+        image_url: item.image_confidence >= 50 ? item.image_url : '',
+        image_method: item.image_confidence >= 50 ? item.image_method : '',
+        image_confidence: item.image_confidence >= 50 ? item.image_confidence : 0
+      });
+    }
+  }
+  return expanded;
+}
+
 // Reordena resultados web por: 1) relevancia con la consulta, 2) tipo de contenido,
 // 3) autoridad de la fuente y 4) score del proveedor. Un PDF irrelevante ya no puede
 // quedar arriba solo por ser PDF. Determinístico y generalizable.
@@ -562,9 +661,14 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     isQueryRelevantIndustrialResult(r, q) &&
     (!manufacturerOnly || isProductResultForManufacturer(r))
   );
+
+  // Última frontera antes de mostrar resultados: si la fuente parece catálogo,
+  // familia o listado, convertirla en partes demostradas o eliminarla. Nunca
+  // mostrar el documento como si fuera la refacción.
+  const resolvedResults = expandCatalogResults(filtered, q);
   return {
     provider: 'tavily',
-    results: rankIndustrialResults(filtered, q).slice(0, 20),
+    results: rankIndustrialResults(resolvedResults, q).slice(0, 20),
     telemetry: {
       configured: Boolean(apiKey),
       queries_made: queriesMade,
