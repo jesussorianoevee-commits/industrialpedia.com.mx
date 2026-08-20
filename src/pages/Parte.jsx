@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 
@@ -40,36 +41,34 @@ export default function Parte() {
     (async () => {
       setLoading(true);
       try {
-        const p = await base44.entities.Part.get(id);
-        setPart(p);
+        // La ficha debe leer el mismo Knowledge Core que BUSCAR.
+        // No volver a consultar entidades legacy de Base44 para el componente.
+        const apiResponse = await getPartIndustrialpedia(id);
+        const p = apiResponse?.part;
+        if (!p) throw new Error('part_not_found');
+        const normalizedPart = {
+          id: p.id,
+          part_number: p.part_number,
+          manufacturer_name: p.manufacturer || '',
+          category: p.category || '',
+          description: p.description || p.name || '',
+          validation_state: p.status || 'processed'
+        };
+        setPart(normalizedPart);
 
-        const rawSpecList = await base44.entities.Specification.filter({ part_id: id }, '-updated_date', 200);
-        const specList = rawSpecList.filter(isTechnicalDisplaySpec);
+        const rawSpecs = p.specifications && typeof p.specifications === 'object' ? p.specifications : {};
+        const specList = Object.entries(rawSpecs)
+          .map(([attribute, raw]) => {
+            const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.value ?? raw : raw;
+            const unit = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.unit ?? null : null;
+            return { id: `${p.id}:${attribute}`, attribute_name: attribute, value, unit, source_id: null };
+          })
+          .filter(isTechnicalDisplaySpec);
         setSpecs(specList);
-
-        const specIds = specList.map((s) => s.id);
-        const evidenceBySpecId = {};
-        if (specIds.length) {
-          const ev = await base44.entities.Evidence.filter({ specification_id: { $in: specIds } }, '-updated_date', 500);
-          ev.forEach((e) => { (evidenceBySpecId[e.specification_id] = evidenceBySpecId[e.specification_id] || []).push(e); });
-        }
-        // evidencia asociada directamente a la parte
-        const evPart = await base44.entities.Evidence.filter({ part_id: id }, '-updated_date', 500);
-        setEvidenceBySpec(evidenceBySpecId);
-
-        const prov = await base44.entities.Provenance.filter({ entity_id: { $in: [id, ...specIds] } }, '-updated_date', 500);
-        setProvenanceBySpec(groupBy(prov, (x) => x.entity_id));
-
-        const docIds = [...new Set([...evPart, ...Object.values(evidenceBySpecId).flat()].map((e) => e.document_id).filter(Boolean))];
-        const srcIds = [...new Set(specList.map((s) => s.source_id).filter(Boolean))];
-        if (docIds.length) {
-          const d = await base44.entities.Document.filter({ id: { $in: docIds } }, '-updated_date', 100);
-          setDocs(d);
-        }
-        if (srcIds.length) {
-          const sres = await base44.entities.Source.filter({ id: { $in: srcIds } }, '-updated_date', 100);
-          setSources(sres);
-        }
+        setEvidenceBySpec({});
+        setProvenanceBySpec({});
+        setDocs([]);
+        setSources([]);
       } catch (e) {
         setPart(null);
       } finally {
