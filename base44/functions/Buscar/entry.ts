@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizePartNumber, looksLikePartNumber, tokenize, scorePart, rankComparator, isNonIndustrialQuery, isLikelyIndustrialSource } from '../../shared/searchRules.js';
 import { discoverIndustrialWeb, isLikelyIndustrialResult, filterTrustedIndustrialResults } from '../../shared/webDiscovery.js';
+import { expandCatalogResults } from '../../shared/tavilySearch.js';
 import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 
 // TEMP: mientras el Knowledge Core no tenga ningun Part en estado
@@ -312,7 +313,10 @@ export default async function (req) {
 
         const industrialMatches = web.results.filter(isLikelyIndustrialResult);
         const candidateResults = industrialMatches.length ? industrialMatches : web.results;
-        const industrial = filterTrustedIndustrialResults(candidateResults, manufacturerNames, trustedOfficialDomains).slice(0, 50);
+        // Un catálogo no es un resultado de producto. Si contiene modelos/PN demostrables,
+        // expandCatalogResults los convierte en candidatos de parte; si no, el catálogo se descarta.
+        const trustedIndustrial = filterTrustedIndustrialResults(candidateResults, manufacturerNames, trustedOfficialDomains);
+        const industrial = expandCatalogResults(trustedIndustrial, q).slice(0, 50);
         // CRÍTICO DE RENDIMIENTO: no persistimos DiscoveryIndex/CatalogProduct ni
         // invocamos MaterializeDiscovery dentro de la petición del usuario. Con 50
         // resultados eso puede generar cientos de llamadas secuenciales y timeout.
@@ -322,7 +326,7 @@ export default async function (req) {
         for (const r of industrial) {
           let host = '';
           try { host = new URL(r.url).hostname; } catch {}
-          const candidatePn = isPartNo ? q : '';
+          const candidatePn = isPartNo ? q : (r.part_number || r.partNumber || '');
           const webKey = String(r.url || '').replace(/#.*$/, '').toLowerCase();
           if (!webKey || seenWeb.has(webKey)) continue;
           seenWeb.add(webKey);
@@ -342,7 +346,7 @@ export default async function (req) {
               manufacturer_name: manufacturer,
               category: '',
               description: r.snippet || r.title || '',
-              title: r.title || host,
+              title: (r.catalog_source && candidatePn) ? candidatePn : (r.title || host),
               image_url: ''
             },
             specs: [],
@@ -353,7 +357,7 @@ export default async function (req) {
               id: null,
               source_url: r.url,
               document_url: r.url,
-              title: r.title || host,
+              title: (r.catalog_source && candidatePn) ? candidatePn : (r.title || host),
               description: r.snippet || '',
               discovery_state: 'discovered',
               manufacturer_name: manufacturer,
