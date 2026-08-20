@@ -114,7 +114,7 @@ export default function Parte() {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, partNumberHint]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#0a0e12] grid-bg flex items-center justify-center text-white/40 text-sm">Cargando componente…</div>;
@@ -134,7 +134,9 @@ export default function Parte() {
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <Link to="/buscar" className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
+        <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
+          <ArrowLeft className="w-4 h-4" /> Volver a BUSCAR
+        </button>
           <ArrowLeft className="w-4 h-4" /> Volver a BUSCAR
         </Link>
       </header>
