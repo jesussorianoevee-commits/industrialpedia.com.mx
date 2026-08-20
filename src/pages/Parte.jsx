@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import SpecList from '@/components/part/SpecList';
@@ -22,6 +23,8 @@ function isTechnicalDisplaySpec(spec) {
 
 export default function Parte() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const partNumberHint = searchParams.get('pn') || '';
   const [part, setPart] = useState(null);
   const [specs, setSpecs] = useState([]);
   const [evidenceBySpec, setEvidenceBySpec] = useState({});
@@ -37,8 +40,25 @@ export default function Parte() {
       try {
         // La ficha debe leer el mismo Knowledge Core que BUSCAR.
         // No volver a consultar entidades legacy de Base44 para el componente.
-        const apiResponse = await getPartIndustrialpedia(id);
-        const p = apiResponse?.part;
+        let p = null;
+        try {
+          const apiResponse = await getPartIndustrialpedia(id);
+          p = apiResponse?.part || null;
+        } catch {
+          // Candidate records are intentionally not exposed through the public
+          // Supabase RPC. For authenticated Base44 users, resolve the candidate
+          // through the existing Search API instead of weakening that boundary.
+          if (partNumberHint) {
+            const searchResponse = await base44.functions.invoke('IndustrialpediaSearch', {
+              q: partNumberHint,
+              filters: { validation_states: ['published', 'validated', 'incomplete', 'candidate'] },
+              limit: 10,
+              offset: 0
+            });
+            const results = searchResponse?.data?.knowledge_core_results || [];
+            p = results.find((r) => r.id === id || r.part_number === partNumberHint) || null;
+          }
+        }
         if (!p) throw new Error('part_not_found');
         const normalizedPart = {
           id: p.id,
