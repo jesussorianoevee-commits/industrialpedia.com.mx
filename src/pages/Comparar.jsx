@@ -12,9 +12,17 @@ const STATE = {
 function val(s) { return `${s?.normalized_value || s?.original_value || ''}${s?.normalized_unit || s?.original_unit ? ` ${s.normalized_unit || s.original_unit}` : ''}`.trim() || 'No disponible'; }
 function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 function stateFor(base, alt) {
-  const a = alt.comparison?.differences?.find((d) => String(d.attribute_canonical || d.attribute).trim().toLowerCase().replace(/\s+/g, ' ') === canonical(base));
-  if (!a) return 'equal';
-  return a.state;
+  // El backend es la única fuente de verdad para el estado de comparación.
+  // La UI no vuelve a comparar valores ni unidades.
+  const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : [];
+  const hit = differences.find((d) => canonical(d) === canonical(base));
+  return hit?.state || 'equal';
+}
+function valueFor(base, alt) {
+  const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : [];
+  const hit = differences.find((d) => canonical(d) === canonical(base));
+  if (hit && Object.prototype.hasOwnProperty.call(hit, 'candidate')) return hit.candidate;
+  return (alt?.specs || []).find((s) => canonical(s) === canonical(base));
 }
 
 export default function Comparar() {
@@ -69,9 +77,9 @@ export default function Comparar() {
           {(base.specs || []).map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`220px repeat(${cols.length}, minmax(190px, 1fr))`}}>
             <div className="p-3 border-t border-white/[0.06] text-xs font-mono text-white/55">{s.attribute_name || s.attribute}</div>
             {cols.map((c, ci) => {
-              const candidate = ci === 0 ? s : (c.specs || []).find((x) => String(x.attribute_name || x.attribute).toLowerCase() === String(s.attribute_name || s.attribute).toLowerCase());
+              const candidate = ci === 0 ? s : valueFor(s, c);
               const st = ci === 0 ? 'base' : stateFor(s, c);
-              return <div key={ci} className={`p-3 border-t border-l border-white/[0.06] text-xs font-mono ${st === 'equal' ? 'text-[#47bcb6]/85' : st === 'different' ? 'text-amber-200/85' : 'text-white/35'}`}>{candidate ? val(candidate) : 'No disponible'}</div>;
+              return <div key={ci} className={`p-3 border-t border-l border-white/[0.06] text-xs font-mono ${st === 'equal' ? 'text-[#47bcb6]/85' : st === 'different' ? 'text-amber-200/85' : 'text-white/35'}`}>{candidate ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : 'No disponible'}</div>;
             })}
           </div>)}
         </div>
