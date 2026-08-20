@@ -249,7 +249,7 @@ export function isProductResultForManufacturer(item) {
 // producto/modelo > familia/catálogo > distribuidor > artículo > otro.
 // Los artículos/editoriales no se eliminan (pueden tener información técnica
 // útil) pero nunca superan a una fuente de producto/catálogo relevante.
-const PRODUCT_MODEL_LABELS = /(?:part number|order number|model number|model no\b|art[\.\s]*nr|article number|product number|\bmpn\b|\bsku\b|order code|bestellnummer|part no\b|model code)/i;
+const PRODUCT_MODEL_LABELS = /(?:part number|order number|model number|model no\b|art[\.\s]*nr|article number|product number|material number|material no\b|material #|\bmpn\b|\bsku\b|order code|bestellnummer|part no\b|model code)/i;
 const PRODUCT_FAMILY_SIGNALS = /(?:\bseries\b|\bfamily\b|\bfamilia\b|\bserie\b|\brange\b|product line|product family|product overview|product listing|product selector|catalog overview)/i;
 const DATASHEET_SIGNALS = /(?:datasheet|data sheet|hoja de datos|specifications?|technical data|technical specifications|ficha t[ée]cnica|spec sheet|product specifications)/i;
 const DISTRIBUTOR_BUY_SIGNALS = /(?:\bbuy\b|\bpurchase\b|comprar|precio|\bprice\b|in stock|disponible|add to cart|order now|distribuidor|distributor|authorized distributor|authorised distributor)/i;
