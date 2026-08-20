@@ -30,7 +30,19 @@ export async function searchIndustrialpedia(q, limit = 25, manufacturer = '') {
 }
 
 export async function getPartIndustrialpedia(id) {
-  return call({ mode: 'part', id });
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_part_v1`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({ p_part_id: id })
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) throw new Error(data?.message || `Industrialpedia API HTTP ${response.status}`);
+  return { api_version: 'v1', operation: 'part', part: data };
 }
 
 export async function decideIndustrialpedia(family, requirements, limit = 10) {
