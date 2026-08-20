@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
 const RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v1`;
+const SEARCH_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search`;
 
 function specsToArray(specifications: any) {
   if (!specifications || typeof specifications !== 'object' || Array.isArray(specifications)) return [];
@@ -31,13 +32,29 @@ export default async function (req: Request) {
     const partNumber = String(body.part_number || '').trim();
     if (!partId && !partNumber) return Response.json({ error: 'part_id or part_number required' }, { status: 400 });
 
-    // El id que entrega la ficha ya es el UUID canónico del Knowledge Core.
-    // No hacemos un lookup REST adicional: la tabla parts está protegida por RLS
-    // y ese endpoint puede devolver [] aunque la función SECURITY DEFINER sí pueda
-    // leer el registro. El RPC es la única puerta de entrada al motor de comparación.
-    if (!partId) {
-      return Response.json({ error: 'canonical_part_id_required', part_number: partNumber }, { status: 400 });
+    // La URL de la ficha puede contener un ID de la capa Base44, no el UUID
+    // canónico de Supabase. Si tenemos número de parte, resolvemos SIEMPRE por
+    // la API canónica de Industrialpedia, que devuelve part_id sin depender de RLS.
+    if (partNumber) {
+      const searchUrl = new URL(SEARCH_URL);
+      searchUrl.searchParams.set('q', partNumber);
+      searchUrl.searchParams.set('limit', '10');
+      const searchResponse = await fetch(searchUrl.toString(), {
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`, Accept: 'application/json' }
+      });
+      const searchData = await searchResponse.json().catch(() => null);
+      if (!searchResponse.ok) {
+        return Response.json({ error: 'part_resolution_failed', detail: searchData?.error || `HTTP ${searchResponse.status}` }, { status: 502 });
+      }
+      const results = Array.isArray(searchData?.results) ? searchData.results : [];
+      const exact = results.find((r: any) => String(r.part_number || '').trim().toLowerCase() === partNumber.toLowerCase());
+      const resolved = exact || results.find((r: any) => String(r.part_id || '') === partId);
+      if (!resolved?.part_id) {
+        return Response.json({ error: 'part_not_found', part_number: partNumber }, { status: 404 });
+      }
+      partId = String(resolved.part_id);
     }
+    if (!partId) return Response.json({ error: 'canonical_part_id_required' }, { status: 400 });
 
     const response = await fetch(RPC_URL, {
       method: 'POST',
