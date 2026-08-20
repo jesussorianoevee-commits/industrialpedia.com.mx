@@ -28,6 +28,7 @@ export default function Parte() {
   const [provenanceBySpec, setProvenanceBySpec] = useState({});
   const [docs, setDocs] = useState([]);
   const [sources, setSources] = useState([]);
+  const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,16 +53,29 @@ export default function Parte() {
         const rawSpecs = p.specifications && typeof p.specifications === 'object' ? p.specifications : {};
         const specList = Object.entries(rawSpecs)
           .map(([attribute, raw]) => {
-            const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.value ?? raw : raw;
-            const unit = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.unit ?? null : null;
-            return { id: `${p.id}:${attribute}`, attribute_name: attribute, value, unit, source_id: null };
+            const isObject = raw && typeof raw === 'object' && !Array.isArray(raw);
+            const value = isObject ? (raw.value ?? null) : raw;
+            const unit = isObject ? (raw.unit ?? null) : null;
+            return {
+              id: `${p.id}:${attribute}`,
+              attribute_name: attribute,
+              original_value: value,
+              original_unit: unit,
+              normalized_value: null,
+              normalized_unit: null,
+              validation_state: p.status || 'processed',
+              source_id: null
+            };
           })
           .filter(isTechnicalDisplaySpec);
         setSpecs(specList);
+        // Evidence returned by the Knowledge Core is currently part-level.
+        // Do not incorrectly attach one identity evidence record to every specification.
+        setPartEvidence(Array.isArray(p.evidence) ? p.evidence : []);
         setEvidenceBySpec({});
         setProvenanceBySpec({});
         setDocs([]);
-        setSources([]);
+        setSources(Array.isArray(p.evidence) ? p.evidence.map((e) => e.source).filter(Boolean) : []);
       } catch (e) {
         setPart(null);
       } finally {
@@ -83,7 +97,7 @@ export default function Parte() {
   }
 
   const st = STATE_LABELS[part.validation_state] || STATE_LABELS.processed;
-  const hasAnyEvidence = Object.values(evidenceBySpec).flat().length > 0;
+  const hasAnyEvidence = partEvidence.length > 0 || Object.values(evidenceBySpec).flat().length > 0;
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
@@ -105,14 +119,28 @@ export default function Parte() {
           {part.description && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
-              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> trazabilidad con evidencia</span>
+              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} evidencia(s) del componente</span>
             ) : (
               <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> sin evidencia documental</span>
             )}
           </div>
         </div>
 
-        <TraceabilityChain counts={{ parts: 1, specs: specs.length, provenance: Object.values(provenanceBySpec).flat().length, evidence: Object.values(evidenceBySpec).flat().length, documents: docs.length, sources: sources.length }} />
+        <TraceabilityChain counts={{ parts: 1, specs: specs.length, provenance: Object.values(provenanceBySpec).flat().length, evidence: partEvidence.length + Object.values(evidenceBySpec).flat().length, documents: docs.length, sources: sources.length }} />
+
+        {partEvidence.length > 0 && (
+          <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
+            <div className="text-white font-semibold text-sm mb-2">Evidencia del componente</div>
+            <div className="space-y-2">
+              {partEvidence.map((ev) => (
+                <div key={ev.id} className="text-[11px] text-white/55 leading-relaxed">
+                  <div>{ev.evidence}</div>
+                  {ev.source?.url && <a href={ev.source.url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline mt-1 inline-block">{ev.source.name || ev.source.url}</a>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div>
           <h2 className="text-white font-semibold text-sm mb-3">Especificaciones</h2>
