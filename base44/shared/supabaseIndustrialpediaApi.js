@@ -29,6 +29,10 @@ export async function searchIndustrialpedia(q, limit = 25, manufacturer = '') {
   return call({ q, limit, manufacturer });
 }
 
+export async function getPartIndustrialpedia(id) {
+  return call({ mode: 'part', id });
+}
+
 export async function decideIndustrialpedia(family, requirements, limit = 10) {
   return call({ mode: 'decide', family, requirements: JSON.stringify(requirements), limit });
 }
