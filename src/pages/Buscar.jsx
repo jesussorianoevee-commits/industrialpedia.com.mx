@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
-import GoogleResultCard from '@/components/search/GoogleResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
@@ -21,9 +20,6 @@ export default function Buscar() {
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
-  const [googleData, setGoogleData] = useState(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState(null);
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
@@ -51,10 +47,7 @@ export default function Buscar() {
   const runSearch = useCallback(async (query, f) => {
     const reqId = ++searchReqId.current;
     setKcLoading(true);
-    setGoogleLoading(true);
-    setGoogleError(null);
     setKcData(null);
-    setGoogleData(null);
     try {
       const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
       const res = await base44.functions.invoke('IndustrialpediaSearch', {
@@ -70,16 +63,13 @@ export default function Buscar() {
       });
       if (searchReqId.current !== reqId) return;
       setKcData(res.data);
-      setGoogleData({ google_results: res.data?.web_results || [] });
     } catch (e) {
       if (searchReqId.current !== reqId) return;
       setKcData(null);
-      setGoogleData(null);
       setGoogleError(e.message || 'Error en la búsqueda');
     } finally {
       if (searchReqId.current === reqId) {
         setKcLoading(false);
-        setGoogleLoading(false);
       }
     }
   }, []);
@@ -90,7 +80,6 @@ export default function Buscar() {
       runSearch(q, filters);
     } else {
       setKcData(null);
-      setGoogleData(null);
       setGoogleError(null);
     }
   }, [q, filters, runSearch]);
@@ -145,7 +134,6 @@ export default function Buscar() {
   const kcResults = kcData?.knowledge_core_results || [];
   const discoveryResults = kcData?.discovery_results || [];
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
-  const googleResults = googleData?.google_results || [];
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
@@ -248,8 +236,8 @@ export default function Buscar() {
           <div className="text-white/40 text-xs">
             {!q ? 'Escribe una refacción industrial para buscarla.' : (
               <span className="flex items-center gap-2">
-                {(kcLoading || googleLoading) && <Loader2 className="w-3 h-3 animate-spin" />}
-                {kcLoading ? 'Buscando en Knowledge Core…' : googleLoading ? 'Descubriendo fuentes…' : `${kcResults.length} en Knowledge Core · ${discoveryResults.length + googleResults.length} fuente(s) encontrada(s)`}
+                {kcLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                {kcLoading ? 'Buscando en Knowledge Core…' : `${kcResults.length} resultado(s) en Knowledge Core`}
               </span>
             )}
           </div>
@@ -287,29 +275,14 @@ export default function Buscar() {
               </section>
             )}
 
-            {/* Fuentes encontradas */}
-            <section>
-              <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Fuentes encontradas</div>
-              {googleLoading || kcLoading ? (
-                <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Descubriendo fuentes…
-                </div>
-              ) : googleError && googleResults.length === 0 && discoveryResults.length === 0 ? (
-                <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
-                  <div className="text-sm text-amber-300/90 font-medium mb-1">No se pudieron descubrir fuentes en este momento</div>
-                  <div className="text-xs text-white/50">Inténtalo de nuevo en unos segundos.</div>
-                </div>
-              ) : discoveryResults.length === 0 && googleResults.length === 0 ? (
-                <div className="text-center py-8 text-white/40 text-xs">No se encontraron fuentes industriales para esta referencia.</div>
-              ) : (
+            {discoveryResults.length > 0 && (
+              <section>
+                <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Fuentes estructuradas</div>
                 <div className="space-y-3">
                   {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
-                  {googleResults.map((r, i) => (
-                    <GoogleResultCard key={`${r.url}-${i}`} result={r} query={q} onFicha={(f) => { setFicha(f); setFichaError(null); }} />
-                  ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
           </div>
         )}
       </main>
