@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
@@ -27,19 +27,21 @@ function valueFor(base, alt) {
 
 export default function Comparar() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const partNumberHint = searchParams.get('pn') || '';
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   useEffect(() => {
     (async () => {
       try {
-        const res = await base44.functions.invoke('Comparar', { part_id: id });
+        const res = await base44.functions.invoke('Comparar', { part_id: id, part_number: partNumberHint });
         setData(res.data);
       } catch (e) { setError(e?.message || 'No se pudo ejecutar el comparador.'); }
     })();
-  }, [id]);
+  }, [id, partNumberHint]);
 
   if (!data && !error) return <div className="min-h-screen bg-[#0a0e12] flex items-center justify-center text-white/45 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Buscando alternativas compatibles…</div>;
-  if (error) return <div className="min-h-screen bg-[#0a0e12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><Link to={`/parte/${id}`} className="text-[#5a9cd9]">← Volver a ficha</Link></div>;
+  if (error) return <div className="min-h-screen bg-[#0a0e12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><Link to={`/parte/${id}${partNumberHint ? `?pn=${encodeURIComponent(partNumberHint)}` : ''}`} className="text-[#5a9cd9]">← Volver a ficha</Link></div>;
 
   const base = data.base;
   const alternatives = data.alternatives || [];
@@ -48,7 +50,7 @@ export default function Comparar() {
 
   return <div className="min-h-screen bg-[#0a0e12] grid-bg text-white">
     <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur border-b border-white/10 px-4 py-3">
-      <div className="max-w-6xl mx-auto flex items-center gap-3"><Link to={`/parte/${id}`} className="text-white/55 hover:text-white"><ArrowLeft className="w-4 h-4" /></Link><div><div className="text-[10px] uppercase tracking-[0.18em] text-white/35">COMPARAR</div><div className="font-mono text-sm text-white/80">{base.part_number}</div></div></div>
+      <div className="max-w-6xl mx-auto flex items-center gap-3"><Link to={`/parte/${id}${partNumberHint ? `?pn=${encodeURIComponent(partNumberHint)}` : ''}`} className="text-white/55 hover:text-white"><ArrowLeft className="w-4 h-4" /></Link><div><div className="text-[10px] uppercase tracking-[0.18em] text-white/35">COMPARAR</div><div className="font-mono text-sm text-white/80">{base.part_number}</div></div></div>
     </header>
     <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
       <section className="rounded-xl border border-white/10 bg-[#11161c] p-5">
