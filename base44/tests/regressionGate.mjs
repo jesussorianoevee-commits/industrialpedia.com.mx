@@ -74,4 +74,41 @@ const catalogWithoutPart = expandCatalogResults([{
 }], 'electrovalvula festo');
 assert.equal(catalogWithoutPart.length, 0);
 
+// Cobertura transversal: la misma regla debe aplicarse a cualquier familia industrial,
+// no solo a válvulas. Un catálogo genérico sin PN/modelo demostrable se descarta;
+// una entrada concreta demostrada se conserva.
+const productFamilies = [
+  ['bearing', 'SKF bearing catalog', 'Bearing — Part Number: 6205-2RS1', '6205-2RS1'],
+  ['motor', 'Siemens motor catalog', 'Motor — Order Number: 1LE1001-0EA23-4AA4', '1LE1001-0EA23-4AA4'],
+  ['sensor', 'SICK sensor catalog', 'Sensor — Part Number: IME08-02BPSZW2S', 'IME08-02BPSZW2S'],
+  ['cylinder', 'Festo cylinder catalog', 'Cylinder — Part Number: DSNU-25-25-PPV-A', 'DSNU-25-25-PPV-A'],
+  ['connector', 'SMC connector catalog', 'Connector — Part Number: KQ2H08-10A', 'KQ2H08-10A'],
+  ['pump', 'Bosch Rexroth pump catalog', 'Pump — Material Number: R901234567', 'R901234567'],
+  ['PLC', 'Siemens PLC catalog', 'PLC — Article Number: 6ES7214-1AG40-0XB0', '6ES7214-1AG40-0XB0'],
+  ['relay', 'Schneider relay catalog', 'Relay — Reference: RXM2AB2BD', 'RXM2AB2BD']
+];
+for (const [family, title, content, pn] of productFamilies) {
+  const result = expandCatalogResults([{
+    title,
+    url: `https://example.com/catalog/${family}`,
+    source_type: 'official',
+    manufacturer_name: 'Industrial Manufacturer',
+    snippet: `${family} product catalog`,
+    raw_content: content
+  }], family);
+  assert.equal(result.length, 1, `catalog expansion: ${family}`);
+  assert.equal(result[0].part_number, pn, `catalog PN: ${family}`);
+  assert.equal(result[0].catalog_source, true, `catalog source: ${family}`);
+
+  const generic = expandCatalogResults([{
+    title: `${title} — product overview`,
+    url: `https://example.com/catalog/${family}/overview`,
+    source_type: 'official',
+    manufacturer_name: 'Industrial Manufacturer',
+    snippet: `${family} product family and applications`,
+    raw_content: `${family} product families, applications and general specifications. No order numbers or model identifiers are demonstrated.`
+  }], family);
+  assert.equal(generic.length, 0, `generic catalog rejected: ${family}`);
+}
+
 console.log('REGRESSION_GATE_OK');
