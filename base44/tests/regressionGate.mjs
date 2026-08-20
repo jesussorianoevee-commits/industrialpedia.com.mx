@@ -85,7 +85,7 @@ const productFamilies = [
   ['connector', 'SMC connector catalog', 'Connector — Part Number: KQ2H08-10A', 'KQ2H08-10A'],
   ['pump', 'Bosch Rexroth pump catalog', 'Pump — Material Number: R901234567', 'R901234567'],
   ['PLC', 'Siemens PLC catalog', 'PLC — Article Number: 6ES7214-1AG40-0XB0', '6ES7214-1AG40-0XB0'],
-  ['relay', 'Schneider relay catalog', 'Relay — Reference: RXM2AB2BD', 'RXM2AB2BD']
+  ['relay', 'Schneider relay catalog', 'Relay — Part Number: RXM2AB2BD', 'RXM2AB2BD']
 ];
 for (const [family, title, content, pn] of productFamilies) {
   const result = expandCatalogResults([{
