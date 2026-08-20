@@ -50,6 +50,111 @@ export async function getPartIndustrialpedia(id) {
   return data;
 }
 
+export async function compareIndustrialpedia(partId, partNumber = '', limit = 3) {
+  // El comparador consume el Knowledge Core directamente. Base44 no debe ser
+  // un proxy de una operación que ya está disponible en Supabase; además esto
+  // evita que un fallo de routing/despliegue de una función Base44 convierta una
+  // comparación válida en un HTTP 500.
+  let canonicalId = String(partId || '').trim();
+  const pn = String(partNumber || '').trim();
+
+  if (pn) {
+    const search = await searchIndustrialpedia(pn, 10);
+    const results = Array.isArray(search?.results) ? search.results : [];
+    const exact = results.find((r) => String(r.part_number || '').trim().toLowerCase() === pn.toLowerCase());
+    if (!exact?.part_id) throw new Error(`No se encontró el número de parte ${pn} en Knowledge Core.`);
+    canonicalId = exact.part_id;
+  }
+
+  if (!canonicalId) throw new Error('No se recibió un identificador canónico del componente.');
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v1`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({ p_part_id: canonicalId, p_limit: Math.min(Number(limit) || 3, 10) })
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) {
+    throw new Error(data?.message || data?.error || `Knowledge Core comparison HTTP ${response.status}`);
+  }
+  if (data.status === 'error') throw new Error(data.code || 'comparison_error');
+
+  const specsToArray = (specifications) => {
+    if (!specifications || typeof specifications !== 'object' || Array.isArray(specifications)) return [];
+    return Object.entries(specifications).map(([attribute_name, raw]) => {
+      const objectValue = raw && typeof raw === 'object' && !Array.isArray(raw);
+      return {
+        id: attribute_name,
+        attribute_name,
+        attribute_canonical: attribute_name,
+        original_value: objectValue ? (raw.value ?? null) : raw,
+        original_unit: objectValue ? (raw.unit ?? null) : null,
+        normalized_value: objectValue ? (raw.value ?? null) : raw,
+        normalized_unit: objectValue ? (raw.unit ?? null) : null
+      };
+    }).filter((s) => s.original_value !== null && s.original_value !== undefined && s.original_value !== '');
+  };
+
+  const baseRaw = data.base || {};
+  const base = {
+    id: baseRaw.id,
+    part_number: baseRaw.part_number,
+    manufacturer_name: baseRaw.manufacturer_name || '',
+    category: baseRaw.category || '',
+    description: baseRaw.description || baseRaw.name || '',
+    specs: specsToArray(baseRaw.specifications),
+    image_url: ''
+  };
+
+  if (data.evaluable === false) {
+    return {
+      base,
+      compatibility_evaluable: false,
+      candidates_found: 0,
+      candidates_considered: 0,
+      alternatives: [],
+      decision: { state: 'not_evaluable', message: 'Compatibilidad no evaluable: faltan especificaciones técnicas.' }
+    };
+  }
+
+  const alternatives = (data.alternatives || []).map((a) => ({
+    id: a.id,
+    part_number: a.part_number,
+    manufacturer_name: a.manufacturer_name || '',
+    product_name: a.name || a.description || a.part_number,
+    category: a.category || '',
+    description: a.description || '',
+    image_url: '',
+    status: a.status,
+    source: { url: a.source_url || '', domain: a.source_url || '' },
+    specs: specsToArray(a.specifications),
+    comparison: a.comparison || { state: 'insufficient', equal: 0, different: 0, missing: 0, not_comparable: 0 }
+  }));
+
+  const compatible = alternatives.some((a) => a.comparison.state === 'compatible');
+  const decision = alternatives.length === 0
+    ? { state: 'insufficient', message: 'No se encontraron alternativas con datos técnicos comparables.' }
+    : compatible
+      ? { state: 'compatible_found', message: 'Se encontraron alternativas que coinciden con los atributos técnicos disponibles.' }
+      : { state: 'review_required', message: 'Se encontraron candidatos, pero existen diferencias o datos faltantes que requieren revisión técnica.' };
+
+  return {
+    base,
+    candidates_found: alternatives.length,
+    candidates_considered: data.candidates_considered || alternatives.length,
+    alternatives,
+    compatibility_evaluable: true,
+    decision,
+    source: 'Knowledge Core / compare_part_candidates_v1'
+  };
+}
+
 export async function decideIndustrialpedia(family, requirements, limit = 10) {
   return call({ mode: 'decide', family, requirements: JSON.stringify(requirements), limit });
 }
