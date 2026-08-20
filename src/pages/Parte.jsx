@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
@@ -13,12 +12,6 @@ const STATE_LABELS = {
   rejected: { label: 'Rechazado', cls: 'text-red-400 bg-red-400/10' },
   processed: { label: 'Procesado', cls: 'text-white/50 bg-white/10' }
 };
-
-function groupBy(list, keyFn) {
-  const m = {};
-  list.forEach((i) => { const k = keyFn(i); (m[k] = m[k] || []).push(i); });
-  return m;
-}
 
 function isTechnicalDisplaySpec(spec) {
   const attribute = String(spec?.attribute_name || spec?.attribute || '').trim();
