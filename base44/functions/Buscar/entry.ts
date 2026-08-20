@@ -507,6 +507,9 @@ export default async function (req) {
         image_url: c.image_url || ''
       };
       const { score: rankedScore, match: rankedMatch } = scorePart(pseudoPart, q, []);
+      // Para búsquedas genéricas solo mostramos una parte identificable.
+      // Un registro de catálogo sin PN/modelo no es una refacción y no debe aparecer.
+      if (!isPartNo && !String(c.part_number || '').trim()) continue;
       const catalogText = `${c.part_number || ''} ${c.manufacturer_name || ''} ${c.name || ''} ${c.description || ''} ${c.search_text || ''}`.toLowerCase();
       const catalogTokens = tokenize(q);
       const hits = catalogTokens.filter((t) => catalogText.includes(t)).length;
