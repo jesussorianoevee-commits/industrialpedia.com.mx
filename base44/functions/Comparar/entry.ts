@@ -35,12 +35,21 @@ export default async function (req: Request) {
     // la transición. El comparador debe resolver siempre el UUID canónico de
     // Supabase antes de invocar el RPC, usando el número de parte como fallback.
     if (partNumber) {
-      const lookupUrl = `${SUPABASE_URL}/rest/v1/parts?select=id&part_number=eq.${encodeURIComponent(partNumber)}&limit=1`;
-      const lookupResponse = await fetch(lookupUrl, {
+      const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/parts`);
+      lookupUrl.searchParams.set('select', 'id');
+      lookupUrl.searchParams.set('part_number', `eq.${partNumber}`);
+      lookupUrl.searchParams.set('limit', '1');
+      const lookupResponse = await fetch(lookupUrl.toString(), {
         headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` }
       });
       const lookup = await lookupResponse.json().catch(() => []);
-      if (lookupResponse.ok && Array.isArray(lookup) && lookup[0]?.id) partId = String(lookup[0].id);
+      if (!lookupResponse.ok) {
+        return Response.json({ error: 'part_lookup_failed', detail: lookup?.message || `HTTP ${lookupResponse.status}` }, { status: 502 });
+      }
+      if (!Array.isArray(lookup) || !lookup[0]?.id) {
+        return Response.json({ error: 'part_not_found', part_number: partNumber }, { status: 404 });
+      }
+      partId = String(lookup[0].id);
     }
 
     const response = await fetch(RPC_URL, {
