@@ -49,7 +49,7 @@ export default function Buscar() {
     setKcLoading(true);
     setKcData(null);
     try {
-      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete'] : ['published'];
+      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete', 'candidate'] : ['published'];
       const res = await base44.functions.invoke('IndustrialpediaSearch', {
         q: query,
         filters: {
