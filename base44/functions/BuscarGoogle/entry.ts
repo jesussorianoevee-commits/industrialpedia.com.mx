@@ -6,6 +6,7 @@ import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
 import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
+import { getSourcePolicy } from '../../shared/sourceRegistry.js';
 
 // BUSCAR GOOGLE — capa de descubrimiento web (Tavily) con cache en base de datos.
 // Toda búsqueda se guarda en SearchQueryLog. Al repetir la misma consulta, los
@@ -31,6 +32,8 @@ export default async function (req: Request) {
     const queryNorm = query.toLowerCase().replace(/\s+/g, ' ').trim();
     const queryTokens = query.split(/\s+/).filter(Boolean);
     let manufacturerOnly = queryTokens.length === 1 && brandTokensFromQuery(query).length === 1;
+    const normalizedRegistryQuery = query.toLowerCase().replace(/[^a-z0-9+ ]/g, '').replace(/\s+/g, ' ').trim();
+    const sourcePolicy = getSourcePolicy(normalizedRegistryQuery);
     let trustedOfficialDomains: string[] = [];
     // El catálogo de Manufacturer es la fuente de verdad cuando la consulta
     // coincide exactamente con un fabricante. Esto cubre fabricantes de varias
@@ -58,7 +61,7 @@ export default async function (req: Request) {
     const hostOf = (url: string) => { try { return new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return ''; } };
     const reclassifyCachedSource = (r: any) => ({
       ...r,
-      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains)
+      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains, sourcePolicy)
     });
 
     // 1) Cache: si esta consulta ya se buscó, devolver los resultados guardados
@@ -78,7 +81,8 @@ export default async function (req: Request) {
             !isCorporateOnlyResult(r) &&
             isLikelyIndustrialTavilyResult(r, query) &&
             isQueryRelevantIndustrialResult(r, query) &&
-            (!manufacturerOnly || isProductResultForManufacturer(r))
+            (!manufacturerOnly || isProductResultForManufacturer(r)) &&
+            (!sourcePolicy || sourcePolicy.official.concat(sourcePolicy.authorized_distributors).some((d: string) => hostOf(r.url) === d || hostOf(r.url).endsWith(`.${d}`)))
           )
           .map((r: any) => {
             const reclassified = reclassifyCachedSource(r);
@@ -108,7 +112,12 @@ export default async function (req: Request) {
     } catch { /* cache miss → buscar en la web */ }
 
     if (!discovery) {
-      discovery = await discoverTavilyIndustrial(query, apiKey, { manufacturerOnly, trustedOfficialDomains });
+      discovery = await discoverTavilyIndustrial(query, apiKey, {
+        manufacturerOnly,
+        trustedOfficialDomains,
+        sourcePolicy,
+        includeDomains: sourcePolicy ? [...sourcePolicy.official, ...sourcePolicy.authorized_distributors] : []
+      });
       // Guardar en cache (sin raw_content para no exceder el tamaño del registro).
       const trimmed = discovery.results.map((r: any) => {
         const rest: any = { ...r };
@@ -187,8 +196,11 @@ export default async function (req: Request) {
     // en el clasificador del proveedor.
     discovery.results = discovery.results.map((r: any) => ({
       ...r,
-      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains)
-    })).filter((r: any) => r.source_type === 'official' || r.source_type === 'distributor' || r.source_type === 'web_discovery');
+      source_type: classifySource(hostOf(r.url), r.manufacturer_name || '', brandTokensFromQuery(query), r.title || '', trustedOfficialDomains, sourcePolicy)
+    })).filter((r: any) =>
+      (r.source_type === 'official' || r.source_type === 'authorized_distributor' || r.source_type === 'distributor' || r.source_type === 'web_discovery') &&
+      (!sourcePolicy || sourcePolicy.official.concat(sourcePolicy.authorized_distributors).some((d: string) => hostOf(r.url) === d || hostOf(r.url).endsWith(`.${d}`)))
+    );
 
     if (Array.isArray(discovery.results) && discovery.results.length) {
       waitUntil(persistDiscoveryResults(base44, discovery.results, query).catch(() => {}));
