@@ -1,7 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { SOURCE_REGISTRY, getSourcePolicy, allAuthorizedDomains, registryKey } from '../../shared/sourceRegistry.js';
-import { isLikelyIndustrialTavilyResult, isQueryRelevantIndustrialResult, rankIndustrialResults } from '../../shared/tavilySearch.js';
-import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 import { searchIndustrialpedia, INDUSTRIALPEDIA_API_VERSION } from '../../shared/supabaseIndustrialpediaApi.js';
 
 function mapSupabaseResult(r: any) {
@@ -79,35 +76,10 @@ export default async function (req: Request) {
       return true;
     });
 
-    // Web discovery remains outside the frozen API. It is explicitly presented as
-    // discovery/evidence, never as Knowledge Core truth.
-    const normalizedQuery = registryKey(q);
-    const registeredManufacturer = Object.keys(SOURCE_REGISTRY)
-      .sort((a, b) => b.length - a.length)
-      .find((name) => normalizedQuery === name || normalizedQuery.startsWith(`${name} `));
-    const sourcePolicy = registeredManufacturer ? getSourcePolicy(registeredManufacturer) : null;
-    const includeDomains = sourcePolicy ? allAuthorizedDomains(sourcePolicy) : [];
-
-    let webResults: any[] = [];
-    try {
-      const webResponse = await base44.functions.invoke('BuscarGoogle', {
-        query: q,
-        include_domains: includeDomains,
-        source_policy: sourcePolicy
-      });
-      const web = webResponse?.data || {};
-      webResults = Array.isArray(web.google_results)
-        ? rankIndustrialResults(
-            web.google_results
-              .filter((r: any) => isLikelyIndustrialTavilyResult(r, q))
-              .filter((r: any) => isQueryRelevantIndustrialResult(r, q))
-              .map((r: any) => sanitizeResultIdentity(r, q)),
-            q
-          ).slice(0, limit)
-        : [];
-    } catch {
-      webResults = [];
-    }
+    // WEB DISCOVERY IS FROZEN LEGACY.
+    // It is intentionally NOT executed from the primary search path.
+    // The Industrialpedia API / Knowledge Core is the sole source for search results.
+    const webResults: any[] = [];
 
     const manufacturers: Record<string, number> = {};
     const cats: Record<string, number> = {};
@@ -128,11 +100,8 @@ export default async function (req: Request) {
       meta: {
         api_version: INDUSTRIALPEDIA_API_VERSION,
         providers: ['supabase_knowledge_core', 'web_discovery'],
-        source_policy: sourcePolicy ? {
-          manufacturer: sourcePolicy.manufacturer,
-          official_domains: sourcePolicy.official,
-          authorized_distributor_domains: sourcePolicy.authorized_distributors
-        } : null
+        source_policy: null,
+        web_discovery: 'frozen_legacy'
       }
     });
   } catch (error) {
