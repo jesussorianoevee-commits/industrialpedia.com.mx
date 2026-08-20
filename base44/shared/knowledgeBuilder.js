@@ -10,7 +10,7 @@ import { classifyIdentifier } from './semanticResolver.js';
 // Diccionario GENÉRICO de etiquetas semánticas (no específico de fabricante).
 const STRONG_PART_NUMBER_LABELS = [
   'part number', 'part no', 'part no.', 'part #', 'p/n', 'pn', 'ordering number', 'order number', 'order no',
-  'order code', 'model number', 'model no', 'product number', 'ordering', 'mpn', 'mfr part',
+  'order code', 'model number', 'model no', 'product number', 'article number', 'material number', 'material no', 'material #', 'ordering', 'mpn', 'mfr part',
   'manufacturer part'
 ];
 
