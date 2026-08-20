@@ -128,11 +128,9 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
           return clean ? { ...r, attribute: clean.attribute, value: clean.value } : null;
         })
         .filter(Boolean)
-        .filter((r: any, i: number, arr: any[]) => {
-          const key = `${String(r.attribute || '').trim().toLowerCase()}|${String(r.value || '').trim().toLowerCase()}`;
-          return arr.findIndex((x: any) => `${String(x.attribute || '').trim().toLowerCase()}|${String(x.value || '').trim().toLowerCase()}` === key) === i;
-        });
-  return rawSpecs.filter((r: any) => r.attribute && r.value).map((r: any) => {
+        .filter((r: any) => r.attribute && r.value);
+  const dedupedRawSpecs = dedupeSpecCandidates(rawSpecs);
+  const builtSpecs = dedupedRawSpecs.map((r: any) => {
     const { value, unit } = splitValueUnit(r.value);
     const page = Number.isFinite(Number(r.page)) ? Number(r.page) : findPageFor(r.value, extracted.pages || []);
     const semantic = isTechnicalSpecification(r.attribute, r.value);
@@ -156,6 +154,16 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
       verified: false
     };
     return { ...builtSpec, gate_passed: gateSpec(builtSpec).pass };
+  });
+
+  // Segunda frontera después de normalizar valor/unidad. Esto cubre casos en
+  // que distintos extractores entregan el mismo dato con formatos diferentes.
+  const seenBuilt = new Set<string>();
+  return builtSpecs.filter((s: any) => {
+    const key = canonicalSpecKey(s.attribute_name, `${s.normalized_value || s.original_value || ''} ${s.normalized_unit || s.original_unit || ''}`);
+    if (seenBuilt.has(key)) return false;
+    seenBuilt.add(key);
+    return true;
   });
 }
 
