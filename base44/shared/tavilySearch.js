@@ -6,6 +6,7 @@ import { extractCompactSpecs, extractPartNumber, extractPlainText, extractTextSp
 import { deriveProductIdentity } from './productIdentity.js';
 import { isTechnicalSpecification } from './semanticResolver.js';
 import { selectBestImage } from './imageResolver.js';
+import { classifyRegisteredDomain } from './sourceRegistry.js';
 
 const TIMEOUT_MS = 15000;
 
@@ -147,6 +148,8 @@ export function brandTokensFromQuery(query) {
 
 export function classifySource(host, brand, queryBrandTokens, title = '', trustedOfficialDomains = []) {
   if (!host) return 'untrusted';
+  const registered = classifyRegisteredDomain(host, options.sourcePolicy);
+  if (registered) return registered;
   if ([...TRUSTED_DISTRIBUTOR_DOMAINS].some((d) => domainMatches(host, d))) return 'distributor';
   const base = domainBaseToken(host);
   // Un dominio oficial sólo se reconoce por coincidencia exacta del dominio
@@ -458,7 +461,8 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
   // Para una marca sola, pedir explícitamente productos/componentes evita que
   // Tavily priorice la portada corporativa. Seguimos haciendo una sola consulta.
   const searchQuery = manufacturerOnly ? `${q} products industrial components catalog` : q;
-  const batch = await tavilySearch(searchQuery, apiKey, { max_results: 10 });
+  const includeDomains = Array.isArray(options.includeDomains) ? options.includeDomains.filter(Boolean) : [];
+  const batch = await tavilySearch(searchQuery, apiKey, { max_results: 10, include_domains: includeDomains });
   let queriesMade = 1;
   let primaryError = batch.error;
   let primaryDetail = batch.detail;
@@ -467,7 +471,7 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
 
   if (!items.length && !primaryError) {
     const fallbackQuery = partLike ? `${q} datasheet` : `${q} datasheet specifications`;
-    const fb = await tavilySearch(fallbackQuery, apiKey, { max_results: 10 });
+    const fb = await tavilySearch(fallbackQuery, apiKey, { max_results: 10, include_domains: includeDomains });
     queriesMade++;
     if (fb.error && !primaryError) { primaryError = fb.error; primaryDetail = fb.detail; }
     items = fb.results;
@@ -483,7 +487,7 @@ export async function discoverTavilyIndustrial(query, apiKey, options = {}) {
     const title = item.title || '';
     const snippet = item.content || '';
     const brand = extractBrandFromContent(`${title} ${snippet}`, queryBrandTokens);
-    const sourceType = classifySource(host, brand, queryBrandTokens, title, options.trustedOfficialDomains || []);
+    const sourceType = classifySource(host, brand, queryBrandTokens, title, options.trustedOfficialDomains || [], options.sourcePolicy);
     const partNumber = partLike ? q : resolvePartNumber(q, title);
     const tavilyImages = Array.isArray(item.images)
       ? item.images.map((x) => typeof x === 'string' ? x : x?.url).filter(Boolean)
