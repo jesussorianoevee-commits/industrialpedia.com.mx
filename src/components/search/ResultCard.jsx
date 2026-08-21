@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText } from 'lucide-react';
