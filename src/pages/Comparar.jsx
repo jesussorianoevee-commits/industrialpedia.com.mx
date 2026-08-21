@@ -23,7 +23,13 @@ function canonical(s) { return String(s?.attribute_canonical || s?.attribute_nam
 function comparisonFor(base, alt) { const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : []; return differences.find((d) => canonical(d) === canonical(base)) || null; }
 function stateFor(base, alt) { const hit = comparisonFor(base, alt); if (hit?.state) return hit.state; return (alt?.specs || []).some((s) => canonical(s) === canonical(base)) ? 'not_comparable' : 'base_only'; }
 function valueFor(base, alt) { const hit = comparisonFor(base, alt); if (hit && Object.prototype.hasOwnProperty.call(hit, 'candidate')) return hit.candidate; return (alt?.specs || []).find((s) => canonical(s) === canonical(base)); }
+const COMPOUND_LABELS_ES = { diameter: 'Diámetro', length: 'Longitud', width: 'Ancho', height: 'Altura', depth: 'Profundidad' };
 function normalizedFor(base, alt) { const hit = comparisonFor(base, alt); return hit && hit.normalized_b !== null && hit.normalized_b !== undefined ? { value: hit.normalized_b, unit: hit.normalized_unit } : null; }
+function normalizedDisplayFor(normalized) {
+  if (!normalized) return '';
+  if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente'}: ${item?.normalized_value ?? '—'}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
+  return normalized.unit ? `${normalized.value} ${normalized.unit}` : String(normalized.value);
+}
 function statusMeta(component) {
   return STATE[component?.comparison?.state] || STATE.insufficient;
 }
@@ -158,7 +164,7 @@ export default function Comparar() {
                 const candidate = ci === 0 ? s : valueFor(s, c);
                 const st = ci === 0 ? 'base' : stateFor(s, c);
                 const normalized = ci === 0 ? null : normalizedFor(s, c);
-                const normalizedDisplay = normalized?.value !== null && normalized?.value !== undefined && normalized?.unit ? `${normalized.value} ${normalized.unit}` : '';
+                const normalizedDisplay = normalizedDisplayFor(normalized);
                 const display = candidate ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : 'No disponible';
                 const stateClass = st === 'equal' ? 'text-white/80' : st === 'different' ? 'text-amber-200' : 'text-white/35';
                 return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass}`}>
