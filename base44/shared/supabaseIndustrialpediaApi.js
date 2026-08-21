@@ -1,7 +1,7 @@
 const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
 // Publishable/anon key: safe for client applications. Never use the service-role key here.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
-const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v14`;
+const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v16`;
 
 async function call(params) {
   const url = new URL(FUNCTION_URL);
@@ -215,6 +215,18 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     decision,
     source: 'Knowledge Core / compare_part_candidates_v2'
   };
+}
+
+export async function compareReferenceIndustrialpedia({ manufacturer = '', partNumber = '', category = '', specifications = {}, limit = 5 }) {
+  const data = await call({
+    mode: 'reference_compare',
+    manufacturer,
+    part_number: partNumber,
+    category,
+    specifications: JSON.stringify(specifications),
+    limit
+  });
+  return data;
 }
 
 export async function decideIndustrialpedia(family, requirements, limit = 10) {
