@@ -68,7 +68,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
 
   if (!canonicalId) throw new Error('No se recibió un identificador canónico del componente.');
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v1`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v2`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -119,7 +119,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
       candidates_found: 0,
       candidates_considered: 0,
       alternatives: [],
-      decision: { state: 'not_evaluable', message: 'Compatibilidad no evaluable: faltan especificaciones técnicas.' }
+      decision: { state: 'not_evaluable', message: 'Compatibilidad no evaluable: faltan especificaciones técnicas o familia técnica.' }
     };
   }
 
@@ -141,8 +141,8 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   const decision = alternatives.length === 0
     ? { state: 'insufficient', message: 'No se encontraron alternativas con datos técnicos comparables.' }
     : compatible
-      ? { state: 'compatible_found', message: 'Se encontraron alternativas que coinciden con los atributos técnicos disponibles.' }
-      : { state: 'review_required', message: 'Se encontraron candidatos, pero existen diferencias o datos faltantes que requieren revisión técnica.' };
+      ? { state: 'compatible_found', message: 'Se encontraron alternativas que cumplen las reglas de compatibilidad disponibles.' }
+      : { state: 'review_required', message: 'Se encontraron candidatos, pero la evidencia disponible no permite declarar intercambiabilidad.' };
 
   return {
     base,
