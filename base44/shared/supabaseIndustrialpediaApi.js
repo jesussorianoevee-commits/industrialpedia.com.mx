@@ -137,6 +137,65 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     comparison: a.comparison || { state: 'insufficient', equal: 0, different: 0, missing: 0, not_comparable: 0 }
   }));
 
+  // La selección de candidatos y la matriz técnica son responsabilidades distintas.
+  // v2 encuentra candidatos; compare_parts_v1 produce la comparación propiedad por propiedad.
+  // Esto evita que la UI reconstruya reglas técnicas y mantiene el resultado reproducible.
+  const pairwise = await Promise.all(alternatives.map(async (alt) => {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_parts_v1`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify({ p_part_a: canonicalId, p_part_b: alt.id })
+      });
+      const matrix = await r.json().catch(() => null);
+      if (!r.ok || !matrix || matrix.status === 'error') return alt;
+      const rows = Array.isArray(matrix.comparisons) ? matrix.comparisons : [];
+      const differences = rows.map((row) => ({
+        attribute_name: row.property,
+        attribute_canonical: row.property,
+        base: row.part_a ?? null,
+        candidate: row.part_b ?? null,
+        state: row.comparison,
+        reason: row.reason,
+        comparable: row.comparable,
+        normalized_a: row.normalized_a ?? null,
+        normalized_b: row.normalized_b ?? null,
+        normalized_unit: row.normalized_unit ?? null,
+        source_property_a: row.source_property_a ?? row.property,
+        source_property_b: row.source_property_b ?? row.property
+      }));
+      const counts = rows.reduce((acc, row) => {
+        if (row.comparison === 'equal') acc.equal++;
+        else if (row.comparison === 'different') acc.different++;
+        else if (row.comparison === 'base_only') acc.missing++;
+        else if (row.comparison === 'candidate_only') acc.candidate_only++;
+        else if (row.comparison === 'not_comparable') acc.not_comparable++;
+        return acc;
+      }, { equal: 0, different: 0, missing: 0, candidate_only: 0, not_comparable: 0 });
+      return {
+        ...alt,
+        comparison: {
+          ...(alt.comparison || {}),
+          ...counts,
+          compared: rows.length,
+          differences,
+          matrix_status: matrix.status,
+          comparison_mode: matrix.comparison_mode || 'technical_matrix',
+          manufacturer_independent: matrix.manufacturer_independent === true
+        }
+      };
+    } catch (_) {
+      return alt;
+    }
+  }));
+
+  const enrichedAlternatives = pairwise;
+
   const compatible = alternatives.some((a) => a.comparison.state === 'compatible');
   const decision = alternatives.length === 0
     ? { state: 'insufficient', message: 'No se encontraron alternativas con datos técnicos comparables.' }
