@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
-const RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v1`;
+const RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v2`;
 const SEARCH_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search`;
 
 function specsToArray(specifications: any) {
