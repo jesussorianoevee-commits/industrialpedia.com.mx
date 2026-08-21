@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText } from 'lucide-react';
 
 function isUsableImageUrl(value) {
@@ -22,8 +23,36 @@ const STATE_LABELS = {
 export default function ResultCard({ result }) {
   const navigate = useNavigate();
   const [materializing, setMaterializing] = useState(false);
+  const [imageSrc, setImageSrc] = useState(result.image_url || '');
+  const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
+
+  useEffect(() => {
+    let cancelled = false;
+    const initialUrl = typeof result.image_url === 'string' ? result.image_url.trim() : '';
+    setImageSrc(initialUrl);
+    setImageVerified(result.image_verification_status === 'verified');
+
+    if (initialUrl || !result.id) return () => { cancelled = true; };
+
+    // Canonical fallback: if the Base44 search function is serving an older
+    // deployed payload, read the same part from the canonical Supabase API.
+    // This does not discover or guess images; it only retrieves a verified
+    // image already associated with this exact canonical part_id.
+    getPartIndustrialpedia(result.id)
+      .then((data) => {
+        const part = data?.part;
+        const url = typeof part?.image_url === 'string' ? part.image_url.trim() : '';
+        if (!cancelled && url) {
+          setImageSrc(url);
+          setImageVerified(part?.image_verification_status === 'verified');
+        }
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [result.id, result.image_url, result.image_verification_status]);
   const [materializeError, setMaterializeError] = useState('');
-  const isVerified = result.discovery_state === 'verified' ||
+  const isVerified = imageVerified || result.discovery_state === 'verified' ||
     (['published', 'validated'].includes(result.validation_state) && Boolean(result.has_evidence));
   const st = isVerified
     ? { label: 'Verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
@@ -46,9 +75,9 @@ export default function ResultCard({ result }) {
 
       <div className="mb-3 flex gap-3">
         <div className="w-20 h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
-          {isUsableImageUrl(result.image_url) ? (
+          {isUsableImageUrl(imageSrc) ? (
             <img
-              src={result.image_url}
+              src={imageSrc}
               alt={result.part_number || ''}
               className="w-full h-full object-contain p-1.5"
               loading="lazy"
