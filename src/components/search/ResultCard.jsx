@@ -246,7 +246,7 @@ export default function ResultCard({ result }) {
           </button>
         ) : (
           <button disabled title="Se habilita cuando la referencia externa tiene suficientes especificaciones técnicas." className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Comparar</button>
-        )
+        )}
       </div>
     </div>
   );
