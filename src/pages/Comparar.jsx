@@ -10,6 +10,14 @@ const STATE = {
   insufficient: { label: 'DATOS INSUFICIENTES', short: 'Datos insuficientes', cls: 'border-white/20 bg-white/[0.03] text-white/45', icon: XCircle }
 };
 
+const PROPERTY_LABELS_ES = {
+  size: 'Tamaño', voltage: 'Voltaje', current: 'Corriente', capacity: 'Capacidad', quantity: 'Cantidad', material: 'Material', resistance: 'Resistencia', temperature: 'Temperatura', frequency: 'Frecuencia', power: 'Potencia', pressure: 'Presión', flow: 'Flujo', diameter: 'Diámetro', length: 'Longitud', width: 'Ancho', height: 'Altura', weight: 'Peso', volume: 'Volumen', area: 'Área', speed: 'Velocidad', torque: 'Torque', stroke: 'Carrera', mounting: 'Montaje', connection: 'Conexión', connector: 'Conector', interface: 'Interfaz', protection: 'Protección', rating: 'Clasificación', thread: 'Rosca', port: 'Puerto'
+};
+const STATUS_LABELS_ES = { equal: 'Igual', different: 'Diferente', base_only: 'Solo base', candidate_only: 'Solo alternativa', not_comparable: 'No comparable' };
+function propertyLabel(value) {
+  const raw = String(value || '').trim();
+  return PROPERTY_LABELS_ES[raw.toLowerCase()] || raw;
+}
 function val(s) { return `${s?.normalized_value || s?.original_value || ''}${s?.normalized_unit || s?.original_unit ? ` ${s.normalized_unit || s.original_unit}` : ''}`.trim() || 'No disponible'; }
 function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 function stateFor(base, alt) {
@@ -93,7 +101,7 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
-            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/30">{s.attribute_name || s.attribute}</div><div className="mt-0.5 font-mono text-white/80">{val(s)}</div></div>)}
+            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/30">{propertyLabel(s.attribute_name || s.attribute)}</div><div className="mt-0.5 font-mono text-white/80">{val(s)}</div></div>)}
           </div>
         </div>
       </section>
@@ -137,7 +145,7 @@ export default function Comparar() {
             </div>
 
             {(base.specs || []).map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{s.attribute_name || s.attribute}</div>
+              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute)}</div>
               {cols.map((c, ci) => {
                 const candidate = ci === 0 ? s : valueFor(s, c);
                 const st = ci === 0 ? 'base' : stateFor(s, c);
@@ -151,8 +159,8 @@ export default function Comparar() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-white/45">
-          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#16c79a]" /> Igual</span>
-          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> Diferente (revisar)</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#16c79a]" /> {STATUS_LABELS_ES.equal}</span>
+          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> {STATUS_LABELS_ES.different} (revisar)</span>
           <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 text-red-400" /> No coincide</span>
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
