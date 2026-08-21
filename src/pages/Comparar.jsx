@@ -61,7 +61,6 @@ export default function Comparar() {
   const base = data.base;
   const alternatives = data.alternatives || [];
   const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
-  const strictDecision = data.decision?.state || 'review_required';
   const cols = [base, ...alternatives];
   const specCount = base.specs?.length || 0;
 
