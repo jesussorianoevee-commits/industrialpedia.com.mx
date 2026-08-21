@@ -5,6 +5,7 @@ import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpe
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] text-[#16c79a]', icon: ShieldCheck },
+  not_compatible: { label: 'NO COMPATIBLE', short: 'No compatible', cls: 'border-red-400/60 bg-red-400/[0.08] text-red-300', icon: XCircle },
   review: { label: 'SIMILAR', short: 'Revisión técnica', cls: 'border-amber-400/60 bg-amber-400/[0.08] text-amber-300', icon: AlertTriangle },
   insufficient: { label: 'DATOS INSUFICIENTES', short: 'Datos insuficientes', cls: 'border-white/20 bg-white/[0.03] text-white/45', icon: XCircle }
 };
@@ -60,6 +61,7 @@ export default function Comparar() {
   const base = data.base;
   const alternatives = data.alternatives || [];
   const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
+  const strictDecision = data.decision?.state || 'review_required';
   const cols = [base, ...alternatives];
   const specCount = base.specs?.length || 0;
 
@@ -76,7 +78,7 @@ export default function Comparar() {
     <main className="mx-auto max-w-7xl px-4 py-5 sm:py-7">
       <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs text-[#65a9e6] hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex items-end justify-between gap-4">
-        <div><h1 className="text-2xl font-semibold tracking-tight">Comparación técnica</h1><p className="mt-1 text-sm text-white/45">Compara especificaciones técnicas y encuentra alternativas compatibles.</p></div>
+        <div><h1 className="text-2xl font-semibold tracking-tight">Comparación técnica</h1><p className="mt-1 text-sm text-white/45">Compara especificaciones técnicas sin declarar intercambiabilidad cuando faltan requisitos críticos.</p></div>
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} candidatos consultados</div>
       </div>
 
@@ -155,7 +157,7 @@ export default function Comparar() {
           <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 text-red-400" /> No coincide</span>
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
-        <p className="mt-3 text-[10px] text-white/30">La comparación utiliza únicamente los datos disponibles en Knowledge Core. Una diferencia no significa automáticamente incompatibilidad.</p>
+        <p className="mt-3 text-[10px] text-white/30">La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
       </>}
     </main>
   </div>;
