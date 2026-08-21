@@ -52,11 +52,12 @@ export default function Comparar() {
   const partNumberHint = searchParams.get('pn') || '';
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const result = await compareIndustrialpedia(id, partNumberHint, 3);
+        const result = await compareIndustrialpedia(id, partNumberHint, 5);
         setData(result);
       } catch (e) { setError(e?.message || 'No se pudo ejecutar el comparador.'); }
     })();
@@ -176,13 +177,36 @@ export default function Comparar() {
           </div>
         </div>
 
+        {data.candidates_found > alternatives.length && !loadingMore && (
+          <div className="mt-5 flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#0d141b] px-5 py-4 text-center">
+            <div className="text-xs font-medium text-white/65">¿No encontraste lo que buscas?</div>
+            <div className="text-[10px] text-white/35">Podemos ampliar la búsqueda para mostrarte más alternativas.</div>
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={async () => {
+                setLoadingMore(true);
+                try {
+                  const expanded = await compareIndustrialpedia(id, partNumberHint, 10);
+                  setData(expanded);
+                } catch (e) {
+                  setError(e?.message || 'No se pudieron cargar más alternativas.');
+                } finally {
+                  setLoadingMore(false);
+                }
+              }}
+              className="mt-1 rounded-lg border border-[#65a9e6]/35 bg-[#65a9e6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.14] disabled:opacity-50"
+            >Ver más alternativas</button>
+          </div>
+        )}
+
         <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-white/45">
           <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#16c79a]" /> {STATUS_LABELS_ES.equal}</span>
           <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> {STATUS_LABELS_ES.different} (revisar)</span>
           <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 text-red-400" /> No coincide</span>
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
-        <p className="mt-3 text-[10px] text-white/30">La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
+        <p className="mt-3 text-[10px] text-white/30">La comparación inicial muestra un máximo de 5 alternativas para mantener una lectura clara. Si necesitas ampliar la búsqueda, puedes solicitar más alternativas. La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
       </>}
     </main>
   </div>;
