@@ -70,7 +70,22 @@ export default function Comparar() {
   const alternatives = data.alternatives || [];
   const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
   const cols = [base, ...alternatives];
-  const specCount = base.specs?.length || 0;
+  const specRows = [...(base.specs || [])];
+  const seenProperties = new Set(specRows.map((s) => canonical(s)));
+  for (const alt of alternatives) {
+    for (const diff of alt?.comparison?.differences || []) {
+      if (diff?.state !== 'candidate_only') continue;
+      const key = canonical(diff);
+      if (!key || seenProperties.has(key)) continue;
+      seenProperties.add(key);
+      specRows.push({
+        attribute_name: diff.attribute_name || diff.attribute_canonical,
+        attribute_canonical: diff.attribute_canonical || diff.attribute_name,
+        original_value: null,
+        original_unit: null
+      });
+    }
+  }
 
   return <div className="min-h-screen bg-[#080d12] text-white">
     <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
@@ -144,7 +159,7 @@ export default function Comparar() {
               </div>)}
             </div>
 
-            {(base.specs || []).map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
+            {specRows.map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute)}</div>
               {cols.map((c, ci) => {
                 const candidate = ci === 0 ? s : valueFor(s, c);
