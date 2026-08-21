@@ -1,7 +1,7 @@
 const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
 // Publishable/anon key: safe for client applications. Never use the service-role key here.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
-const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v16`;
+const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17`;
 
 async function call(params) {
   const url = new URL(FUNCTION_URL);
