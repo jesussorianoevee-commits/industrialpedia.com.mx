@@ -109,7 +109,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     category: baseRaw.category || '',
     description: baseRaw.description || baseRaw.name || '',
     specs: specsToArray(baseRaw.specifications),
-    image_url: ''
+    image_url: baseRaw.image?.image_url || ''
   };
 
   if (data.evaluable === false) {
@@ -130,7 +130,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     product_name: a.name || a.description || a.part_number,
     category: a.category || '',
     description: a.description || '',
-    image_url: '',
+    image_url: a.image?.image_url || '',
     status: a.status,
     source: { url: a.source_url || '', domain: a.source_url || '' },
     specs: specsToArray(a.specifications),
@@ -151,7 +151,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     alternatives,
     compatibility_evaluable: true,
     decision,
-    source: 'Knowledge Core / compare_part_candidates_v1'
+    source: 'Knowledge Core / compare_part_candidates_v2'
   };
 }
 
