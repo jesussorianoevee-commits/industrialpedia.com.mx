@@ -24,10 +24,20 @@ export default function CompararReferencia() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!ref?.category || !ref?.specifications || Object.keys(ref.specifications).length === 0) {
-      setError('La referencia no tiene suficientes especificaciones técnicas para comparar.');
+    const technicalSpecs = ref?.specifications && typeof ref.specifications === 'object' && !Array.isArray(ref.specifications)
+      ? Object.entries(ref.specifications).filter(([, value]) => value !== null && value !== undefined && value !== '' && !(typeof value === 'object' && !Array.isArray(value) && value.value === undefined && value.min === undefined && value.max === undefined))
+      : [];
+
+    if (!ref?.category) {
+      setError('Falta la familia técnica de la referencia.');
       return;
     }
+
+    if (technicalSpecs.length < 3) {
+      setError(`Se requieren al menos 3 especificaciones técnicas para comparar. Actualmente hay ${technicalSpecs.length}. Agrega más datos como dimensiones, conexión, alimentación, montaje, IP, salida o rango.`);
+      return;
+    }
+
     (async () => {
       try {
         const result = await compareReferenceIndustrialpedia(ref);
@@ -58,7 +68,7 @@ export default function CompararReferencia() {
     <main className="mx-auto max-w-6xl px-4 py-6">
       <div className="mb-5">
         <h1 className="text-2xl font-semibold">Alternativas para {reference.partNumber || 'referencia externa'}</h1>
-        <p className="mt-1 text-sm text-white/40">La referencia externa no se almacena en Industrialpedia. Se compara en esta sesión contra el Knowledge Core.</p>
+        <p className="mt-1 text-sm text-white/40">La referencia externa no se almacena en Industrialpedia. Se compara en esta sesión contra el Knowledge Core. Se requieren mínimo 3 especificaciones técnicas válidas para evitar falsos equivalentes.</p>
       </div>
 
       <section className="rounded-xl border border-white/10 bg-[#0d141b] p-5 mb-5">
@@ -72,7 +82,7 @@ export default function CompararReferencia() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Alternativas encontradas</h2><span className="text-[10px] text-white/30">{alternatives.length} candidato(s)</span></div>
-        {alternatives.length === 0 ? <div className="rounded-xl border border-white/10 bg-[#0d141b] p-8 text-center text-sm text-white/40">No hay suficientes datos comparables en el Knowledge Core.</div> : alternatives.map((a) => {
+        {alternatives.length === 0 ? <div className="rounded-xl border border-white/10 bg-[#0d141b] p-8 text-center text-sm text-white/40">No hay suficientes datos comparables en el Knowledge Core. Esto no significa que no exista un equivalente; significa que la evidencia disponible no alcanza el umbral técnico.</div> : alternatives.map((a) => {
           const state = stateMeta[a.comparison?.state] || stateMeta.low_similarity;
           const Icon = state.icon;
           return <article key={a.id} className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
@@ -83,6 +93,7 @@ export default function CompararReferencia() {
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]"><div><span className="text-white/30">Coinciden</span><div className="mt-1 font-mono text-white/75">{a.comparison?.equal_specs ?? a.comparison?.equal ?? 0}</div></div><div><span className="text-white/30">Compartidas</span><div className="mt-1 font-mono text-white/75">{a.comparison?.shared_specs ?? a.comparison?.compared ?? 0}</div></div><div><span className="text-white/30">Diferentes</span><div className="mt-1 font-mono text-amber-200">{a.comparison?.different_specs ?? a.comparison?.different ?? 0}</div></div><div><span className="text-white/30">Similitud</span><div className="mt-1 font-mono text-white/80">{a.comparison?.similarity_pct ?? '—'}%</div></div></div>
             <div className="mt-4 flex flex-wrap gap-2">{Object.entries(a.specifications || {}).slice(0, 8).map(([k,v]) => <span key={k} className="rounded bg-white/[0.04] border border-white/10 px-2 py-1 text-[10px] text-white/55"><span className="text-white/30">{k}:</span> {specValue(v)}</span>)}</div>
             {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#65a9e6] hover:underline">Ver fuente del modelo →</a>}
+            {a.comparison?.state === 'strong_match' && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] text-amber-100/70">Coincidencia técnica fuerte, no autorización automática de sustitución. Valida requisitos críticos y documentación del fabricante antes de instalar.</div>}
           </article>;
         })}
       </section>
