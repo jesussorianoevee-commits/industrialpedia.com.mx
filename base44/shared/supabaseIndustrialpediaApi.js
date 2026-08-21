@@ -196,8 +196,8 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
 
   const enrichedAlternatives = pairwise;
 
-  const compatible = alternatives.some((a) => a.comparison.state === 'compatible');
-  const decision = alternatives.length === 0
+  const compatible = enrichedAlternatives.some((a) => a.comparison.state === 'compatible');
+  const decision = enrichedAlternatives.length === 0
     ? { state: 'insufficient', message: 'No se encontraron alternativas con datos técnicos comparables.' }
     : compatible
       ? { state: 'compatible_found', message: 'Se encontraron alternativas que cumplen las reglas de compatibilidad disponibles.' }
@@ -205,9 +205,9 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
 
   return {
     base,
-    candidates_found: alternatives.length,
-    candidates_considered: data.candidates_considered || alternatives.length,
-    alternatives,
+    candidates_found: enrichedAlternatives.length,
+    candidates_considered: data.candidates_considered || enrichedAlternatives.length,
+    alternatives: enrichedAlternatives,
     compatibility_evaluable: true,
     decision,
     source: 'Knowledge Core / compare_part_candidates_v2'
