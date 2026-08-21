@@ -142,17 +142,20 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   // Esto evita que la UI reconstruya reglas técnicas y mantiene el resultado reproducible.
   const pairwise = await Promise.all(alternatives.map(async (alt) => {
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_parts_v1`, {
-        method: 'POST',
+      const compareUrl = new URL(FUNCTION_URL);
+      compareUrl.searchParams.set('mode', 'compare');
+      compareUrl.searchParams.set('a', canonicalId);
+      compareUrl.searchParams.set('b', alt.id);
+      const r = await fetch(compareUrl, {
+        method: 'GET',
         headers: {
           apikey: SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          'Content-Type': 'application/json',
           Accept: 'application/json'
-        },
-        body: JSON.stringify({ p_part_a: canonicalId, p_part_b: alt.id })
+        }
       });
-      const matrix = await r.json().catch(() => null);
+      const envelope = await r.json().catch(() => null);
+      const matrix = envelope?.result || null;
       if (!r.ok || !matrix || matrix.status === 'error') return alt;
       const rows = Array.isArray(matrix.comparisons) ? matrix.comparisons : [];
       const differences = rows.map((row) => ({
