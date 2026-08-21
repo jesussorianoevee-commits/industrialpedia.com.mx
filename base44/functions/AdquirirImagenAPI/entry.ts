@@ -33,7 +33,8 @@ export default async function (req: Request) {
       partNumber,
       secrets: {
         digikeyClientId: secrets.get('DIGIKEY_CLIENT_ID'),
-        digikeyClientSecret: secrets.get('DIGIKEY_CLIENT_SECRET')
+        digikeyClientSecret: secrets.get('DIGIKEY_CLIENT_SECRET'),
+        expectedManufacturer: manufacturer
       }
     });
 

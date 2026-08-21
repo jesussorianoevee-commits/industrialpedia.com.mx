@@ -20,7 +20,10 @@ async function getJson(url, options = {}) {
   return data;
 }
 
+let digiKeyTokenCache = { accessToken: '', expiresAt: 0, clientId: '' };
+
 async function digikeyToken(clientId, clientSecret) {
+  if (digiKeyTokenCache.accessToken && digiKeyTokenCache.clientId === clientId && Date.now() < digiKeyTokenCache.expiresAt) return digiKeyTokenCache.accessToken;
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     client_id: clientId,
@@ -31,10 +34,13 @@ async function digikeyToken(clientId, clientSecret) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
     body
   });
-  return data?.access_token || '';
+  const token = data?.access_token || '';
+  const expiresIn = Number(data?.expires_in || 0);
+  if (token) digiKeyTokenCache = { accessToken: token, clientId, expiresAt: Date.now() + Math.max(30, expiresIn - 30) * 1000 };
+  return token;
 }
 
-export async function lookupDigiKeyExact({ partNumber, manufacturerId = '', clientId, clientSecret }) {
+export async function lookupDigiKeyExact({ partNumber, expectedManufacturer = '', manufacturerId = '', clientId, clientSecret }) {
   const pn = clean(partNumber);
   if (!pn || !clientId || !clientSecret) return { status: 'not_configured', source_key: 'digikey_product_information_v4' };
 
@@ -67,12 +73,24 @@ export async function lookupDigiKeyExact({ partNumber, manufacturerId = '', clie
     };
   }
 
+  const returnedManufacturer = clean(product.Manufacturer?.Name || '');
+  const normalizeManufacturer = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (expectedManufacturer && normalizeManufacturer(returnedManufacturer) !== normalizeManufacturer(expectedManufacturer)) {
+    return {
+      status: 'rejected',
+      source_key: 'digikey_product_information_v4',
+      result_code: 'manufacturer_mismatch',
+      returned_part_number: returnedPn,
+      returned_manufacturer: returnedManufacturer
+    };
+  }
+
   const imageUrl = clean(product.PhotoUrl || product.PrimaryPhoto || '');
   return {
     status: imageUrl ? 'verified_candidate' : 'not_found',
     source_key: 'digikey_product_information_v4',
     part_number: returnedPn,
-    manufacturer: clean(product.Manufacturer?.Name || ''),
+    manufacturer: returnedManufacturer,
     image_url: imageUrl,
     source_url: clean(product.ProductUrl || ''),
     datasheet_url: clean(product.DatasheetUrl || ''),
@@ -85,6 +103,7 @@ export async function lookupImageByConfiguredSource({ sourceKey, partNumber, man
   if (key === 'digikey_product_information_v4') {
     return lookupDigiKeyExact({
       partNumber,
+      expectedManufacturer: secrets?.expectedManufacturer || '',
       manufacturerId,
       clientId: clean(secrets?.digikeyClientId),
       clientSecret: clean(secrets?.digikeyClientSecret)
