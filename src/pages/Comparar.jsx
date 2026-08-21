@@ -178,7 +178,7 @@ export default function Comparar() {
           </div>
         </div>
 
-        {alternatives.length >= 5 && !expandedResults && !loadingMore && (
+        {(data.candidates_considered || 0) > alternatives.length && !expandedResults && !loadingMore && (
           <div className="mt-5 flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#0d141b] px-5 py-4 text-center">
             <div className="text-xs font-medium text-white/65">¿No encontraste lo que buscas?</div>
             <div className="text-[10px] text-white/35">Podemos ampliar la búsqueda para mostrarte más alternativas.</div>
