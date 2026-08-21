@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FileText, Globe, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
+import { FileText, Globe, ExternalLink, ArrowRight, Loader2, GitCompareArrows } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
+import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -17,8 +19,34 @@ const SOURCE_TYPE_LABELS = {
   web_discovery: { label: 'Fuente web', cls: 'text-white/55 bg-white/10' }
 };
 
+function inferCategory(result) {
+  const raw = `${result.category || ''} ${result.component_type_label || ''} ${result.product_identity?.short_description || ''} ${result.product_name || ''} ${result.title || ''}`.toLowerCase();
+  if (/proximity|inductive sensor|sensor inductivo/.test(raw)) return 'proximity_sensor';
+  if (/pressure sensor|sensor de presión/.test(raw)) return 'pressure_sensor';
+  if (/servo drive|servodrive|servo amplifier/.test(raw)) return 'servo_drive';
+  if (/servo motor/.test(raw)) return 'servo_motor';
+  if (/solenoid valve|válvula solenoide/.test(raw)) return 'solenoid_valve';
+  if (/fieldbus|remote i\/o|fieldbus node/.test(raw)) return 'fieldbus_node';
+  return result.category || result.product_identity?.category || '';
+}
+
+function buildReferenceSpecs(result) {
+  const source = Array.isArray(result.basic_specs) ? result.basic_specs : [];
+  const out = {};
+  for (const s of source) {
+    const key = String(s.attribute || s.attribute_name || '').trim();
+    const value = s.value;
+    if (!key || value === undefined || value === null || value === '') continue;
+    out[key] = s.unit ? { value, unit: s.unit } : value;
+  }
+  return out;
+}
+
 export default function GoogleResultCard({ result, query, onFicha }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState('');
   const [imageSrc, setImageSrc] = useState(isUsableImageUrl(result.image_url) ? result.image_url : '');
   const [err, setErr] = useState('');
 
@@ -53,6 +81,10 @@ export default function GoogleResultCard({ result, query, onFicha }) {
   };
 
   const st = SOURCE_TYPE_LABELS[result.source_type] || SOURCE_TYPE_LABELS.cse_configured;
+  const isFestoOfficial = String(result.manufacturer_name || result.product_identity?.manufacturer || '').toLowerCase() === 'festo';
+  const referenceCategory = inferCategory(result);
+  const referenceSpecs = buildReferenceSpecs(result);
+  const canCompareReference = isFestoOfficial && referenceCategory && Object.keys(referenceSpecs).length >= 2;
 
   return (
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
@@ -112,6 +144,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
       </div>
 
       {err && <p className="text-red-300 text-[11px] mb-3">{err}</p>}
+      {compareError && <p className="text-amber-300 text-[11px] mb-3">{compareError}</p>}
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -121,6 +154,32 @@ export default function GoogleResultCard({ result, query, onFicha }) {
         >
           {loading ? <><Loader2 className="w-3 h-3 animate-spin" /> Extrayendo ficha…</> : <>Ver ficha <ArrowRight className="w-3 h-3" /></>}
         </button>
+        {canCompareReference && (
+          <button
+            onClick={async () => {
+              setCompareLoading(true);
+              setCompareError('');
+              try {
+                const response = await compareReferenceIndustrialpedia({
+                  manufacturer: 'Festo',
+                  partNumber: result.part_number || result.product_identity?.part_number || '',
+                  category: referenceCategory,
+                  specifications: referenceSpecs,
+                  limit: 5
+                });
+                navigate('/comparar-referencia', { state: { reference: response.reference, result: response.result } });
+              } catch (e) {
+                setCompareError(e?.message || 'No se pudo comparar esta referencia.');
+              } finally {
+                setCompareLoading(false);
+              }
+            }}
+            disabled={compareLoading}
+            className="flex items-center gap-1 bg-[#168fd5]/15 hover:bg-[#168fd5]/25 disabled:opacity-60 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#168fd5]/30 transition-colors"
+          >
+            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Comparando…</> : <><GitCompareArrows className="w-3 h-3" /> Comparar alternativas</>}
+          </button>
+        )}
         <a
           href={result.url}
           target="_blank"
