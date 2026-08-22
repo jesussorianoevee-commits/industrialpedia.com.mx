@@ -54,7 +54,7 @@ export async function translateParts(results, language) {
       return {
         ...result,
         original_name: result.original_name || result.title || result.product_name || result.name || result.product_identity?.short_description || '',
-        original_description: result.original_description || result.description || '';
+        original_description: result.original_description || result.description || '',
         title: translation.name,
         product_name: translation.name,
         description: translation.description || result.description || '',
