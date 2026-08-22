@@ -1,10 +1,10 @@
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage, localizedCount } from '@/lib/i18n';
 
 export default function CategoryCard({ area, count }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const Icon = area.icon;
   return (
@@ -21,7 +21,7 @@ export default function CategoryCard({ area, count }) {
           </div>
           <div>
             <h3 className="ip-text font-semibold text-sm">{area.name}</h3>
-            <span className="ip-muted text-[10px]">{count.toLocaleString()} {t.references}</span>
+            <span className="ip-muted text-[10px]">{localizedCount(count, t.reference, t.references, language)}</span>
           </div>
         </div>
         <ArrowRight className="w-4 h-4 ip-muted group-hover:ip-accent group-hover:translate-x-0.5 transition-all" />
