@@ -28,7 +28,7 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
         <style>{`
           @keyframes loader-bob { 0%,100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(1px,-1px) rotate(0.4deg); } 50% { transform: translate(0,0) rotate(0deg); } 75% { transform: translate(-1px,1px) rotate(-0.4deg); } }
           @keyframes loader-progress { 0% { transform: translateX(-140%); } 50% { transform: translateX(120%); } 100% { transform: translateX(320%); } }
-          @media (prefers-reduced-motion: reduce) { .animate-\[loader-bob_1\.2s_steps\(4\,end\)_infinite\] { animation: none; } }
+          @media (prefers-reduced-motion: reduce) { img[alt="Industrialpedia cargando"] { animation: none; } }
         `}</style>
       </div>
     </div>
