@@ -18,11 +18,11 @@ export default function Hero({ partCount, loading, lastUpdated }) {
       </div>
       {!loading && lastUpdated && (
         <div className="text-[10px] ip-muted -mt-3 mb-5 opacity-70">
-          Actualizado automáticamente · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {t.updatedAutomatically} · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       )}
       <h1 className="text-[42px] md:text-[68px] leading-[0.98] font-bold tracking-[-0.045em] ip-text mb-5 max-w-4xl mx-auto">
-        Encuentra tu <span className="ip-accent">refacción</span><br className="hidden sm:block" /> en segundos.
+        {t.findYourPart} <span className="ip-accent">{t.sparePart}</span><br className="hidden sm:block" /> {t.inSeconds}
       </h1>
       <p className="ip-muted text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-8">
         {t.searchParts}
@@ -39,9 +39,9 @@ export default function Hero({ partCount, loading, lastUpdated }) {
         {POPULAR_TAGS.slice(0, 6).map((t) => <button key={t} onClick={() => navigate(`/buscar?q=${encodeURIComponent(t)}`)} className="px-2.5 py-1.5 rounded-md bg-secondary border border-border ip-muted text-[11px] hover:text-primary transition-colors">{t}</button>)}
       </div>
       <div className="mt-10 flex items-center justify-center gap-5 ip-muted text-[11px]">
-        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 ip-accent" /> Información estructurada</span>
+        <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 ip-accent" /> {t.structuredInfo}</span>
         <span className="hidden sm:inline opacity-30">•</span>
-        <span className="hidden sm:inline-flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5 ip-accent" /> Hasta 5 alternativas</span>
+        <span className="hidden sm:inline-flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5 ip-accent" /> {t.upToFiveAlternatives}</span>
       </div>
     </section>
   );
