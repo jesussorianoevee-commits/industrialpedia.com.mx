@@ -37,12 +37,18 @@ export default function Hero({ partCount, loading, lastUpdated }) {
       <p className="ip-muted text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-8">
         {t.searchParts}
       </p>
-      <form onSubmit={submit} className="max-w-2xl mx-auto">
+      <form onSubmit={submit} className="max-w-2xl mx-auto relative">
         <div className="flex items-center gap-2 ip-surface border border-border rounded-2xl p-2 focus-within:border-primary/60 transition-all">
           <Search className="w-5 h-5 ip-muted ml-2 shrink-0" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.searchPlaceholder} className="bg-transparent flex-1 text-sm md:text-base ip-text placeholder:text-muted-foreground/60 outline-none py-3 min-w-0" />
+          <input value={q} onChange={(e) => { setQ(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)} placeholder={t.searchPlaceholder} className="bg-transparent flex-1 text-sm md:text-base ip-text placeholder:text-muted-foreground/60 outline-none py-3 min-w-0" />
           <button type="submit" className="ip-accent-bg text-sm font-semibold px-5 py-3 rounded-xl transition-transform hover:scale-[1.02] active:scale-[.98]">{t.search}</button>
         </div>
+        {showDropdown && q.trim().length >= 2 && (historySuggestions.length > 0 || suggestionsLoading || suggestions.length > 0) && (
+          <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-border ip-surface shadow-2xl text-left">
+            {historySuggestions.length > 0 && <div className="border-b border-border"><div className="px-4 py-2 text-[10px] uppercase tracking-wider ip-muted flex items-center gap-1.5"><Clock className="w-3 h-3" /> {t.recentSearches}</div>{historySuggestions.map((term, i) => <button key={'history-'+term+'-'+i} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => goSearch(term)} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary"><Clock className="w-3.5 h-3.5 ip-muted" /><span className="text-sm ip-text truncate">{term}</span></button>)}</div>}
+            {suggestionsLoading ? <div className="px-4 py-4 text-xs ip-muted flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> {t.discoveringProducts}</div> : <div className="max-h-[360px] overflow-y-auto">{suggestions.map((s, i) => <button key={(s.part_number || s.text)+'-'+i} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => goSearch(s.part_number || s.text)} className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-border last:border-0 hover:bg-secondary">{s.image ? <img src={s.image} alt="" className="h-10 w-10 rounded-lg object-contain bg-white shrink-0" /> : <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center shrink-0"><Globe className="w-4 h-4 ip-muted" /></div>}<div className="min-w-0 flex-1"><div className="text-sm font-medium ip-text truncate">{s.text || 'Producto'}</div><div className="mt-0.5 flex gap-2 text-xs ip-muted">{s.part_number && <span className="font-mono">{s.part_number}</span>}{s.manufacturer && <span>{s.manufacturer}</span>}</div></div><span className="ip-muted">›</span></button>)}</div>}
+          </div>
+        )}
       </form>
       <div className="flex items-center justify-center flex-wrap gap-2 mt-5">
         <span className="ip-muted text-[10px] uppercase tracking-wider mr-1">{t.examples}</span>
