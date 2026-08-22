@@ -131,7 +131,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     category: baseRaw.category || '',
     description: baseRaw.description || baseRaw.name || '',
     specs: specsToArray(baseRaw.specifications),
-    image_url: baseRaw.image?.image_url || ''
+    image_url: baseRaw.image?.image_url || baseRaw.image?.url || baseRaw.image_url || baseRaw.primary_image_url || ''
   };
 
   if (data.evaluable === false) {
@@ -152,7 +152,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     product_name: a.name || a.description || a.part_number,
     category: a.category || '',
     description: a.description || '',
-    image_url: a.image?.image_url || '',
+    image_url: a.image?.image_url || a.image?.url || a.image_url || a.primary_image_url || '',
     status: a.status,
     source: { url: a.source_url || '', domain: a.source_url || '' },
     specs: specsToArray(a.specifications),
