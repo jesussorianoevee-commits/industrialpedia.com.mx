@@ -74,8 +74,8 @@ export function scorePart(part, q, specs) {
     if (Array.isArray(specs)) {
       const specHits = specs.reduce((count, s) => {
         const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
-        const value = String(s.normalized_value || s.original_value || '').toLowerCase();
-        const unit = String(s.normalized_unit || s.original_unit || '').toLowerCase();
+        const value = String(s.normalized_value ?? s.original_value ?? '').toLowerCase();
+        const unit = String(s.normalized_unit ?? s.original_unit ?? '').toLowerCase();
         const text = `${attr} ${value} ${unit}`;
         return count + (tokens.some((t) => text.includes(t)) ? 1 : 0);
       }, 0);
