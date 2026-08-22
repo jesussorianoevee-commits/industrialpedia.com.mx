@@ -439,7 +439,7 @@ export default async function (req) {
           for (const s of specs) {
             const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
             const value = String(s.normalized_value ?? s.original_value ?? '').toLowerCase();
-            const unit = String(s.normalized_unit || s.original_unit || '').toLowerCase();
+            const unit = String(s.normalized_unit ?? s.original_unit ?? '').toLowerCase();
             const haystack = `${attr} ${value} ${unit}`;
             if (tokens.some((t) => haystack.includes(t))) {
               s.__search_text_match = true;
