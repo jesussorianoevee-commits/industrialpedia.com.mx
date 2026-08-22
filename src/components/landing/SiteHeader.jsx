@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Moon, Sun, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/lib/i18n';
 
 export default function SiteHeader() {
   const [light, setLight] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const { language, setLanguage, languages, t } = useLanguage();
 
   useEffect(() => {
     const saved = localStorage.getItem('industrialpedia-theme');
@@ -30,9 +33,9 @@ export default function SiteHeader() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          <Link to="/buscar" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Buscar</Link>
-          <Link to="/comparar-referencia" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Comparar</Link>
-          <Link to="/decidir" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Decidir</Link>
+          <Link to="/buscar" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">{t.search}</Link>
+          <Link to="/comparar-referencia" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">{t.compare}</Link>
+          <Link to="/decidir" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">{t.decide}</Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -43,12 +46,19 @@ export default function SiteHeader() {
             className="flex items-center gap-2 h-9 px-3 rounded-md border border-[#5a9cd9]/30 bg-[#5a9cd9]/10 text-[#5a9cd9] hover:bg-[#5a9cd9]/20 hover:border-[#5a9cd9]/60 transition-all"
           >
             {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            <span className="hidden sm:inline text-[11px] font-medium">{light ? 'Claro' : 'Oscuro'}</span>
+            <span className="hidden sm:inline text-[11px] font-medium">{light ? t.light : t.dark}</span>
           </button>
-          <button className="hidden sm:flex items-center gap-1.5 text-white/55 hover:text-white text-xs px-2">
-            <Globe className="w-3.5 h-3.5" /> ES
-          </button>
-          <Link to="/login" className="px-3.5 py-2 rounded-md border border-white/15 text-white text-xs font-medium hover:bg-white/5 transition-colors">Ingresar</Link>
+          <div className="relative hidden sm:block">
+            <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="flex items-center gap-1.5 text-white/55 hover:text-white text-xs px-2 py-2 rounded-md hover:bg-white/5">
+              <Globe className="w-3.5 h-3.5" /> {languages.find((item) => item.code === language)?.flag} {language.toUpperCase()}
+            </button>
+            {languageOpen && <div className="absolute right-0 top-[calc(100%+6px)] z-50 min-w-40 rounded-xl border border-white/10 bg-[#11161c] p-1 shadow-2xl">
+              {languages.map((item) => <button key={item.code} type="button" onClick={() => { setLanguage(item.code); setLanguageOpen(false); }} className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs ${item.code === language ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}>
+                <span>{item.flag}</span><span>{item.label}</span><span className="ml-auto text-[9px] uppercase opacity-50">{item.code}</span>
+              </button>)}
+            </div>}
+          </div>
+          <Link to="/login" className="px-3.5 py-2 rounded-md border border-white/15 text-white text-xs font-medium hover:bg-white/5 transition-colors">{t.login}</Link>
         </div>
       </div>
     </header>
