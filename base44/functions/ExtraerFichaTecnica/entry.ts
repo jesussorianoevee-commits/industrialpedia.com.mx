@@ -202,7 +202,7 @@ function computeBasicSpecs(sourceContent: string, extractedText: string) {
   const deduped = dedupeSpecCandidates(merged);
   for (const s of deduped) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
-    const val = String(s.value || '').trim().slice(0, 80);
+    const val = String(s.value ?? '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
     const cleanPair = sanitizeExtractedPair(attr, val);
     if (!cleanPair) continue;
