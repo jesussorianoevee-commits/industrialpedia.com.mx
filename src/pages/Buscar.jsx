@@ -327,7 +327,7 @@ export default function Buscar() {
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `${t.foundPartsLabel} · ${areaLabel}` : t.foundPartsLabel}</div>
                 <div className="space-y-2.5">
-                  {kcResults.map((r) => <ResultCard key={r.id} result={r} />)
+                  {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
               </section>
             )}
@@ -336,7 +336,7 @@ export default function Buscar() {
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{t.structuredSources}</div>
                 <div className="space-y-2.5">
-                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)
+                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
                 </div>
               </section>
             )}
