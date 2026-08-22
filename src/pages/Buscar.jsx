@@ -67,7 +67,18 @@ export default function Buscar() {
     setKcData(null);
     setKcError(null);
     try {
-      const res = await getIndustrialpediaAreaParts(areaKey, 25, 0);
+      let res;
+      try {
+        // La consulta por familia es independiente de BUSCAR. La primera lectura
+        // usa una página moderada; si Supabase devuelve statement_timeout por carga
+        // concurrente, reintentamos con una página menor en vez de mostrar un error
+        // al usuario. No cambiamos la fuente ni la lógica de clasificación.
+        res = await getIndustrialpediaAreaParts(areaKey, 25, 0);
+      } catch (firstError) {
+        const message = String(firstError?.message || firstError || '').toLowerCase();
+        if (!message.includes('statement timeout') && !message.includes('canceling statement')) throw firstError;
+        res = await getIndustrialpediaAreaParts(areaKey, 10, 0);
+      }
       if (searchReqId.current !== reqId) return;
       setKcData({ knowledge_core_results: res.results, discovery_results: [], web_results: [], facets: { manufacturers: [], categories: [] }, meta: { mode: 'area', area: areaKey, total: res.total } });
     } catch (e) {
