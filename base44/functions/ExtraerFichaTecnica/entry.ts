@@ -69,7 +69,7 @@ function safeText(s: string, max = 500) {
 // mismo dato, sin confundir unidades distintas (p. ej. A vs mA).
 function canonicalSpecKey(attribute: any, value: any) {
   const attr = String(attribute || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const rawValue = String(value || '').replace(/\s+/g, ' ').trim();
+  const rawValue = String(value ?? '').replace(/\s+/g, ' ').trim();
   const { value: numericValue, unit } = splitValueUnit(rawValue);
   const normalizedUnit = normalizeUnit(unit).toLowerCase();
   const normalizedValue = numericValue
@@ -177,7 +177,7 @@ function buildSpecs(extracted: any, isPdf: boolean, url: string, consultationDat
   // que distintos extractores entregan el mismo dato con formatos diferentes.
   const seenBuilt = new Set<string>();
   return builtSpecs.filter((s: any) => {
-    const key = canonicalSpecKey(s.attribute_name, `${s.normalized_value || s.original_value || ''} ${s.normalized_unit || s.original_unit || ''}`);
+    const key = canonicalSpecKey(s.attribute_name, `${s.normalized_value ?? s.original_value ?? ''} ${s.normalized_unit ?? s.original_unit ?? ''}`);
     if (seenBuilt.has(key)) return false;
     seenBuilt.add(key);
     return true;
