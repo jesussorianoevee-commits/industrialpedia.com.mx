@@ -1,11 +1,13 @@
-const STEPS = [
-  { n: '01', title: 'Buscar', body: 'Encuentra información por número de parte, fabricante o descripción.' },
-  { n: '02', title: 'Encontrar', body: 'Identifica alternativas relevantes sin saturarte de resultados.' },
-  { n: '03', title: 'Comparar', body: 'Contrasta las especificaciones técnicas que realmente importan.' },
-  { n: '04', title: 'Decidir', body: 'Llega a una decisión con información técnica clara y trazable.' }
-];
+import { useLanguage } from '@/lib/i18n';
 
 export default function WorkflowSteps() {
+  const { t } = useLanguage();
+  const STEPS = [
+    { n: '01', title: t.search, body: t.workflowSearch },
+    { n: '02', title: t.findAlternatives, body: t.workflowFind },
+    { n: '03', title: t.compare, body: t.workflowCompare },
+    { n: '04', title: t.decide, body: t.workflowDecide }
+  ];
   return (
     <section className="px-5 py-10 md:py-14">
       <div className="mb-5"><p className="text-[10px] uppercase tracking-[0.18em] ip-accent mb-2">El flujo Industrialpedia</p><h2 className="ip-text font-bold text-xl md:text-2xl">De la búsqueda a la decisión.</h2></div>
