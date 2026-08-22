@@ -33,16 +33,16 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0e12] grid-bg flex flex-col">
+    <div className="min-h-screen bg-background text-foreground grid-bg flex flex-col transition-colors">
       <SiteHeader />
-      <main className="flex-1 mx-auto w-full max-w-5xl">
+      <main className="flex-1 mx-auto w-full max-w-6xl">
         <Hero partCount={partCount} loading={loading} />
         <CategorySection counts={counts} />
         <ForumCard />
         <WorkflowSteps />
       </main>
-      <footer className="px-5 py-8 text-center border-t border-white/5 mt-4">
-        <p className="text-white/30 text-[11px] tracking-wide">
+      <footer className="px-5 py-8 text-center border-t border-border mt-4">
+        <p className="ip-muted text-[11px] tracking-wide">
           INDUSTRIALPEDIA · Knowledge Core industrial · Buscar · Encontrar · Comparar · Decidir
         </p>
       </footer>
