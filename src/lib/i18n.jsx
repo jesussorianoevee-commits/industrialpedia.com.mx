@@ -45,12 +45,24 @@ export async function translateParts(results, language) {
       null,
       500,
       0,
-      ['id', 'part_id', 'language', 'name', 'description', 'status', 'translation_version']
+      ['id', 'part_id', 'language', 'name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
     );
     const byPart = new Map((translations || []).map((t) => [String(t.part_id), t]));
     return results.map((result) => {
       const translation = byPart.get(String(result.id));
       if (!translation?.name) return result;
+      const translatedSpecs = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
+      const localizedTopSpecs = Array.isArray(result.top_specs)
+        ? result.top_specs.map((spec) => {
+            const key = spec?.attribute || spec?.attribute_name || '';
+            const localized = translatedSpecs[key];
+            if (!localized) return spec;
+            if (typeof localized === 'object' && localized !== null) {
+              return { ...spec, attribute: localized.attribute || localized.label || key, value: localized.value ?? spec.value, unit: localized.unit ?? spec.unit };
+            }
+            return { ...spec, attribute: String(localized) };
+          })
+        : result.top_specs;
       return {
         ...result,
         original_name: result.original_name || result.title || result.product_name || result.name || result.product_identity?.short_description || '',
@@ -58,6 +70,9 @@ export async function translateParts(results, language) {
         title: translation.name,
         product_name: translation.name,
         description: translation.description || result.description || '',
+        category: translation.category || result.category || '',
+        subcategory: translation.subcategory || result.subcategory || '',
+        top_specs: localizedTopSpecs,
         translation_status: translation.status || 'machine_draft',
         translation_version: translation.translation_version || 1,
         translation_language: language,
