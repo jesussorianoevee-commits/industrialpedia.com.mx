@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock, Cog } from 'lucide-react';
+import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
