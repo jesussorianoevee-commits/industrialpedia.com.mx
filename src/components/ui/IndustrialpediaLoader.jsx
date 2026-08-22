@@ -7,29 +7,12 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
     <div className={fullScreen ? 'fixed inset-0 z-[9999] flex items-center justify-center bg-[#080d12]' : 'flex min-h-[360px] items-center justify-center'}>
       <div className="relative flex flex-col items-center justify-center">
         <div className="relative w-64 h-64 sm:w-72 sm:h-72">
-          <svg viewBox="0 0 700 700" className="absolute inset-0 w-full h-full select-none" role="img" aria-label="Industrialpedia cargando">
-            <defs>
-              <mask id="loader-base-mask">
-                <rect width="700" height="700" fill="white" />
-                <polygon fill="black" points="25,350 75,330 120,330 150,325 190,345 225,365 260,390 290,420 315,460 325,500 320,545 300,585 270,615 230,640 185,650 135,645 95,630 60,600 40,560 30,520 25,480 30,440 25,400" />
-                <polygon fill="black" points="135,285 170,285 210,295 250,305 280,325 290,345 280,360 255,370 235,375 225,395 205,402 180,390 155,380 140,360 132,335" />
-                <polygon fill="black" points="285,395 315,395 345,405 370,425 382,450 375,475 360,495 335,505 310,500 292,485 282,460" />
-              </mask>
-              <clipPath id="loader-gear-clip"><polygon points="25,350 75,330 120,330 150,325 190,345 225,365 260,390 290,420 315,460 325,500 320,545 300,585 270,615 230,640 185,650 135,645 95,630 60,600 40,560 30,520 25,480 30,440 25,400" /></clipPath>
-              <clipPath id="loader-paw-top-clip"><polygon points="135,285 170,285 210,295 250,305 280,325 290,345 280,360 255,370 235,375 225,395 205,402 180,390 155,380 140,360 132,335" /></clipPath>
-              <clipPath id="loader-paw-lower-clip"><polygon points="285,395 315,395 345,405 370,425 382,450 375,475 360,495 335,505 310,500 292,485 282,460" /></clipPath>
-            </defs>
-            <image href={CAT_IMAGE} width="700" height="700" preserveAspectRatio="none" mask="url(#loader-base-mask)" className="loader-cat-base" />
-            <g className="loader-gear" style={{ transformBox: 'fill-box', transformOrigin: 'center' }}>
-              <image href={CAT_IMAGE} width="700" height="700" preserveAspectRatio="none" clipPath="url(#loader-gear-clip)" />
-            </g>
-            <g className="loader-paw-top" style={{ transformBox: 'fill-box', transformOrigin: '190px 355px' }}>
-              <image href={CAT_IMAGE} width="700" height="700" preserveAspectRatio="none" clipPath="url(#loader-paw-top-clip)" />
-            </g>
-            <g className="loader-paw-lower" style={{ transformBox: 'fill-box', transformOrigin: '330px 450px' }}>
-              <image href={CAT_IMAGE} width="700" height="700" preserveAspectRatio="none" clipPath="url(#loader-paw-lower-clip)" />
-            </g>
-          </svg>
+          <img
+            src={CAT_IMAGE}
+            alt="Industrialpedia cargando"
+            className="absolute inset-0 w-full h-full object-contain select-none"
+            draggable="false"
+          />
         </div>
         <div className="mt-2 flex items-center gap-2 text-xs tracking-[0.18em] uppercase text-white/45">
           <span>{label}</span>
@@ -43,14 +26,7 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
           <div className="h-full w-1/3 bg-[#5a9cd9] animate-[loader-progress_1.5s_ease-in-out_infinite]" />
         </div>
         <style>{`
-          .loader-cat-base { animation: loader-bob 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-          .loader-gear { animation: loader-gear 1.9s linear infinite; }
-          .loader-paw-top { animation: loader-paw-top 1.9s ease-in-out infinite; }
-          .loader-paw-lower { animation: loader-paw-lower 1.9s ease-in-out infinite; }
           @keyframes loader-bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
-          @keyframes loader-gear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          @keyframes loader-paw-top { 0%,100% { transform: rotate(-3deg) translate(0,0); } 32% { transform: rotate(9deg) translate(2px,3px); } 48% { transform: rotate(12deg) translate(3px,4px); } 65% { transform: rotate(-1deg) translate(0,0); } }
-          @keyframes loader-paw-lower { 0%,100% { transform: rotate(4deg) translate(0,0); } 32% { transform: rotate(-7deg) translate(-2px,2px); } 48% { transform: rotate(-10deg) translate(-3px,3px); } 65% { transform: rotate(2deg) translate(0,0); } }
           @keyframes loader-progress { 0% { transform: translateX(-140%); } 50% { transform: translateX(120%); } 100% { transform: translateX(320%); } }
           @media (prefers-reduced-motion: reduce) { .loader-cat-base, .loader-gear, .loader-paw-top, .loader-paw-lower { animation: none; } }
         `}</style>
