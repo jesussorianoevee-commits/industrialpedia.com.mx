@@ -10,7 +10,7 @@ export default function CategorySection({ counts }) {
       </div>
       <div className="space-y-3">
         {AREAS.map((a) => (
-          <CategoryCard key={a.id} area={a} count={counts[a.id] || 0} />
+          <CategoryCard key={a.id} area={a} count={counts[a.statsKey || a.id] || 0} />
         ))}
       </div>
     </section>
