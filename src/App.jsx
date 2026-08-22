@@ -19,6 +19,7 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
+import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
 
 const AuthenticatedApp = () => {
@@ -50,11 +51,11 @@ const AuthenticatedApp = () => {
       <Route path="/oauth/consent" element={<OAuthConsent />} />
       {/* La aplicación es navegable públicamente. El login solo vive en /login y no debe interrumpir Buscar, Encontrar, Comparar o Decidir. */}
       <Route path="/" element={<Home />} />
-      <Route path="/buscar" element={<Buscar />} />
-      <Route path="/parte/:id" element={<Parte />} />
-      <Route path="/comparar/:id" element={<Comparar />} />
-      <Route path="/comparar-referencia" element={<CompararReferencia />} />
-      <Route path="/decidir" element={<Decidir />} />
+      <Route path="/buscar" element={<TrialRoute><Buscar /></TrialRoute>} />
+      <Route path="/parte/:id" element={<TrialRoute><Parte /></TrialRoute>} />
+      <Route path="/comparar/:id" element={<TrialRoute><Comparar /></TrialRoute>} />
+      <Route path="/comparar-referencia" element={<TrialRoute><CompararReferencia /></TrialRoute>} />
+      <Route path="/decidir" element={<TrialRoute><Decidir /></TrialRoute>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
