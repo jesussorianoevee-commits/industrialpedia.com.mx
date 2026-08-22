@@ -209,7 +209,7 @@ export default function Comparar() {
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
         <p className="mt-3 text-[10px] text-white/30">La comparación inicial muestra un máximo de 5 alternativas para mantener una lectura clara. Si necesitas ampliar la búsqueda, puedes solicitar más alternativas. La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
-      </>}
+      </>
     </main>
   </div>;
 }

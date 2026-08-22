@@ -20,6 +20,7 @@ export default function Buscar() {
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
+  const [kcError, setKcError] = useState(null);
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
@@ -48,6 +49,7 @@ export default function Buscar() {
     const reqId = ++searchReqId.current;
     setKcLoading(true);
     setKcData(null);
+    setKcError(null);
     try {
       const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete', 'candidate'] : ['published'];
       const res = await base44.functions.invoke('IndustrialpediaSearch', {
@@ -66,7 +68,7 @@ export default function Buscar() {
     } catch (e) {
       if (searchReqId.current !== reqId) return;
       setKcData(null);
-      setGoogleError(e.message || 'Error en la búsqueda');
+      setKcError(e.message || 'Error en la búsqueda');
     } finally {
       if (searchReqId.current === reqId) {
         setKcLoading(false);
@@ -80,7 +82,7 @@ export default function Buscar() {
       runSearch(q, filters);
     } else {
       setKcData(null);
-      setGoogleError(null);
+      setKcError(null);
     }
   }, [q, filters, runSearch]);
 
@@ -258,6 +260,11 @@ export default function Buscar() {
         {!q ? (
           <div className="space-y-6">
             <EmptyState q={q} onReset={onReset} />
+          </div>
+        ) : kcError ? (
+          <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-5 text-center">
+            <p className="text-sm text-amber-200/80">{kcError}</p>
+            <button onClick={onReset} className="mt-3 text-xs text-[#5a9cd9] hover:underline">Reintentar</button>
           </div>
         ) : (
           <div className="space-y-6">
