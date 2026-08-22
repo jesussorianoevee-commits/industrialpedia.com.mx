@@ -6,6 +6,7 @@ import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
+import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
@@ -15,6 +16,7 @@ export default function Buscar() {
   const navigate = useNavigate();
   const q = params.get('q') || '';
   const area = params.get('area') || '';
+  const areaLabel = AREAS.find((a) => (a.statsKey || a.id) === area)?.name || area;
   const [input, setInput] = useState(q);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
@@ -296,7 +298,7 @@ export default function Buscar() {
               </div>
             ) : kcResults.length > 0 && (
               <section>
-                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `Refacciones · ${area}` : 'Refacciones encontradas'}</div>
+                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `Refacciones · ${areaLabel}` : 'Refacciones encontradas'}</div>
                 <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
