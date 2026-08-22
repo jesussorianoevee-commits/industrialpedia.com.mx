@@ -180,6 +180,15 @@ export default function Comparar() {
                 </div>
               </div>
               {c.product_name && <div className="mt-3 text-[10px] leading-relaxed text-white/45">{c.product_name}</div>}
+              {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">Ficha técnica rápida</div>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {c.specs.slice(0, 6).map((s, j) => <div key={j} className="min-w-0">
+                    <div className="truncate text-[9px] text-white/30">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
+                    <div className="truncate font-mono text-[10px] text-white/75">{val(s)}</div>
+                  </div>)}
+                </div>
+              </div>}
               <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
                 <div className="mt-1 font-mono text-xs font-semibold text-white">{base.part_number}</div>
