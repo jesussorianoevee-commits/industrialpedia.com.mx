@@ -17,7 +17,7 @@ function extractIndustrialCompactSpecs(rawText) {
     const match = raw.match(re);
     if (!match) continue;
     const value = valueFn(match).replace(/\s+/g, ' ').trim();
-    if (value && !specs.some((s) => s.attribute === attribute && s.value === value)) specs.push({ attribute, value });
+    if (value !== null && value !== undefined && String(value).trim() !== '' && !specs.some((s) => s.attribute === attribute && s.value === value)) specs.push({ attribute, value });
   }
   return specs;
 }
@@ -219,7 +219,7 @@ export function extractPlainText(text) {
     const m = raw.match(re);
     if (!m) continue;
     const value = m[2] ? `${m[1]} ${attribute.includes('Digital inputs') ? 'DI' : attribute.includes('Digital outputs') ? 'DO' : attribute.includes('Analog inputs') ? 'AI' : ''} ${m[2]}`.replace(/\s+/g, ' ').trim() : m[1];
-    if (value && !specTable.some((s) => s.attribute === attribute && s.value === value)) {
+    if (value !== null && value !== undefined && String(value).trim() !== '' && !specTable.some((s) => s.attribute === attribute && s.value === value)) {
       specTable.push({ attribute, value });
     }
   }
