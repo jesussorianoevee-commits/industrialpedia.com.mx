@@ -1,9 +1,16 @@
 import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CategoryCard({ area, count }) {
+  const navigate = useNavigate();
   const Icon = area.icon;
   return (
-    <div className="ip-surface border border-border rounded-xl p-5 hover:border-primary/40 transition-all group">
+    <button
+      type="button"
+      onClick={() => navigate(`/buscar?area=${encodeURIComponent(area.statsKey || area.id)}`)}
+      className="w-full text-left ip-surface border border-border rounded-xl p-5 hover:border-primary/40 transition-all group cursor-pointer"
+      aria-label={`Ver ${count.toLocaleString()} refacciones de ${area.name}`}
+    >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center">
@@ -25,6 +32,6 @@ export default function CategoryCard({ area, count }) {
           <span className="px-2.5 py-1 rounded-md bg-primary/5 border border-primary/15 ip-accent text-[11px]">+{area.moreCount} más</span>
         )}
       </div>
-    </div>
+    </button>
   );
 }
