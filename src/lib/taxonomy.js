@@ -1,4 +1,4 @@
-import { Wind, Radar, Bot, Cpu, Cog } from 'lucide-react';
+import { Wind, Radar, Bot, Cpu, Cog, Package } from 'lucide-react';
 
 // Taxonomía de áreas industriales. Esta es estructura de taxonomía (no cobertura):
 // define las áreas y tipos de subcategorías que el Knowledge Core puede clasificar.
@@ -57,6 +57,15 @@ export const AREAS = [
       'Acoplamientos', 'Rodamientos', 'Correas y poleas', 'Engranajes', 'Ejes y chavetas', 'Piñones'
     ],
     moreCount: 24
+  },
+  {
+    id: 'otras-refacciones',
+    name: 'Otras refacciones',
+    icon: Package,
+    description: 'Refacciones disponibles que aún no cuentan con una clasificación técnica suficiente para asignarlas a un área.',
+    subcategories: [],
+    moreCount: 0,
+    statsKey: 'sin_clasificar'
   }
 ];
 
