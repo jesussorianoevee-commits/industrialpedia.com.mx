@@ -41,7 +41,31 @@ const SPEC_ATTRIBUTE_I18N = {
   'rubber stopper': { es: 'Tope de goma', en: 'Rubber stopper', de: 'Gummistopfen', fr: 'Butée en caoutchouc', zh: '橡胶塞' },
   'rubber guard': { es: 'Protector de goma', en: 'Rubber guard', de: 'Gummischutz', fr: 'Protection en caoutchouc', zh: '橡胶护套' },
   'adapter (mm)': { es: 'Adaptador (mm)', en: 'Adapter (mm)', de: 'Adapter (mm)', fr: 'Adaptateur (mm)', zh: '适配器 (mm)' },
-  'outer cylinder length (mm)': { es: 'Longitud exterior del cilindro (mm)', en: 'Outer cylinder length (mm)', de: 'Äußere Zylinderlänge (mm)', fr: 'Longueur extérieure du cylindre (mm)', zh: '外圆柱长度 (mm)' }
+  'outer cylinder length (mm)': { es: 'Longitud exterior del cilindro (mm)', en: 'Outer cylinder length (mm)', de: 'Äußere Zylinderlänge (mm)', fr: 'Longueur extérieure du cylindre (mm)', zh: '外圆柱长度 (mm)' },
+  'connection point': { es: 'Punto de conexión', en: 'Connection point', de: 'Anschlusspunkt', fr: 'Point de connexion', zh: '连接点' },
+  'connection points': { es: 'Puntos de conexión', en: 'Connection points', de: 'Anschlusspunkte', fr: 'Points de connexion', zh: '连接点' },
+  connection: { es: 'Conexión', en: 'Connection', de: 'Anschluss', fr: 'Connexion', zh: '连接' },
+  connector: { es: 'Conector', en: 'Connector', de: 'Stecker', fr: 'Connecteur', zh: '连接器' },
+  'connector type': { es: 'Tipo de conector', en: 'Connector type', de: 'Steckertyp', fr: 'Type de connecteur', zh: '连接器类型' },
+  'connection type': { es: 'Tipo de conexión', en: 'Connection type', de: 'Anschlussart', fr: 'Type de connexion', zh: '连接类型' },
+  'port size': { es: 'Tamaño de puerto', en: 'Port size', de: 'Anschlussgröße', fr: 'Taille du port', zh: '接口尺寸' },
+  'connection port size': { es: 'Tamaño del puerto de conexión', en: 'Connection port size', de: 'Anschlussgröße', fr: 'Taille du port de connexion', zh: '连接接口尺寸' },
+  'fluid used': { es: 'Fluido utilizado', en: 'Fluid used', de: 'Verwendetes Medium', fr: 'Fluide utilisé', zh: '使用流体' },
+  configuration: { es: 'Configuración', en: 'Configuration', de: 'Konfiguration', fr: 'Configuration', zh: '配置' },
+  'inlet air pressure': { es: 'Presión de entrada de aire', en: 'Inlet air pressure', de: 'Eingangsluftdruck', fr: 'Pression d’entrée d’air', zh: '入口空气压力' },
+  'outlet air atmospheric pressure dew point': { es: 'Punto de rocío atmosférico del aire de salida', en: 'Outlet air atmospheric pressure dew point', de: 'Taupunkt des Auslassluftdrucks bei Atmosphärendruck', fr: 'Point de rosée atmosphérique de l’air en sortie', zh: '出口空气大气压露点' },
+  'adjustment pressure': { es: 'Presión de ajuste', en: 'Adjustment pressure', de: 'Einstelldruck', fr: 'Pression de réglage', zh: '调节压力' },
+  'processing air flow rate (m3/min)': { es: 'Caudal de aire de proceso (m³/min)', en: 'Processing air flow rate (m³/min)', de: 'Prozessluftdurchfluss (m³/min)', fr: 'Débit d’air de traitement (m³/min)', zh: '处理空气流量 (m³/min)' },
+  'filter composition': { es: 'Composición del filtro', en: 'Filter composition', de: 'Filterzusammensetzung', fr: 'Composition du filtre', zh: '过滤器组成' },
+  'set pressure range': { es: 'Rango de presión de ajuste', en: 'Set pressure range', de: 'Einstelldruckbereich', fr: 'Plage de pression de réglage', zh: '设定压力范围' },
+  'operating temperature range': { es: 'Rango de temperatura de operación', en: 'Operating temperature range', de: 'Betriebstemperaturbereich', fr: 'Plage de température de fonctionnement', zh: '工作温度范围' },
+  'fluid medium': { es: 'Medio fluido', en: 'Fluid medium', de: 'Fluidmedium', fr: 'Fluide', zh: '流体介质' },
+  'operating pressure': { es: 'Presión de operación', en: 'Operating pressure', de: 'Betriebsdruck', fr: 'Pression de fonctionnement', zh: '工作压力' },
+  'maximum pressure': { es: 'Presión máxima', en: 'Maximum pressure', de: 'Maximaldruck', fr: 'Pression maximale', zh: '最大压力' },
+  'minimum pressure': { es: 'Presión mínima', en: 'Minimum pressure', de: 'Mindestdruck', fr: 'Pression minimale', zh: '最小压力' },
+  'flow rate': { es: 'Caudal', en: 'Flow rate', de: 'Durchfluss', fr: 'Débit', zh: '流量' },
+  'air flow rate': { es: 'Caudal de aire', en: 'Air flow rate', de: 'Luftdurchfluss', fr: 'Débit d’air', zh: '空气流量' },
+  'connection points count': { es: 'Cantidad de puntos de conexión', en: 'Connection points count', de: 'Anzahl der Anschlusspunkte', fr: 'Nombre de points de connexion', zh: '连接点数量' }
 };
 
 const TECHNICAL_TERM_I18N = {
