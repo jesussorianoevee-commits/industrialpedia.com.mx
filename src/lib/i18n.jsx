@@ -57,13 +57,37 @@ export async function translateParts(results, language) {
   const ids = [...new Set(results.map((r) => r?.id).filter(Boolean))];
   if (ids.length === 0) return results;
   try {
-    const translations = await base44.entities.PartTranslation.filter(
+    let translations = await base44.entities.PartTranslation.filter(
       { part_id: { $in: ids }, language },
       null,
       500,
       0,
       ['id', 'part_id', 'language', 'name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
     );
+
+    // Legacy parts may predate the automatic translation pipeline. Backfill
+    // only the visible result page, bounded by the server to prevent a bulk
+    // translation job from being triggered by a normal search.
+    const missingIds = ids.filter((id) => !(translations || []).some((t) => String(t.part_id) === String(id)));
+    if (missingIds.length) {
+      try {
+        await base44.functions.invoke('EnsurePartTranslations', {
+          part_ids: missingIds.slice(0, 10),
+          language
+        });
+        translations = await base44.entities.PartTranslation.filter(
+          { part_id: { $in: ids }, language },
+          null,
+          500,
+          0,
+          ['id', 'part_id', 'language', 'name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
+        );
+      } catch {
+        // The original Part remains the authoritative fallback if translation
+        // generation is temporarily unavailable.
+      }
+    }
+
     const byPart = new Map((translations || []).map((t) => [String(t.part_id), t]));
     return results.map((result) => {
       const translation = byPart.get(String(result.id));
