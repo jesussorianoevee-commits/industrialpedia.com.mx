@@ -438,7 +438,7 @@ export default async function (req) {
         if (q && !isPartNo && tokens.length) {
           for (const s of specs) {
             const attr = String(s.attribute_canonical || s.attribute_name || '').toLowerCase();
-            const value = String(s.normalized_value || s.original_value || '').toLowerCase();
+            const value = String(s.normalized_value ?? s.original_value ?? '').toLowerCase();
             const unit = String(s.normalized_unit || s.original_unit || '').toLowerCase();
             const haystack = `${attr} ${value} ${unit}`;
             if (tokens.some((t) => haystack.includes(t))) {
@@ -566,8 +566,8 @@ export default async function (req) {
       source_title: r.discovery?.title || '',
       top_specs: r.specs.slice(0, 4).map((s) => ({
         attribute: s.attribute_canonical || s.attribute_name,
-        value: s.normalized_value || s.original_value,
-        unit: s.normalized_unit || s.original_unit,
+        value: s.normalized_value ?? s.original_value,
+        unit: s.normalized_unit ?? s.original_unit,
         validated: s.validation_state === 'published' || s.validation_state === 'validated'
       }))
     });
