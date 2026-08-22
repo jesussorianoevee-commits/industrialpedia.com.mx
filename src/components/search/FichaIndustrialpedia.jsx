@@ -35,7 +35,8 @@ function SourceBadge({ page, verified, t }) {
   );
 }
 
-function SpecRow({ label, value, unit, page, verified, sourceUrl, language = 'es', t = { verified: 'VERIFIED', page: 'p.', noSource: 'N/A', source: 'source' } }) {
+function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
+  const { language, t } = useLanguage();
   if (value === undefined || value === null || String(value).trim() === '') return null;
   const text = `${value}${unit ? ` ${unit}` : ''}`;
 
