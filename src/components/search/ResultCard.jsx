@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -143,7 +143,7 @@ export default function ResultCard({ result }) {
         <div className="flex flex-wrap gap-1.5 mb-3">
           {result.top_specs.slice(0, 4).map((s, i) => (
             <span key={i} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/55 text-[11px]">
-              {s.attribute}: {s.value}{s.unit ? ` ${s.unit}` : ''}
+              {localizeSpecAttribute(s.attribute, language)}: {s.value}{s.unit ? ` ${s.unit}` : ''}
             </span>
           ))}
           {result.spec_count > 4 && (
