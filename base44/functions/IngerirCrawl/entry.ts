@@ -35,7 +35,7 @@ async function refreshSearchIndexForPart(base44, partId) {
   if (!part) return;
   const specs = await base44.asServiceRole.entities.Specification.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
   const evidence = await base44.asServiceRole.entities.Evidence.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
-  const specText = specs.map((s) => [s.attribute_canonical || s.attribute_name || '', s.normalized_value || s.original_value || '', s.normalized_unit || s.original_unit || ''].join(' ')).join(' | ');
+  const specText = specs.map((s) => [s.attribute_canonical || s.attribute_name || '', s.normalized_value ?? s.original_value ?? '', s.normalized_unit ?? s.original_unit ?? ''].join(' ')).join(' | ');
   const searchText = [part.part_number || '', part.part_number_normalized || '', part.manufacturer_name || '', part.category || '', part.subcategory || '', part.description || '', specText].join(' ').replace(/\\s+/g, ' ').trim();
   const payload = {
     part_id: part.id, part_number: part.part_number || '', part_number_normalized: part.part_number_normalized || '',
