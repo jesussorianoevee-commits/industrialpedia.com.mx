@@ -12,6 +12,7 @@ import Buscar from '@/pages/Buscar';
 import Parte from '@/pages/Parte';
 import Comparar from '@/pages/Comparar';
 import CompararReferencia from '@/pages/CompararReferencia';
+import Decidir from '@/pages/Decidir';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
         <Route path="/parte/:id" element={<Parte />} />
         <Route path="/comparar/:id" element={<Comparar />} />
         <Route path="/comparar-referencia" element={<CompararReferencia />} />
+        <Route path="/decidir" element={<Decidir />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
