@@ -3,9 +3,9 @@ import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lu
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 const SOURCE_TYPE_LABELS = {
-  official: 'Fabricante oficial',
-  distributor: 'Distribuidor',
-  cse_configured: 'Fuente web'
+  official: { es: 'Fabricante oficial', en: 'Official manufacturer', de: 'Offizieller Hersteller', fr: 'Fabricant officiel', zh: '官方制造商' },
+  distributor: { es: 'Distribuidor', en: 'Distributor', de: 'Händler', fr: 'Distributeur', zh: '经销商' },
+  cse_configured: { es: 'Fuente web', en: 'Web source', de: 'Webquelle', fr: 'Source web', zh: '网页来源' }
 };
 
 function isDisplayableSpec(spec) {
@@ -79,7 +79,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
     ...unverifiedSpecs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`)
   ]);
   const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute || '').toLowerCase()}|${String(s.value || '').toLowerCase()}`));
-  const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type] || SOURCE_TYPE_LABELS.cse_configured;
+  const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm" onClick={onClose}>
