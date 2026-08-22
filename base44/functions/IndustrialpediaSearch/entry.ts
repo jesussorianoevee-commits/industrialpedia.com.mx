@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { searchIndustrialpedia, INDUSTRIALPEDIA_API_VERSION } from '../../shared/supabaseIndustrialpediaApi.js';
+import { looksLikePartNumber } from '../../shared/searchRules.js';
 
 const GENERIC_QUERY_TERMS = new Set([
   'sensor', 'sensores', 'industrial', 'industriales', 'refaccion', 'refacciones', 'repuesto', 'repuestos',
@@ -116,7 +117,12 @@ export default async function (req: Request) {
     // 5 mm" sin obligar al usuario a conocer el número de parte.
     // Cada término relevante debe estar demostrado en descripción o especificación;
     // no se hacen coincidencias por palabras genéricas ni se inventan atributos.
-    if (q && knowledgeCore.length < limit) {
+    // Un número de parte es una consulta determinística de identidad. Si el
+    // Knowledge Core no devuelve coincidencia, NO debemos lanzar el fallback masivo
+    // de Part.list()+Specification.filter(): esa ruta escanea miles de registros,
+    // puede agotar el tiempo de ejecución y convertir un "no encontrado" en timeout.
+    // El fallback descriptivo queda reservado para consultas de texto libre.
+    if (q && !looksLikePartNumber(q) && knowledgeCore.length < limit) {
       try {
         const states = new Set(
           Array.isArray(filters.validation_states) && filters.validation_states.length
