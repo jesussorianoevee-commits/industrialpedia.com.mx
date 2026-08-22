@@ -67,6 +67,18 @@ export default function Parte() {
           }
         }
         if (!p) throw new Error('part_not_found');
+        // Completa únicamente la imagen desde la API canónica si el resultado de búsqueda no la trae.
+        // No sustituye ni modifica los datos técnicos de la pieza.
+        if (!p.image_url && !p.image?.url && !p.image?.image_url && !p.primary_image_url) {
+          try {
+            const canonicalResponse = await getPartIndustrialpedia(id);
+            const canonicalPart = canonicalResponse?.part;
+            const canonicalImage = canonicalPart?.image_url || canonicalPart?.image?.image_url || canonicalPart?.image?.url || canonicalPart?.primary_image_url || '';
+            if (canonicalImage) p = { ...p, image_url: canonicalImage };
+          } catch {
+            // La ficha sigue funcionando sin imagen si la fuente canónica no la tiene.
+          }
+        }
         const normalizedPart = {
           id: p.id,
           part_number: p.part_number,
