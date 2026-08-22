@@ -195,7 +195,7 @@ export default function Buscar() {
             autoFocus
           />
           <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-sm font-semibold px-4 py-1.5 rounded-full transition-colors">
-            Buscar
+            {t.search}
           </button>
 
           {showHistory && history.length > 0 && input.trim().length < 3 && !(input.trim() !== q.trim() && suggestions.length > 0) && (
@@ -326,8 +326,8 @@ export default function Buscar() {
             ) : kcResults.length > 0 && (
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `${t.foundPartsLabel} · ${areaLabel}` : t.foundPartsLabel}</div>
-                <div className="space-y-3">
-                  {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
+                <div className="space-y-2.5">
+                  {kcResults.map((r) => <ResultCard key={r.id} result={r} />)
                 </div>
               </section>
             )}
@@ -335,8 +335,8 @@ export default function Buscar() {
             {discoveryResults.length > 0 && (
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{t.structuredSources}</div>
-                <div className="space-y-3">
-                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
+                <div className="space-y-2.5">
+                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)
                 </div>
               </section>
             )}
