@@ -164,6 +164,7 @@ const AREA_I18N = {
   es: {},
   en: {
     'fuera-alcance': { name: 'Outside industrial scope', description: 'Identified products that are not industrial technical spare parts or supplies.' },
+    'otros-mro': { name: 'MRO / Other components', description: 'Identified components and supplies that do not yet fit a more specific technical discipline.' },
     'infraestructura-almacenamiento': { name: 'Infrastructure / Storage', description: 'Benches, racks, carts, containers and support furniture for operations and laboratories.' },
     'limpieza-epp': { name: 'Cleaning / PPE', description: 'Personal protection, cleanroom and cleaning materials.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Measurement', description: 'Instruments for measuring, recording, calibrating and verifying process variables.' },
@@ -183,6 +184,7 @@ const AREA_I18N = {
   },
   de: {
     'fuera-alcance': { name: 'Außerhalb des industriellen Umfangs', description: 'Identifizierte Produkte, die keine technischen Industrieersatzteile oder -materialien sind.' },
+    'otros-mro': { name: 'MRO / Andere Komponenten', description: 'Identifizierte Komponenten und Materialien ohne spezifischere technische Disziplin.' },
     'infraestructura-almacenamiento': { name: 'Infrastruktur / Lagerung', description: 'Arbeitsbänke, Regale, Wagen, Behälter und unterstützende Ausstattung.' },
     'limpieza-epp': { name: 'Reinigung / PSA', description: 'Persönliche Schutzausrüstung, Reinraum- und Reinigungsmaterialien.' },
     'instrumentacion-medicion': { name: 'Messtechnik / Instrumentierung', description: 'Mess-, Prüf-, Kalibrier- und Aufzeichnungsinstrumente für Prozessgrößen.' },
@@ -202,6 +204,7 @@ const AREA_I18N = {
   },
   fr: {
     'fuera-alcance': { name: 'Hors périmètre industriel', description: 'Produits identifiés qui ne sont pas des pièces ou fournitures techniques industrielles.' },
+    'otros-mro': { name: 'MRO / Autres composants', description: 'Composants et fournitures identifiés sans discipline technique plus précise.' },
     'infraestructura-almacenamiento': { name: 'Infrastructure / Stockage', description: 'Établis, rayonnages, chariots, conteneurs et mobilier de support.' },
     'limpieza-epp': { name: 'Nettoyage / EPI', description: 'Protection individuelle, salle propre et matériel de nettoyage.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Mesure', description: 'Instruments de mesure, d’enregistrement et d’étalonnage des variables de procédé.' },
@@ -221,6 +224,7 @@ const AREA_I18N = {
   },
   zh: {
     'fuera-alcance': { name: '不属于工业范围', description: '已识别但不属于工业技术备件或物料的产品。' },
+    'otros-mro': { name: 'MRO / 其他组件', description: '已识别但尚未归入更具体技术领域的组件和物料。' }
     'infraestructura-almacenamiento': { name: '基础设施 / 存储', description: '工作台、货架、推车、容器及支持设施。' },
     'limpieza-epp': { name: '清洁 / PPE', description: '个人防护、洁净室和清洁用品。' },
     'instrumentacion-medicion': { name: '仪器 / 测量', description: '用于测量、记录、校准和验证过程变量的仪器。' },
