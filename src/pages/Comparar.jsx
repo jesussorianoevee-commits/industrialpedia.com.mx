@@ -308,7 +308,7 @@ export default function Comparar() {
                 ? (typeof candidate === 'object' ? val(candidate) : String(candidate))
                 : '—';
               return { s, originalValue, candidateValue, state };
-            }).filter((row) => row.baseValue !== '—' || row.candidateValue !== '—');
+            }).filter((row) => row.originalValue !== '—' || row.candidateValue !== '—');
             const visible = expandedMobileSpecs[c.id] ? mobileRows : mobileRows.slice(0, 8);
             return (
               <section key={c.id || ci} className="rounded-xl border border-white/10 bg-[#0d141b] overflow-hidden">
@@ -326,7 +326,7 @@ export default function Comparar() {
                   <span className="text-white/50">Base:</span> {base.part_number} · <span className="text-white/50">Alternativa:</span> {c.part_number}
                 </div>
                 <div className="divide-y divide-white/[0.06]">
-                  {visible.map(({ s, baseValue, candidateValue, state }, j) => {
+                  {visible.map(({ s, originalValue, candidateValue, state }, j) => {
                     const valueClass = state === 'equal'
                       ? 'text-[#16c79a]'
                       : state === 'different'
@@ -339,14 +339,14 @@ export default function Comparar() {
                       <div key={`${s.attribute_name}-${j}`} className="grid grid-cols-[1fr_auto] gap-3 p-3">
                         <div className="min-w-0">
                           <div className="text-[10px] text-white/45">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
-                          <div className="mt-1 grid grid-cols-2 gap-2">
-                            <div className="min-w-0 rounded-md bg-white/[0.025] px-2 py-1.5">
-                              <div className="text-[8px] uppercase tracking-wider text-white/25">Base</div>
-                              <div className="mt-0.5 break-words font-mono text-[10px] text-white/65">{baseValue}</div>
-                            </div>
-                            <div className="min-w-0 rounded-md bg-white/[0.025] px-2 py-1.5">
-                              <div className="text-[8px] uppercase tracking-wider text-white/25">{t.alternatives || 'Alternativa'}</div>
+                          <div className="mt-1 grid grid-cols-2 gap-2" dir="ltr">
+                            <div className={`min-w-0 rounded-md px-2 py-1.5 ${state === 'equal' ? 'bg-[#16c79a]/[0.06]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : 'bg-white/[0.025]'}`}>
+                              <div className="text-[8px] uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
                               <div className={`mt-0.5 break-words font-mono text-[10px] font-semibold ${valueClass}`}>{candidateValue}</div>
+                            </div>
+                            <div className="min-w-0 rounded-md bg-[#65a9e6]/[0.035] px-2 py-1.5">
+                              <div className="text-[8px] uppercase tracking-wider text-white/40">Original · {base.part_number}</div>
+                              <div className="mt-0.5 break-words font-mono text-[10px] text-white/85">{originalValue}</div>
                             </div>
                           </div>
                         </div>
