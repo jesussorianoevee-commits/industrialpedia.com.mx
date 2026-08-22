@@ -239,16 +239,34 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   };
 }
 
-let categoryStatsCache = { value: null, expiresAt: 0 };
+const VERIFIED_CATEGORY_STATS_FALLBACK = {
+  neumatica: 13,
+  sensores: 181,
+  robotica: 2,
+  'electronica-control': 13,
+  'mecanica-transmision': 68,
+  'fuera-alcance': 79,
+  'infraestructura-almacenamiento': 1287,
+  'limpieza-epp': 527,
+  'instrumentacion-medicion': 281,
+  'laboratorio-cientifico': 3827,
+  'fluidos-bombeo': 292,
+  'herramientas-mro': 340,
+  'soldadura-union': 101,
+  'consumibles-mro': 312,
+  'proceso-maquinaria': 6,
+  'otros-mro': 325,
+  sin_clasificar: 0,
+  'otras-refacciones': 0
+};
 
-export async function getIndustrialpediaCategoryStats() {
-  // No usamos el RPC histórico de estadísticas: su taxonomía quedó desfasada.
-  // La fuente canónica de clasificación es industrialpedia_classify_area_v3,
-  // expuesta de forma segura a través del catálogo por área. Cada consulta con
-  // limit=1 devuelve result_count, por lo que no descargamos miles de piezas.
-  const now = Date.now();
-  if (categoryStatsCache.value && categoryStatsCache.expiresAt > now) return categoryStatsCache.value;
+let categoryStatsCache = {
+  value: VERIFIED_CATEGORY_STATS_FALLBACK,
+  expiresAt: 0,
+  refreshPromise: null
+};
 
+async function refreshIndustrialpediaCategoryStats() {
   const areas = [
     'neumatica', 'sensores', 'robotica', 'electronica-control', 'mecanica-transmision',
     'fuera-alcance', 'infraestructura-almacenamiento', 'limpieza-epp',
@@ -257,14 +275,40 @@ export async function getIndustrialpediaCategoryStats() {
     'otros-mro'
   ];
 
-  const pairs = await Promise.all(areas.map(async (area) => {
-    const result = await getIndustrialpediaAreaParts(area, 1, 0);
-    return [area, Number(result?.total) || 0];
-  }));
+  // Estas consultas son costosas en el RPC actual; secuenciarlas evita que
+  // dieciséis llamadas simultáneas provoquen statement_timeout en PostgREST.
+  const next = { sin_clasificar: 0, 'otras-refacciones': 0 };
+  for (const area of areas) {
+    try {
+      const result = await getIndustrialpediaAreaParts(area, 1, 0);
+      next[area] = Number(result?.total) || 0;
+    } catch {
+      // Conservamos el último valor conocido para esta área.
+      next[area] = Number(categoryStatsCache.value?.[area]) || 0;
+    }
+  }
 
-  const value = Object.fromEntries([...pairs, ['sin_clasificar', 0], ['otras-refacciones', 0]]);
-  categoryStatsCache = { value, expiresAt: now + 5 * 60 * 1000 };
-  return value;
+  categoryStatsCache = {
+    value: next,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    refreshPromise: null
+  };
+  return next;
+}
+
+export async function getIndustrialpediaCategoryStats() {
+  const now = Date.now();
+  if (categoryStatsCache.expiresAt > now) return categoryStatsCache.value;
+
+  // Stale-while-revalidate: la UI recibe inmediatamente el último estado
+  // válido y la actualización pesada se ejecuta una sola vez en segundo plano.
+  if (!categoryStatsCache.refreshPromise) {
+    categoryStatsCache.refreshPromise = refreshIndustrialpediaCategoryStats().catch(() => {
+      categoryStatsCache.refreshPromise = null;
+      return categoryStatsCache.value;
+    });
+  }
+  return categoryStatsCache.value;
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
