@@ -1,4 +1,4 @@
-import { ShieldCheck, AlertCircle, FileText, Link2 } from 'lucide-react';
+import { FileText, Link2 } from 'lucide-react';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 function SpecRow({ spec, evidence, provenance, language }) {
