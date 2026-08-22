@@ -19,6 +19,11 @@ export async function autoTranslatePart(base44: any, part: any) {
 
   const sourceName = cleanText(part.name || part.product_name || part.description || part.part_number);
   const sourceDescription = cleanText(part.description || part.name || '');
+  const sourceCategory = cleanText(part.category || '');
+  const sourceSubcategory = cleanText(part.subcategory || '');
+  const sourceSpecifications = part.specifications && typeof part.specifications === 'object' && !Array.isArray(part.specifications)
+    ? Object.fromEntries(Object.entries(part.specifications).slice(0, 40))
+    : {};
   if (!sourceName) return { created: 0, skipped: 0, failed: 0 };
 
   const existing = await base44.asServiceRole.entities.PartTranslation.filter(
