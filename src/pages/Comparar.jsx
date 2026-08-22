@@ -95,6 +95,7 @@ export default function Comparar() {
   const [error, setError] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedResults, setExpandedResults] = useState(false);
+  const [expandedSpecs, setExpandedSpecs] = useState({});
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -200,13 +201,14 @@ export default function Comparar() {
               </div>
               {c.product_name && <div className="mt-3 text-[10px] leading-relaxed text-white/45">{c.product_name}</div>}
               {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">Ficha técnica rápida</div>
+                <div className="flex items-center justify-between gap-2"><div className="text-[9px] font-bold uppercase tracking-wider text-white/35">Ficha técnica</div><div className="text-[9px] font-mono text-white/25">{c.specs.length} datos</div></div>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {c.specs.slice(0, 6).map((s, j) => <div key={j} className="min-w-0">
+                  {(expandedSpecs[c.id] ? c.specs : c.specs.slice(0, 6)).map((s, j) => <div key={j} className="min-w-0 rounded-md border border-white/[0.04] bg-black/[0.08] px-2 py-1.5">
                     <div className="truncate text-[9px] text-white/30">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
-                    <div className="truncate font-mono text-[10px] text-white/75">{val(s)}</div>
+                    <div className="font-mono text-[10px] text-white/80 break-words">{val(s)}</div>
                   </div>)}
                 </div>
+                {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
               </div>}
               <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
