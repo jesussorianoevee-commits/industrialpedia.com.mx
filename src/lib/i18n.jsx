@@ -44,9 +44,40 @@ const SPEC_ATTRIBUTE_I18N = {
   'outer cylinder length (mm)': { es: 'Longitud exterior del cilindro (mm)', en: 'Outer cylinder length (mm)', de: 'Äußere Zylinderlänge (mm)', fr: 'Longueur extérieure du cylindre (mm)', zh: '外圆柱长度 (mm)' }
 };
 
+const TECHNICAL_TERM_I18N = {
+  general: { es: '', en: '', de: '', fr: '', zh: '' },
+  cylinder: { es: 'Cilindro', en: 'Cylinder', de: 'Zylinder', fr: 'Vérin', zh: '气缸' },
+  plc: { es: 'PLC', en: 'PLC', de: 'SPS', fr: 'API', zh: 'PLC' },
+  proximity_sensor: { es: 'Sensor de proximidad', en: 'Proximity sensor', de: 'Näherungssensor', fr: 'Capteur de proximité', zh: '接近传感器' },
+  pressure_sensor: { es: 'Sensor de presión', en: 'Pressure sensor', de: 'Drucksensor', fr: 'Capteur de pression', zh: '压力传感器' },
+  servo_drive: { es: 'Servodrive', en: 'Servo drive', de: 'Servoantrieb', fr: 'Servo-variateur', zh: '伺服驱动器' },
+  servo_motor: { es: 'Servomotor', en: 'Servo motor', de: 'Servomotor', fr: 'Servomoteur', zh: '伺服电机' },
+  solenoid_valve: { es: 'Válvula solenoide', en: 'Solenoid valve', de: 'Magnetventil', fr: 'Électrovanne', zh: '电磁阀' },
+  fieldbus_node: { es: 'Nodo Fieldbus', en: 'Fieldbus node', de: 'Fieldbus-Knoten', fr: 'Nœud Fieldbus', zh: '现场总线节点' },
+  'Texas Instruments': { es: 'Texas Instruments', en: 'Texas Instruments', de: 'Texas Instruments', fr: 'Texas Instruments', zh: '德州仪器' }
+};
+
 export function localizeSpecAttribute(attribute, language = 'es') {
   const key = String(attribute || '').trim().toLowerCase();
   return SPEC_ATTRIBUTE_I18N[key]?.[language] || attribute;
+}
+
+export function localizeTechnicalTerm(term, language = 'es') {
+  const raw = String(term || '').trim();
+  if (!raw) return '';
+  return TECHNICAL_TERM_I18N[raw]?.[language] ?? TECHNICAL_TERM_I18N[raw.toLowerCase()]?.[language] ?? raw;
+}
+
+export function localizedCount(count, singular, plural, language = 'es') {
+  const n = Number(count) || 0;
+  const forms = {
+    es: n === 1 ? singular : plural,
+    en: n === 1 ? singular : plural,
+    de: n === 1 ? singular : plural,
+    fr: n === 0 || n === 1 ? singular : plural,
+    zh: singular
+  };
+  return `${n.toLocaleString(language === 'zh' ? 'zh-CN' : language)} ${forms[language] || plural}`;
 }
 
 // Batch translation lookup: one request for a result page, with the original
