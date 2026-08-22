@@ -32,6 +32,7 @@ export default function SiteHeader() {
         <nav className="hidden md:flex items-center gap-1">
           <Link to="/buscar" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Buscar</Link>
           <Link to="/comparar-referencia" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Comparar</Link>
+          <Link to="/decidir" className="px-3 py-2 rounded-md text-xs text-white/55 hover:text-white hover:bg-white/5 transition-colors">Decidir</Link>
         </nav>
 
         <div className="flex items-center gap-2">
