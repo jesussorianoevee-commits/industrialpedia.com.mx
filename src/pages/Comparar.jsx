@@ -180,8 +180,14 @@ export default function Comparar() {
               {alternatives.map((c, i) => {
             const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             const evidence = evidenceSummary(c, language);
+            const visualState = decisionVisualState(c);
+            const visual = DECISION_VISUAL[visualState];
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
-              <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
+              <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider`}><span className={`h-2 w-2 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
+              <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] px-3 py-2">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">Qué lo hace {visualState === 'compatible' ? 'compatible' : visualState === 'not_compatible' ? 'no compatible' : 'similar'}</div>
+                <div className="mt-1 text-[10px] text-white/55">{visualState === 'compatible' ? `${equal} propiedades coinciden con la ficha base.` : visualState === 'not_compatible' ? `${evidence.different.length} propiedades presentan diferencias críticas.` : `${equal} propiedades coinciden y ${evidence.different.length} presentan diferencias o requieren revisión.`}</div>
+              </div>
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
                   {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
