@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -19,7 +19,6 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import { LanguageProvider } from '@/lib/i18n';
 
 const AuthenticatedApp = () => {
@@ -49,15 +48,13 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
-      {/* La portada es pública: debe ser visible antes de iniciar sesión. */}
+      {/* La aplicación es navegable públicamente. El login solo vive en /login y no debe interrumpir Buscar, Encontrar, Comparar o Decidir. */}
       <Route path="/" element={<Home />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/buscar" element={<Buscar />} />
-        <Route path="/parte/:id" element={<Parte />} />
-        <Route path="/comparar/:id" element={<Comparar />} />
-        <Route path="/comparar-referencia" element={<CompararReferencia />} />
-        <Route path="/decidir" element={<Decidir />} />
-      </Route>
+      <Route path="/buscar" element={<Buscar />} />
+      <Route path="/parte/:id" element={<Parte />} />
+      <Route path="/comparar/:id" element={<Comparar />} />
+      <Route path="/comparar-referencia" element={<CompararReferencia />} />
+      <Route path="/decidir" element={<Decidir />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
