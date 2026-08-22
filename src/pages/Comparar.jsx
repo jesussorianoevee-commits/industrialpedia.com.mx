@@ -96,6 +96,7 @@ export default function Comparar() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedResults, setExpandedResults] = useState(false);
   const [expandedSpecs, setExpandedSpecs] = useState({});
+  const [expandedMobileSpecs, setExpandedMobileSpecs] = useState({});
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -239,7 +240,83 @@ export default function Comparar() {
             <div><h2 className="text-sm font-semibold text-white/90">Fichas técnicas comparadas</h2><p className="mt-1 text-[11px] text-white/35">Aquí se ve exactamente qué dato de la ficha de cada fabricante coincide, difiere o falta.</p></div>
           </div>
         </section>
-        <div className="ip-scroll-x rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
+        {/* En móvil no obligamos al usuario a adivinar qué columna está viendo.
+            La tabla completa sigue disponible en desktop/tablet, pero en teléfono
+            mostramos una matriz apilada por alternativa con los mismos datos y estados. */}
+        <div className="mb-4 md:hidden space-y-3">
+          {alternatives.map((c, ci) => {
+            const mobileRows = specRows.map((s) => {
+              const baseValue = s.original_value !== null && s.original_value !== undefined && s.original_value !== ''
+                ? val(s)
+                : '—';
+              const candidate = valueFor(s, c);
+              const state = stateFor(s, c);
+              const candidateValue = candidate !== null && candidate !== undefined && candidate !== ''
+                ? (typeof candidate === 'object' ? val(candidate) : String(candidate))
+                : '—';
+              return { s, baseValue, candidateValue, state };
+            }).filter((row) => row.baseValue !== '—' || row.candidateValue !== '—');
+            const visible = expandedMobileSpecs[c.id] ? mobileRows : mobileRows.slice(0, 8);
+            return (
+              <section key={c.id || ci} className="rounded-xl border border-white/10 bg-[#0d141b] overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
+                  <div className="min-w-0">
+                    <div className="text-[9px] uppercase tracking-wider text-white/30">{t.alternatives || 'Alternativa'}</div>
+                    <div className="mt-1 font-mono text-sm font-semibold text-[#65a9e6] break-all">{c.part_number}</div>
+                    <div className="mt-0.5 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
+                  </div>
+                  <div className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${statusMeta(c, t).cls}`}>
+                    {statusMeta(c, t).label}
+                  </div>
+                </div>
+                <div className="px-3 py-2 text-[9px] text-white/30 border-b border-white/[0.06]">
+                  <span className="text-white/50">Base:</span> {base.part_number} · <span className="text-white/50">Alternativa:</span> {c.part_number}
+                </div>
+                <div className="divide-y divide-white/[0.06]">
+                  {visible.map(({ s, baseValue, candidateValue, state }, j) => {
+                    const valueClass = state === 'equal'
+                      ? 'text-[#16c79a]'
+                      : state === 'different'
+                        ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300')
+                        : state === 'not_comparable'
+                          ? 'text-red-300'
+                          : 'text-white/35';
+                    const stateIcon = state === 'equal' ? '✓' : state === 'different' ? '⚠' : state === 'not_comparable' ? '✕' : '○';
+                    return (
+                      <div key={`${s.attribute_name}-${j}`} className="grid grid-cols-[1fr_auto] gap-3 p-3">
+                        <div className="min-w-0">
+                          <div className="text-[10px] text-white/45">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
+                          <div className="mt-1 grid grid-cols-2 gap-2">
+                            <div className="min-w-0 rounded-md bg-white/[0.025] px-2 py-1.5">
+                              <div className="text-[8px] uppercase tracking-wider text-white/25">Base</div>
+                              <div className="mt-0.5 break-words font-mono text-[10px] text-white/65">{baseValue}</div>
+                            </div>
+                            <div className="min-w-0 rounded-md bg-white/[0.025] px-2 py-1.5">
+                              <div className="text-[8px] uppercase tracking-wider text-white/25">{t.alternatives || 'Alternativa'}</div>
+                              <div className={`mt-0.5 break-words font-mono text-[10px] font-semibold ${valueClass}`}>{candidateValue}</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`pt-5 text-xs font-bold ${valueClass}`} aria-label={state}>{stateIcon}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {mobileRows.length > 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedMobileSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))}
+                    className="w-full border-t border-white/[0.07] bg-[#65a9e6]/[0.04] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6]"
+                  >
+                    {expandedMobileSpecs[c.id] ? 'Ver menos' : `Ver más · ${mobileRows.length - 8} datos`}
+                  </button>
+                )}
+              </section>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:block ip-scroll-x rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
