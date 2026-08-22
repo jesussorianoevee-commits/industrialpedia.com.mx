@@ -126,8 +126,8 @@ export function groupSpecsByTemplate(specs, template) {
   });
   const others = specs.filter((s, i) => !used.has(i)).map((s) => ({
     label: s.attribute_name || s.attribute,
-    value: s.normalized_value || s.original_value || '',
-    unit: s.normalized_unit || s.original_unit || '',
+    value: s.normalized_value ?? s.original_value ?? '',
+    unit: s.normalized_unit ?? s.original_unit ?? ''
     evidence: s.evidence,
     available: true
   }));
