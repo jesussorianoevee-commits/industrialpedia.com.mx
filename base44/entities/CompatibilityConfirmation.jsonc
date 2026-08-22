@@ -1,0 +1,47 @@
+{
+  "name": "CompatibilityConfirmation",
+  "type": "object",
+  "properties": {
+    "relation_id": {
+      "type": "string"
+    },
+    "source_part_id": {
+      "type": "string"
+    },
+    "target_part_id": {
+      "type": "string"
+    },
+    "contributor_user_id": {
+      "type": "string"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "incompatible"
+      ]
+    },
+    "experience_type": {
+      "type": "string",
+      "enum": [
+        "field_use",
+        "installation",
+        "technical_review"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "created_at_client": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "source_part_id",
+    "target_part_id",
+    "contributor_user_id",
+    "outcome",
+    "experience_type"
+  ]
+}
