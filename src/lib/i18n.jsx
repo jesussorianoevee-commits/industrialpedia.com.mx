@@ -108,9 +108,61 @@ const TECHNICAL_TERM_I18N = {
   'Texas Instruments': { es: 'Texas Instruments', en: 'Texas Instruments', de: 'Texas Instruments', fr: 'Texas Instruments', zh: '德州仪器' }
 };
 
+const SPEC_WORD_I18N = {
+  connection: { es: 'conexión', en: 'connection', de: 'Anschluss', fr: 'connexion', zh: '连接' },
+  points: { es: 'puntos', en: 'points', de: 'Punkte', fr: 'points', zh: '点' },
+  point: { es: 'punto', en: 'point', de: 'Punkt', fr: 'point', zh: '点' },
+  type: { es: 'tipo', en: 'type', de: 'Typ', fr: 'type', zh: '类型' },
+  used: { es: 'utilizado', en: 'used', de: 'verwendet', fr: 'utilisé', zh: '使用' },
+  fluid: { es: 'fluido', en: 'fluid', de: 'Medium', fr: 'fluide', zh: '流体' },
+  air: { es: 'aire', en: 'air', de: 'Luft', fr: 'air', zh: '空气' },
+  inlet: { es: 'entrada', en: 'inlet', de: 'Eingang', fr: 'entrée', zh: '入口' },
+  outlet: { es: 'salida', en: 'outlet', de: 'Ausgang', fr: 'sortie', zh: '出口' },
+  pressure: { es: 'presión', en: 'pressure', de: 'Druck', fr: 'pression', zh: '压力' },
+  range: { es: 'rango', en: 'range', de: 'Bereich', fr: 'plage', zh: '范围' },
+  operating: { es: 'operación', en: 'operating', de: 'Betriebs', fr: 'fonctionnement', zh: '工作' },
+  temperature: { es: 'temperatura', en: 'temperature', de: 'Temperatur', fr: 'température', zh: '温度' },
+  filter: { es: 'filtro', en: 'filter', de: 'Filter', fr: 'filtre', zh: '过滤器' },
+  composition: { es: 'composición', en: 'composition', de: 'Zusammensetzung', fr: 'composition', zh: '组成' },
+  adjustment: { es: 'ajuste', en: 'adjustment', de: 'Einstellung', fr: 'réglage', zh: '调节' },
+  processing: { es: 'proceso', en: 'processing', de: 'Prozess', fr: 'traitement', zh: '处理' },
+  flow: { es: 'flujo', en: 'flow', de: 'Durchfluss', fr: 'débit', zh: '流量' },
+  rate: { es: 'caudal', en: 'rate', de: 'Rate', fr: 'débit', zh: '速率' },
+  size: { es: 'tamaño', en: 'size', de: 'Größe', fr: 'taille', zh: '尺寸' },
+  material: { es: 'material', en: 'material', de: 'Material', fr: 'matière', zh: '材料' },
+  model: { es: 'modelo', en: 'model', de: 'Modell', fr: 'modèle', zh: '型号' },
+  number: { es: 'número', en: 'number', de: 'Nummer', fr: 'numéro', zh: '编号' },
+  name: { es: 'nombre', en: 'name', de: 'Name', fr: 'nom', zh: '名称' },
+  product: { es: 'producto', en: 'product', de: 'Produkt', fr: 'produit', zh: '产品' },
+  mounting: { es: 'montaje', en: 'mounting', de: 'Montage', fr: 'montage', zh: '安装' },
+  protection: { es: 'protección', en: 'protection', de: 'Schutz', fr: 'protection', zh: '防护' },
+  maximum: { es: 'máximo', en: 'maximum', de: 'maximal', fr: 'maximal', zh: '最大' },
+  minimum: { es: 'mínimo', en: 'minimum', de: 'minimal', fr: 'minimal', zh: '最小' },
+  length: { es: 'longitud', en: 'length', de: 'Länge', fr: 'longueur', zh: '长度' },
+  width: { es: 'ancho', en: 'width', de: 'Breite', fr: 'largeur', zh: '宽度' },
+  height: { es: 'altura', en: 'height', de: 'Höhe', fr: 'hauteur', zh: '高度' },
+  diameter: { es: 'diámetro', en: 'diameter', de: 'Durchmesser', fr: 'diamètre', zh: '直径' },
+  depth: { es: 'profundidad', en: 'depth', de: 'Tiefe', fr: 'profondeur', zh: '深度' },
+  voltage: { es: 'voltaje', en: 'voltage', de: 'Spannung', fr: 'tension', zh: '电压' },
+  current: { es: 'corriente', en: 'current', de: 'Strom', fr: 'courant', zh: '电流' },
+  power: { es: 'potencia', en: 'power', de: 'Leistung', fr: 'puissance', zh: '功率' },
+  frequency: { es: 'frecuencia', en: 'frequency', de: 'Frequenz', fr: 'fréquence', zh: '频率' }
+};
+
 export function localizeSpecAttribute(attribute, language = 'es') {
-  const key = String(attribute || '').trim().toLowerCase();
-  return SPEC_ATTRIBUTE_I18N[key]?.[language] || attribute;
+  const original = String(attribute || '').trim();
+  const key = original.toLowerCase();
+  if (!original) return '';
+  if (SPEC_ATTRIBUTE_I18N[key]?.[language]) return SPEC_ATTRIBUTE_I18N[key][language];
+
+  // Technical labels are UI metadata, not source results. For an unknown
+  // compound label, translate known English attribute words while preserving
+  // numbers, units, model codes and punctuation exactly.
+  const translated = key.replace(/[a-z]+/gi, (word) => {
+    const entry = SPEC_WORD_I18N[word.toLowerCase()];
+    return entry?.[language] || word;
+  });
+  return translated;
 }
 
 export function localizeTechnicalTerm(term, language = 'es') {
