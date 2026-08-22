@@ -44,13 +44,22 @@ export default function Buscar() {
   });
 
   const saveToHistory = (term) => {
-    if (!term.trim()) return;
+    const clean = term.trim();
+    if (!clean) return;
     setHistory((prev) => {
-      const next = [term, ...prev.filter((s) => s !== term)].slice(0, 8);
+      const next = [clean, ...prev.filter((s) => s !== clean)].slice(0, 8);
       try { localStorage.setItem('industrialpedia_search_history', JSON.stringify(next)); } catch {}
       return next;
     });
   };
+
+  // El historial también funciona como fuente de recuperación rápida: mientras
+  // el usuario escribe, las búsquedas anteriores que coincidan con el texto
+  // aparecen junto con las sugerencias de componentes. Se conserva localmente
+  // para no enviar historial personal al backend.
+  const historySuggestions = input.trim().length >= 2
+    ? history.filter((term) => term.toLowerCase().includes(input.trim().toLowerCase())).slice(0, 5)
+    : [];
 
   const runAreaBrowse = useCallback(async (areaKey) => {
     const reqId = ++searchReqId.current;
