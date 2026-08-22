@@ -46,11 +46,24 @@ function statusMeta(component, t) {
 
 function evidenceSummary(component, language = 'es') {
   const differences = Array.isArray(component?.comparison?.differences) ? component.comparison.differences : [];
-  const equal = differences.filter((d) => d?.state === 'equal').slice(0, 3);
-  const different = differences.filter((d) => d?.state === 'different').slice(0, 2);
-  const missing = differences.filter((d) => ['base_only', 'candidate_only', 'not_comparable'].includes(d?.state)).slice(0, 2);
+  const equal = differences.filter((d) => d?.state === 'equal');
+  const different = differences.filter((d) => d?.state === 'different');
+  const missing = differences.filter((d) => ['base_only', 'candidate_only', 'not_comparable'].includes(d?.state));
   return { equal, different, missing };
 }
+
+function decisionVisualState(component) {
+  const state = component?.comparison?.state;
+  if (state === 'compatible') return 'compatible';
+  if (state === 'not_compatible') return 'not_compatible';
+  return 'similar';
+}
+
+const DECISION_VISUAL = {
+  compatible: { label: 'COMPATIBLE', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.10] text-[#16c79a]', dot: 'bg-[#16c79a]' },
+  similar: { label: 'SIMILAR', cls: 'border-amber-400/60 bg-amber-400/[0.08] text-amber-300', dot: 'bg-amber-300' },
+  not_compatible: { label: 'NO COMPATIBLE', cls: 'border-red-400/60 bg-red-400/[0.08] text-red-300', dot: 'bg-red-400' }
+};
 
 function compactComparisonValue(value) {
   if (value === null || value === undefined || value === '') return '—';
