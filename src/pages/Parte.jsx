@@ -82,12 +82,15 @@ export default function Parte() {
             null,
             5,
             0,
-            ['name', 'description', 'status', 'translation_version']
+            ['name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
           );
           const translation = translations?.[0];
           if (translation?.name) {
             normalizedPart.display_name = translation.name;
             normalizedPart.description = translation.description || normalizedPart.description;
+            normalizedPart.category = translation.category || normalizedPart.category;
+            normalizedPart.subcategory = translation.subcategory || '';
+            normalizedPart.translation_specifications = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
             normalizedPart.translation_status = translation.status || 'machine_draft';
           }
         } catch {
@@ -103,16 +106,21 @@ export default function Parte() {
         const specEntries = Object.keys(rawSpecs).length > 0
           ? Object.entries(rawSpecs)
           : fallbackSpecs.map((s) => [s.attribute || s.attribute_name, { value: s.value, unit: s.unit }]);
+        const translatedSpecifications = normalizedPart.translation_specifications || {};
         const specList = specEntries
           .filter(([attribute, raw]) => attribute && raw !== null && raw !== undefined && raw !== '')
           .map(([attribute, raw]) => {
             const isObject = raw && typeof raw === 'object' && !Array.isArray(raw);
             const value = isObject ? (raw.value ?? null) : raw;
             const unit = isObject ? (raw.unit ?? null) : null;
+            const localized = translatedSpecifications[attribute];
+            const localizedAttribute = localized && typeof localized === 'object' ? (localized.attribute || localized.label || attribute) : (typeof localized === 'string' ? localized : attribute);
+            const localizedValue = localized && typeof localized === 'object' ? (localized.value ?? value) : value;
             return {
               id: `${p.id}:${attribute}`,
-              attribute_name: attribute,
-              original_value: value,
+              attribute_name: localizedAttribute,
+              original_attribute_name: attribute,
+              original_value: localizedValue,
               original_unit: unit,
               normalized_value: null,
               normalized_unit: null,
