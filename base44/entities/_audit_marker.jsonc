@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "_audit_marker"
+}

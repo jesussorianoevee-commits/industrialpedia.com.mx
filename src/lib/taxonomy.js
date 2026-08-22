@@ -71,3 +71,45 @@ export const AREAS = [
 
 export const TOTAL_TYPES = 129;
 export const POPULAR_TAGS = ['Balluff', 'Eaton', 'Aubo'];
+
+const AREA_I18N = {
+  es: {},
+  en: {
+    neumatica: { name: 'Pneumatics', description: 'Valves, cylinders, grippers and compressed-air systems.' },
+    sensores: { name: 'Sensors', description: 'Inductive, capacitive, photoelectric sensors and encoders.' },
+    robotica: { name: 'Robotics', description: 'Servo motors, gearboxes and components for robotic cells.' },
+    'electronica-control': { name: 'Electronics / Control', description: 'PLC, HMI, I/O boards and electronic components.' },
+    'mecanica-transmision': { name: 'Mechanical / Transmission', description: 'Couplings, bearings, belts and mechanical transmission elements.' },
+    'otras-refacciones': { name: 'Other spare parts', description: 'Available spare parts that do not yet have enough technical classification for an area.' }
+  },
+  de: {
+    neumatica: { name: 'Pneumatik', description: 'Ventile, Zylinder, Greifer und Druckluftsysteme.' },
+    sensores: { name: 'Sensoren', description: 'Induktive, kapazitive, photoelektrische Sensoren und Encoder.' },
+    robotica: { name: 'Robotik', description: 'Servomotoren, Getriebe und Komponenten für Roboterzellen.' },
+    'electronica-control': { name: 'Elektronik / Steuerung', description: 'SPS, HMI, E/A-Karten und elektronische Komponenten.' },
+    'mecanica-transmision': { name: 'Mechanik / Antriebstechnik', description: 'Kupplungen, Lager, Riemen und mechanische Übertragungselemente.' },
+    'otras-refacciones': { name: 'Andere Ersatzteile', description: 'Verfügbare Ersatzteile ohne ausreichende technische Klassifizierung für einen Bereich.' }
+  },
+  fr: {
+    neumatica: { name: 'Pneumatique', description: 'Vannes, vérins, préhenseurs et systèmes d’air comprimé.' },
+    sensores: { name: 'Capteurs', description: 'Capteurs inductifs, capacitifs, photoélectriques et codeurs.' },
+    robotica: { name: 'Robotique', description: 'Servomoteurs, réducteurs et composants pour cellules robotisées.' },
+    'electronica-control': { name: 'Électronique / Contrôle', description: 'API, IHM, cartes E/S et composants électroniques.' },
+    'mecanica-transmision': { name: 'Mécanique / Transmission', description: 'Accouplements, roulements, courroies et éléments de transmission mécanique.' },
+    'otras-refacciones': { name: 'Autres pièces', description: 'Pièces disponibles qui ne disposent pas encore d’une classification technique suffisante.' }
+  },
+  zh: {
+    neumatica: { name: '气动', description: '阀、气缸、夹爪和压缩空气系统。' },
+    sensores: { name: '传感器', description: '电感式、电容式、光电传感器和编码器。' },
+    robotica: { name: '机器人技术', description: '伺服电机、减速机和机器人单元组件。' },
+    'electronica-control': { name: '电子 / 控制', description: 'PLC、HMI、I/O 模块和电子元件。' },
+    'mecanica-transmision': { name: '机械 / 传动', description: '联轴器、轴承、皮带及机械传动元件。' },
+    'otras-refacciones': { name: '其他备件', description: '尚未具备足够技术分类以归入具体领域的可用备件。' }
+  }
+};
+
+export function getLocalizedArea(area, language = 'es') {
+  const localized = AREA_I18N[language]?.[area.id];
+  if (!localized) return area;
+  return { ...area, name: localized.name, description: localized.description };
+}
