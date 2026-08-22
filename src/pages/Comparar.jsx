@@ -150,6 +150,9 @@ export default function Comparar() {
             const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
+              <div className="mt-3 text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
+              <div className="mt-1 font-mono text-sm font-semibold text-white">{c.part_number}</div>
+              <div className="mt-0.5 truncate text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
               <div className="mt-3 text-xs text-white/50">{t.compatibility}</div>
               <div className="mt-1 text-sm font-semibold text-white/80">{meta.short}</div>
               <div className="mt-2 text-[9px] text-white/30">{t.comparedAgainst}: <span className="font-mono text-white/50">{base.part_number}</span></div>
