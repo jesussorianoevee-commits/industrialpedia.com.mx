@@ -31,13 +31,22 @@ function normalizedDisplayFor(normalized) {
   if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente'}: ${item?.normalized_value ?? '—'}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
   return normalized.unit ? `${normalized.value} ${normalized.unit}` : String(normalized.value);
 }
-function statusMeta(component) {
-  return STATE[component?.comparison?.state] || STATE.insufficient;
+function statusMeta(component, t) {
+  const state = component?.comparison?.state;
+  const base = STATE[state] || STATE.insufficient;
+  const labels = {
+    compatible: [t.compatible, t.compatible],
+    not_compatible: [t.notCompatible, t.notCompatible],
+    review: [t.similar, t.technicalReview],
+    insufficient: [t.insufficientData, t.insufficientData]
+  };
+  const [label, short] = labels[state] || labels.insufficient;
+  return { ...base, label, short };
 }
 
 function StatusBadge({ component, base = false, t }) {
-  if (base) return <span className="inline-flex items-center gap-1.5 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#16c79a]"><CheckCircle2 className="h-3.5 w-3.5" /> Componente base</span>;
-  const meta = statusMeta(component);
+  if (base) return <span className="inline-flex items-center gap-1.5 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#16c79a]"><CheckCircle2 className="h-3.5 w-3.5" /> {t.baseComponent}</span>;
+  const meta = statusMeta(component, t);
   const Icon = meta.icon;
   const compared = component?.comparison?.compared || 0;
   const equal = component?.comparison?.equal || 0;
@@ -138,7 +147,7 @@ export default function Comparar() {
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
               {alternatives.map((c, i) => {
-            const meta = statusMeta(c); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
+            const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
               <div className="mt-3 text-xs text-white/50">{t.compatibility}</div>
