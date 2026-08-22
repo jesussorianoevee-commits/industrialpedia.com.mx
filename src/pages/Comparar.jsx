@@ -214,13 +214,13 @@ export default function Comparar() {
                     const baseValueForCard = baseSpec ? val(baseSpec) : '—';
                     return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2.5 py-2 ${valueBg}`}>
                       <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="mt-2 grid grid-cols-2 gap-2" dir="ltr">
                         <div className="min-w-0 rounded border border-white/[0.06] bg-white/[0.025] px-2 py-1.5">
-                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/35">Original</div>
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/35">Original · {base.part_number}</div>
                           <div className="mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed text-white/85">{baseValueForCard}</div>
                         </div>
                         <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
-                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Alternativa · {c.part_number}</div>
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
                           <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s)}</div>
                         </div>
                       </div>
