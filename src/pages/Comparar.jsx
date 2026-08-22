@@ -203,10 +203,18 @@ export default function Comparar() {
               {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
                 <div className="flex items-center justify-between gap-2"><div className="text-[9px] font-bold uppercase tracking-wider text-white/35">Ficha técnica</div><div className="text-[9px] font-mono text-white/25">{c.specs.length} datos</div></div>
                 <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {(expandedSpecs[c.id] ? c.specs : c.specs.slice(0, 6)).map((s, j) => <div key={j} className="min-w-0 rounded-md border border-white/[0.04] bg-black/[0.08] px-2 py-1.5">
-                    <div className="truncate text-[9px] text-white/30">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
-                    <div className="font-mono text-[10px] text-white/80 break-words">{val(s)}</div>
-                  </div>)}
+                  {(expandedSpecs[c.id] ? c.specs : c.specs.slice(0, 6)).map((s, j) => {
+                    const baseSpec = (base.specs || []).find((b) => canonical(b) === canonical(s));
+                    const propertyState = baseSpec ? stateFor(baseSpec, c) : 'candidate_only';
+                    const isIncompatible = propertyState === 'different' && c.comparison?.state === 'not_compatible';
+                    const valueTone = propertyState === 'equal' ? 'text-[#16c79a]' : isIncompatible ? 'text-red-300' : propertyState === 'different' ? 'text-amber-300' : 'text-white/55';
+                    const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
+                    const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
+                    return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2 py-1.5 ${valueBg}`}>
+                      <div className="flex items-center gap-1.5"><span className="text-[8px]" aria-hidden="true">{indicator}</span><div className="truncate text-[9px] text-white/35">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
+                      <div className={`mt-0.5 font-mono text-[10px] font-semibold break-words ${valueTone}`}>{val(s)}</div>
+                    </div>;
+                  })}
                 </div>
                 {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
               </div>}
