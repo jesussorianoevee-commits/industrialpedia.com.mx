@@ -168,6 +168,7 @@ export default function Buscar() {
     let cancelled = false;
     const localize = async () => {
       if (!kcData || kcResults.length === 0) return;
+      if (kcResults.every((result) => result?.translation_language === language)) return;
       const localized = await translateParts(kcResults, language);
       if (cancelled) return;
       if (localized !== kcResults) setKcData((prev) => prev ? { ...prev, knowledge_core_results: localized } : prev);
