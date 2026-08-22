@@ -115,8 +115,8 @@ export function groupSpecsByTemplate(specs, template) {
       return {
         key: f.key,
         label: f.label,
-        value: match.normalized_value || match.original_value || '',
-        unit: match.normalized_unit || match.original_unit || '',
+        value: match.normalized_value ?? match.original_value ?? ''
+        unit: match.normalized_unit ?? match.original_unit ?? ''
         attribute_name: match.attribute_name,
         evidence: match.evidence,
         available: true
@@ -127,7 +127,7 @@ export function groupSpecsByTemplate(specs, template) {
   const others = specs.filter((s, i) => !used.has(i)).map((s) => ({
     label: s.attribute_name || s.attribute,
     value: s.normalized_value ?? s.original_value ?? '',
-    unit: s.normalized_unit ?? s.original_unit ?? ''
+    unit: s.normalized_unit ?? s.original_unit ?? '',
     evidence: s.evidence,
     available: true
   }));
