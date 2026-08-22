@@ -6,6 +6,7 @@ import CategorySection from '@/components/landing/CategorySection';
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { AREAS } from '@/lib/taxonomy';
+import { getIndustrialpediaCatalogStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
   const [partCount, setPartCount] = useState(0);
@@ -15,15 +16,11 @@ export default function Home() {
 
   const refreshCount = async () => {
     try {
-      const parts = await base44.entities.Part.list('-updated_date', 1000);
-      const c = {};
-      AREAS.forEach((a) => { c[a.id] = 0; });
-      parts.forEach((p) => {
-        const area = AREAS.find((a) => a.name === p.category);
-        if (area) c[area.id] = (c[area.id] || 0) + 1;
-      });
-      setCounts(c);
-      setPartCount(parts.length);
+      // Catálogo canónico: Supabase. No usamos Base44 Part ni un límite de 1000.
+      const stats = await getIndustrialpediaCatalogStats();
+      const total = Number(stats?.count);
+      if (!Number.isFinite(total)) throw new Error('invalid_catalog_count');
+      setPartCount(total);
       setLastUpdated(new Date());
       return true;
     } catch (e) {

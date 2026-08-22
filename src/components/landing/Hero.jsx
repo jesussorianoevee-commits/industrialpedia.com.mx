@@ -12,7 +12,7 @@ export default function Hero({ partCount, loading, lastUpdated }) {
     <section className="px-5 pt-16 pb-10 md:pt-24 md:pb-16 text-center">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 ip-muted text-[10px] mb-6 tracking-[0.16em] uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/.7)]" />
-        {loading ? 'Knowledge Core' : `${partCount.toLocaleString()} refacciones en el Knowledge Core`}
+        {loading ? 'Cargando catálogo…' : `${partCount.toLocaleString()} refacciones`}
       </div>
       {!loading && lastUpdated && (
         <div className="text-[10px] ip-muted -mt-3 mb-5 opacity-70">

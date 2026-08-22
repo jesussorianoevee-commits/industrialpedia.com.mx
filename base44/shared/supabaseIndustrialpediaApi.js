@@ -29,6 +29,20 @@ export async function searchIndustrialpedia(q, limit = 25, manufacturer = '') {
   return call({ q, limit, manufacturer });
 }
 
+export async function getIndustrialpediaCatalogStats() {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/industrialpedia-catalog-stats`, {
+    method: 'GET',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      Accept: 'application/json'
+    }
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error || `Industrialpedia catalog stats HTTP ${response.status}`);
+  return data;
+}
+
 export async function getPartIndustrialpedia(id) {
   // La ficha usa el mismo contrato canónico de Industrialpedia Search.
   // Evitamos el RPC legacy get_part_v1 porque no garantiza el payload técnico.
