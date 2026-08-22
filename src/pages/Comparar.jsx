@@ -252,9 +252,9 @@ export default function Comparar() {
           <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
             <div className="min-w-[640px]">
               <div className="grid border-b border-white/[0.08] bg-white/[0.025]" style={{gridTemplateColumns:`180px 150px repeat(${alternatives.length}, minmax(140px, 1fr))`}}>
-                <div className="p-3 text-xs font-semibold text-white/60">Dato</div>
-                <div className="border-l border-white/[0.06] p-3 text-xs font-semibold text-[#65a9e6]">Original · {base.part_number}</div>
-                {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-xs font-semibold text-white/65">Alternativa · {c.part_number}</div>)}
+                <div className="p-3 text-sm font-bold text-white/75">Dato</div>
+                <div className="border-l border-white/[0.06] p-3 text-sm font-bold text-[#65a9e6]">Original · {base.part_number}</div>
+                {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-sm font-bold text-white/85">Comparativa · {c.part_number}</div>)}
               </div>
               {specRows.map((s, idx) => {
                 const values = alternatives.map((c) => {
@@ -267,14 +267,14 @@ export default function Comparar() {
                 const hasMatch = states.some((state) => state === 'equal');
                 if (!hasRelevantDifference && !hasMatch) return null;
                 return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px 150px repeat(${alternatives.length}, minmax(140px, 1fr))`}}>
-                  <div className="p-3 text-sm font-medium text-white/70">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
-                  <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-sm font-semibold text-white/90">{baseValue}</div>
+                  <div className="p-3 text-base font-semibold text-white/80">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
+                  <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-base font-semibold text-white/95">{baseValue}</div>
                   {alternatives.map((c, i) => {
                     const state = states[i];
                     const tone = state === 'equal' ? 'text-[#16c79a]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300') : state === 'not_comparable' ? 'text-red-300' : 'text-white/40';
                     const bg = state === 'equal' ? 'bg-[#16c79a]/[0.07]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                     const icon = state === 'equal' ? '✓' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? '✕' : '⚠') : state === 'not_comparable' ? '✕' : '○';
-                    return <div key={c.id || i} className={`border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex items-start gap-2 font-mono text-sm font-semibold ${tone}`}><span aria-hidden="true">{icon}</span><span className="break-words">{values[i]}</span></div><div className="mt-1 text-[10px] text-white/35">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
+                    return <div key={c.id || i} className={`border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span aria-hidden="true">{icon}</span><span className="break-words">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
                   })}
                 </div>;
               })}
