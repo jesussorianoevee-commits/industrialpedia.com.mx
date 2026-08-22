@@ -53,13 +53,14 @@ export async function translateParts(results, language) {
       if (!translation?.name) return result;
       return {
         ...result,
-        original_name: result.title || result.product_name || result.name || result.product_identity?.short_description || '',
-        original_description: result.description || '',
+        original_name: result.original_name || result.title || result.product_name || result.name || result.product_identity?.short_description || '',
+        original_description: result.original_description || result.description || '';
         title: translation.name,
         product_name: translation.name,
         description: translation.description || result.description || '',
         translation_status: translation.status || 'machine_draft',
         translation_version: translation.translation_version || 1,
+        translation_language: language,
       };
     });
   } catch {
