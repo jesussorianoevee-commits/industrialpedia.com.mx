@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import SiteHeader from '@/components/landing/SiteHeader';
 import Hero from '@/components/landing/Hero';
 import CategorySection from '@/components/landing/CategorySection';
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
-import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
