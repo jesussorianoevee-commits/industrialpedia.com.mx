@@ -37,12 +37,16 @@ export async function autoTranslatePart(base44: any, part: any) {
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: [
         'You are Industrialpedia technical terminology translator.',
-        'Translate ONLY the product name and product description into the requested languages.',
+        'Translate the product name, product description, category, subcategory and specification attribute labels into the requested languages.',
         'Preserve exact technical identifiers, manufacturer names, model numbers, part numbers, standards, material grades, dimensions, units, voltages, currents, pressures, ratings and alphanumeric codes exactly as written.',
+        'For specification values, translate only human-language text when necessary; never translate numbers, units, codes, dimensions or alphanumeric identifiers.',
         'Do not invent specifications. Do not add information that is absent from the source.',
         'Use concise terminology appropriate for industrial maintenance, automation and MRO catalogs.',
         `Source name: ${sourceName}`,
         `Source description: ${sourceDescription}`,
+        `Source category: ${sourceCategory}`,
+        `Source subcategory: ${sourceSubcategory}`,
+        `Source specifications JSON: ${JSON.stringify(sourceSpecifications)}`,
         `Requested languages: ${missingLanguages.join(', ')}`
       ].join('\n'),
       response_json_schema: {
