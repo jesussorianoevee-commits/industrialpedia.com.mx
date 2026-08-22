@@ -178,7 +178,8 @@ export default function Comparar() {
                 const st = ci === 0 ? 'base' : stateFor(s, c);
                 const normalized = ci === 0 ? null : normalizedFor(s, c);
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
-                const display = candidate ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
+                const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
+                const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
                 const stateClass = st === 'equal' ? 'text-white/80' : st === 'different' ? 'text-amber-200' : 'text-white/35';
                 return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass}`}>
                   <div className="min-w-0"><div className="font-mono leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-[9px] font-mono text-white/30">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
