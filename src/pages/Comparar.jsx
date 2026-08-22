@@ -266,9 +266,8 @@ export default function Comparar() {
                 const hasRelevantDifference = states.some((state) => state === 'different' || state === 'not_comparable' || state === 'candidate_only');
                 const hasMatch = states.some((state) => state === 'equal');
                 if (!hasRelevantDifference && !hasMatch) return null;
-                return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px 150px repeat(${alternatives.length}, minmax(140px, 1fr))`}}>
+                return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(140px, 1fr)) 150px`}}>
                   <div className="p-3 text-base font-semibold text-white/80">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
-                  <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-base font-semibold text-white/95">{baseValue}</div>
                   {alternatives.map((c, i) => {
                     const state = states[i];
                     const tone = state === 'equal' ? 'text-[#16c79a]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300') : state === 'not_comparable' ? 'text-red-300' : 'text-white/40';
@@ -276,6 +275,7 @@ export default function Comparar() {
                     const icon = state === 'equal' ? '✓' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? '✕' : '⚠') : state === 'not_comparable' ? '✕' : '○';
                     return <div key={c.id || i} className={`border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span aria-hidden="true">{icon}</span><span className="break-words">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
                   })}
+                  <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-base font-semibold text-white/95">{baseValue}</div>
                 </div>;
               })}
             </div>
