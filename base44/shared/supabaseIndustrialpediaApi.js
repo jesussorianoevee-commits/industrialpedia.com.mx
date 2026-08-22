@@ -249,6 +249,56 @@ export async function getIndustrialpediaCategoryStats() {
   return Object.fromEntries(data.map((row) => [String(row.area), Number(row.count) || 0]));
 }
 
+export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_parts_v1`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: JSON.stringify({ p_area: area, p_limit: Math.min(Number(limit) || 25, 50), p_offset: Math.max(Number(offset) || 0, 0) })
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(data)) {
+    throw new Error(data?.message || data?.error || `Catalog area parts HTTP ${response.status}`);
+  }
+  return {
+    results: data.map((r) => ({
+      id: r.part_id,
+      part_number: r.part_number || '',
+      manufacturer_name: r.manufacturer || '',
+      category: r.category || '',
+      description: r.description || r.name || '',
+      title: r.name || r.part_number || '',
+      specifications: r.specifications && typeof r.specifications === 'object' ? r.specifications : {},
+      validation_state: r.status === 'verified' ? 'published' : r.status || 'incomplete',
+      match: 'category',
+      has_evidence: false,
+      evidence_count: 0,
+      spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
+      image_url: '',
+      image_verification_status: null,
+      image_source: null,
+      image_is_primary: false,
+      source_ids: [],
+      discovery_state: null,
+      source_url: null,
+      document_url: null,
+      top_specs: r.specifications ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]) => ({
+        attribute,
+        value: typeof value === 'object' && value !== null ? value.value ?? value : value,
+        unit: typeof value === 'object' && value !== null ? value.unit ?? null : null,
+        validated: true
+      })) : [],
+      api_match_type: 'category',
+      api_score: 0
+    })),
+    total: Number(data[0]?.result_count || 0)
+  };
+}
+
 export async function compareReferenceIndustrialpedia({ manufacturer = '', partNumber = '', category = '', specifications = {}, limit = 5 }) {
   const data = await call({
     mode: 'reference_compare',
