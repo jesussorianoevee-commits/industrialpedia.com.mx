@@ -21,7 +21,9 @@ export default function CategoryCard({ area, count }) {
         {area.subcategories.map((s) => (
           <span key={s} className="px-2.5 py-1 rounded-md bg-secondary border border-border ip-muted text-[11px]">{s}</span>
         ))}
-        <span className="px-2.5 py-1 rounded-md bg-primary/5 border border-primary/15 ip-accent text-[11px]">+{area.moreCount} más</span>
+        {area.moreCount > 0 && (
+          <span className="px-2.5 py-1 rounded-md bg-primary/5 border border-primary/15 ip-accent text-[11px]">+{area.moreCount} más</span>
+        )}
       </div>
     </div>
   );
