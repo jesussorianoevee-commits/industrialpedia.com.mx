@@ -116,7 +116,7 @@ export function groupSpecsByTemplate(specs, template) {
         key: f.key,
         label: f.label,
         value: match.normalized_value ?? match.original_value ?? '',
-        unit: match.normalized_unit ?? match.original_unit ?? ''
+        unit: match.normalized_unit ?? match.original_unit ?? '',
         attribute_name: match.attribute_name,
         evidence: match.evidence,
         available: true
