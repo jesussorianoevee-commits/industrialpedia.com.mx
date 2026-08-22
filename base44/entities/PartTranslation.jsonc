@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en",
+        "de",
+        "fr",
+        "zh"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "machine_draft",
+        "reviewed",
+        "published"
+      ],
+      "default": "machine_draft"
+    },
+    "source_language": {
+      "type": "string"
+    },
+    "translation_version": {
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": [
+    "part_id",
+    "language",
+    "name"
+  ],
+  "name": "PartTranslation"
+}

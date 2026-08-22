@@ -48,9 +48,9 @@ export default function SiteHeader() {
             {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span className="hidden sm:inline text-[11px] font-medium">{light ? t.light : t.dark}</span>
           </button>
-          <div className="relative hidden sm:block">
-            <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="flex items-center gap-1.5 text-white/55 hover:text-white text-xs px-2 py-2 rounded-md hover:bg-white/5">
-              <Globe className="w-3.5 h-3.5" /> {languages.find((item) => item.code === language)?.flag} {language.toUpperCase()}
+          <div className="relative">
+            <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="flex items-center gap-1.5 h-9 px-3 rounded-md border border-white/15 bg-white/[0.03] text-white/70 hover:text-white hover:border-[#5a9cd9]/50 hover:bg-[#5a9cd9]/10 text-xs transition-all">
+              <Globe className="w-4 h-4 text-[#5a9cd9]" /> <span className="font-semibold">{language.toUpperCase()}</span><span className="text-white/30">▾</span>
             </button>
             {languageOpen && <div className="absolute right-0 top-[calc(100%+6px)] z-50 min-w-40 rounded-xl border border-white/10 bg-[#11161c] p-1 shadow-2xl">
               {languages.map((item) => <button key={item.code} type="button" onClick={() => { setLanguage(item.code); setLanguageOpen(false); }} className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs ${item.code === language ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}>
