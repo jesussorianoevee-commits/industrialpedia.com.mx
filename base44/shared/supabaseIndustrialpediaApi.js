@@ -61,6 +61,14 @@ export async function getPartIndustrialpedia(id) {
   if (!response.ok || !data?.found || !data?.part) {
     throw new Error(data?.error || `Industrialpedia API HTTP ${response.status}`);
   }
+  const part = data.part;
+  if (part && typeof part === 'object') {
+    data.part = {
+      ...part,
+      image_url: part.image_url || part.image?.image_url || part.image?.url || part.primary_image_url || '',
+      image_verification_status: part.image_verification_status || part.image?.verification_status || null
+    };
+  }
   return data;
 }
 
@@ -278,10 +286,10 @@ export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) 
       has_evidence: Number(r.evidence_count || 0) > 0,
       evidence_count: Number(r.evidence_count || 0),
       spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
-      image_url: '',
-      image_verification_status: null,
-      image_source: null,
-      image_is_primary: false,
+      image_url: r.image_url || r.image?.image_url || r.image?.url || r.primary_image_url || '',
+      image_verification_status: r.image_verification_status || r.image?.verification_status || null,
+      image_source: r.image_source || r.image?.source_url || r.image?.source || null,
+      image_is_primary: r.image_is_primary === true || r.image?.is_primary === true,
       source_ids: Array.isArray(r.source_ids) ? r.source_ids.filter(Boolean) : [],
       discovery_state: null,
       source_url: r.source_url || null,
