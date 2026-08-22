@@ -35,6 +35,7 @@ export default function Parte() {
   const [sources, setSources] = useState([]);
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -191,9 +192,15 @@ export default function Parte() {
               <div className="text-white/50 text-sm">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
             </div>
             <div className="flex items-start gap-2 shrink-0">
-              {part.image_url && <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/10">
+              {part.image_url && <button
+                type="button"
+                onClick={() => setImagePreviewOpen(true)}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/10 cursor-pointer hover:border-[#5a9cd9] focus:outline-none focus:ring-2 focus:ring-[#5a9cd9]"
+                aria-label={`Ver imagen ampliada de ${part.part_number || 'la pieza'}`}
+                title="Toca la imagen para ampliarla"
+              >
                 <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
-              </div>}
+              </button>}
               <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
             </div>
           </div>
