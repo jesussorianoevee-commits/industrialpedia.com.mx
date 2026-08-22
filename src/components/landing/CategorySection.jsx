@@ -1,4 +1,4 @@
-import { AREAS, TOTAL_TYPES } from '@/lib/taxonomy';
+import { AREAS, TOTAL_TYPES, getLocalizedArea } from '@/lib/taxonomy';
 import CategoryCard from './CategoryCard';
 import { useLanguage } from '@/lib/i18n';
 
@@ -12,7 +12,7 @@ export default function CategorySection({ counts }) {
       </div>
       <div className="space-y-3">
         {AREAS.map((a) => (
-          <CategoryCard key={a.id} area={a} count={counts[a.statsKey || a.id] || 0} />
+          <CategoryCard key={a.id} area={getLocalizedArea(a, language)} count={counts[a.statsKey || a.id] || 0} language={language} />
         ))}
       </div>
     </section>
