@@ -13,8 +13,8 @@ async function indexPart(base44, part) {
   const documentIds = [...new Set(evidence.map((e) => e.document_id).filter(Boolean))];
   const specText = specs.map((s) => [
     s.attribute_canonical || s.attribute_name || '',
-    s.normalized_value || s.original_value || '',
-    s.normalized_unit || s.original_unit || ''
+    s.normalized_value ?? s.original_value ?? '',
+    s.normalized_unit ?? s.original_unit ?? ''
   ].join(' ')).join(' | ');
   const searchText = [
     part.part_number || '', part.part_number_normalized || '',
