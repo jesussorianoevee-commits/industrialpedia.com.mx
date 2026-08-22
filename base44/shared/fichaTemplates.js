@@ -107,7 +107,7 @@ export function groupSpecsByTemplate(specs, template) {
     const match = specs.find((s, i) => {
       if (used.has(i)) return false;
       const attr = String(s.attribute || '').toLowerCase();
-      const val = String(s.original_value || '').toLowerCase();
+      const val = String(s.original_value ?? '').toLowerCase();
       const combo = `${attr} ${val}`;
       return f.match.test(combo) && (used.add(i), true);
     });
