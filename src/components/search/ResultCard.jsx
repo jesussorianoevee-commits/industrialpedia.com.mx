@@ -94,7 +94,7 @@ export default function ResultCard({ result }) {
           <div className="mt-1 text-white/50 text-xs">
             {displayManufacturer || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}
             {displayManufacturer && result.part_number ? ' · ' : ''}
-            {result.part_number ? `${language === 'zh' ? '参考编号' : language === 'de' ? 'Referenz' : language === 'fr' ? 'Référence' : language === 'en' ? 'Part number' : 'Referencia'}: ${result.part_number}` : ''}
+            {result.part_number ? `${t.partNumber}: ${result.part_number}` : ''}
             {result.category ? ` · ${result.category}` : ''}
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function ResultCard({ result }) {
       </div>
 
       <div className="mb-3 flex gap-3">
-        <div className="w-20 h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+        <div className="w-[68px] h-[68px] sm:w-20 sm:h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
           {isUsableImageUrl(imageSrc) ? (
             <img
               src={imageSrc}
@@ -112,7 +112,7 @@ export default function ResultCard({ result }) {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{language === 'zh' ? '无已验证图片' : language === 'de' ? 'Kein verifiziertes Bild' : language === 'fr' ? 'Aucune image vérifiée' : language === 'en' ? 'No verified image' : 'Sin imagen verificada'}</span>
+            <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{t.noVerifiedImage}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -120,7 +120,7 @@ export default function ResultCard({ result }) {
             <div className="text-white/25 text-[10px] leading-snug mb-1">Título de la fuente: {result.source_title}</div>
           )}
           {result.description && (
-            <p className="text-white/55 text-xs leading-relaxed line-clamp-4">{result.description}</p>
+            <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>
           )}
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function ResultCard({ result }) {
 
       {result.top_specs.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {result.top_specs.map((s, i) => (
+          {result.top_specs.slice(0, 4).map((s, i) => (
             <span key={i} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/55 text-[11px]">
               {s.attribute}: {s.value}{s.unit ? ` ${s.unit}` : ''}
             </span>
@@ -154,7 +154,7 @@ export default function ResultCard({ result }) {
       <div className="flex items-center gap-2 mb-3 text-[11px]">
         {result.has_evidence ? (
           <span className="flex items-center gap-1 text-[#47bcb6]">
-            <ShieldCheck className="w-3.5 h-3.5" /> {result.evidence_count} evidencia(s)
+            <ShieldCheck className="w-3.5 h-3.5" /> {result.evidence_count} {t.evidence}
           </span>
         ) : (
           <span className="flex items-center gap-1 text-[#e68a00]/75">
@@ -178,7 +178,7 @@ export default function ResultCard({ result }) {
             to={`/parte/${result.id}${result.part_number ? `?pn=${encodeURIComponent(result.part_number)}` : ''}`}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            {language === 'zh' ? '查看组件' : language === 'de' ? 'Komponente öffnen' : language === 'fr' ? 'Voir le composant' : language === 'en' ? 'View component' : 'Ver componente'} <ArrowRight className="w-3 h-3" />
+            {t.viewComponent} <ArrowRight className="w-3 h-3" />
           </Link>
         ) : result.catalog_id && result.source_url ? (
           <a
@@ -228,7 +228,7 @@ export default function ResultCard({ result }) {
           title="Pilar ENCONTRAR — próxima iteración"
           className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60"
         >
-          {language === 'zh' ? '查找替代品' : language === 'de' ? 'Alternativen finden' : language === 'fr' ? 'Trouver des alternatives' : language === 'en' ? 'Find alternatives' : 'Encontrar alternativas'}
+          {t.findAlternatives}
         </button>
         {canCompareReference ? (
           <button
