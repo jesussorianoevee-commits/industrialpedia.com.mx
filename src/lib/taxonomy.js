@@ -59,6 +59,14 @@ export const AREAS = [
     moreCount: 24
   },
   {
+    id: 'fuera-alcance',
+    name: 'Fuera de alcance industrial',
+    icon: Package,
+    description: 'Productos identificados que no corresponden a una refacción o suministro industrial técnico del catálogo.',
+    subcategories: ['Oficina', 'Médico', 'Hogar / general', 'Otros no industriales'],
+    moreCount: 0
+  },
+  {
     id: 'infraestructura-almacenamiento',
     name: 'Infraestructura / Almacenamiento',
     icon: Package,
@@ -147,6 +155,7 @@ export const POPULAR_TAGS = ['Balluff', 'Eaton', 'Aubo'];
 const AREA_I18N = {
   es: {},
   en: {
+    'fuera-alcance': { name: 'Outside industrial scope', description: 'Identified products that are not industrial technical spare parts or supplies.' },
     'infraestructura-almacenamiento': { name: 'Infrastructure / Storage', description: 'Benches, racks, carts, containers and support furniture for operations and laboratories.' },
     'limpieza-epp': { name: 'Cleaning / PPE', description: 'Personal protection, cleanroom and cleaning materials.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Measurement', description: 'Instruments for measuring, recording, calibrating and verifying process variables.' },
@@ -165,6 +174,7 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Other spare parts', description: 'Available spare parts that do not yet have enough technical classification for an area.' }
   },
   de: {
+    'fuera-alcance': { name: 'Außerhalb des industriellen Umfangs', description: 'Identifizierte Produkte, die keine technischen Industrieersatzteile oder -materialien sind.' },
     'infraestructura-almacenamiento': { name: 'Infrastruktur / Lagerung', description: 'Arbeitsbänke, Regale, Wagen, Behälter und unterstützende Ausstattung.' },
     'limpieza-epp': { name: 'Reinigung / PSA', description: 'Persönliche Schutzausrüstung, Reinraum- und Reinigungsmaterialien.' },
     'instrumentacion-medicion': { name: 'Messtechnik / Instrumentierung', description: 'Mess-, Prüf-, Kalibrier- und Aufzeichnungsinstrumente für Prozessgrößen.' },
@@ -183,6 +193,7 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Andere Ersatzteile', description: 'Verfügbare Ersatzteile ohne ausreichende technische Klassifizierung für einen Bereich.' }
   },
   fr: {
+    'fuera-alcance': { name: 'Hors périmètre industriel', description: 'Produits identifiés qui ne sont pas des pièces ou fournitures techniques industrielles.' },
     'infraestructura-almacenamiento': { name: 'Infrastructure / Stockage', description: 'Établis, rayonnages, chariots, conteneurs et mobilier de support.' },
     'limpieza-epp': { name: 'Nettoyage / EPI', description: 'Protection individuelle, salle propre et matériel de nettoyage.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Mesure', description: 'Instruments de mesure, d’enregistrement et d’étalonnage des variables de procédé.' },
@@ -201,6 +212,7 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Autres pièces', description: 'Pièces disponibles qui ne disposent pas encore d’une classification technique suffisante.' }
   },
   zh: {
+    'fuera-alcance': { name: '不属于工业范围', description: '已识别但不属于工业技术备件或物料的产品。' },
     'infraestructura-almacenamiento': { name: '基础设施 / 存储', description: '工作台、货架、推车、容器及支持设施。' },
     'limpieza-epp': { name: '清洁 / PPE', description: '个人防护、洁净室和清洁用品。' },
     'instrumentacion-medicion': { name: '仪器 / 测量', description: '用于测量、记录、校准和验证过程变量的仪器。' },
