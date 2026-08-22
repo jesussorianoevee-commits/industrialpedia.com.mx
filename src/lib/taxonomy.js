@@ -139,6 +139,14 @@ export const AREAS = [
     moreCount: 0
   },
   {
+    id: 'otros-mro',
+    name: 'MRO / Otros componentes',
+    icon: Package,
+    description: 'Componentes y suministros identificados que no encajan todavía en una disciplina técnica más específica.',
+    subcategories: ['Componentes generales', 'Accesorios', 'Materiales técnicos', 'Repuestos varios'],
+    moreCount: 0
+  },
+  {
     id: 'otras-refacciones',
     name: 'Otras refacciones',
     icon: Package,
