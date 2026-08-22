@@ -35,8 +35,14 @@ export default function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button onClick={toggleTheme} aria-label="Cambiar tema" className="w-9 h-9 rounded-md border border-white/10 text-white/60 hover:text-white hover:border-white/20 flex items-center justify-center transition-colors">
+          <button
+            onClick={toggleTheme}
+            aria-label={light ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+            title={light ? 'Modo claro activo · Cambiar a oscuro' : 'Modo oscuro activo · Cambiar a claro'}
+            className="flex items-center gap-2 h-9 px-3 rounded-md border border-[#5a9cd9]/30 bg-[#5a9cd9]/10 text-[#5a9cd9] hover:bg-[#5a9cd9]/20 hover:border-[#5a9cd9]/60 transition-all"
+          >
             {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <span className="hidden sm:inline text-[11px] font-medium">{light ? 'Claro' : 'Oscuro'}</span>
           </button>
           <button className="hidden sm:flex items-center gap-1.5 text-white/55 hover:text-white text-xs px-2">
             <Globe className="w-3.5 h-3.5" /> ES
