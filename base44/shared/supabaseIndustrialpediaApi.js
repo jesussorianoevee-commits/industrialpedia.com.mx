@@ -231,6 +231,24 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   };
 }
 
+export async function getIndustrialpediaCategoryStats() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_stats_v1`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    },
+    body: '{}'
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !Array.isArray(data)) {
+    throw new Error(data?.message || data?.error || `Catalog area stats HTTP ${response.status}`);
+  }
+  return Object.fromEntries(data.map((row) => [String(row.area), Number(row.count) || 0]));
+}
+
 export async function compareReferenceIndustrialpedia({ manufacturer = '', partNumber = '', category = '', specifications = {}, limit = 5 }) {
   const data = await call({
     mode: 'reference_compare',
