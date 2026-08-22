@@ -19,11 +19,11 @@ function propertyLabel(value) {
   const raw = String(value || '').trim();
   return PROPERTY_LABELS_ES[raw.toLowerCase()] || raw;
 }
-function val(s) { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; if (normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw)) return `${original || raw || 'No disponible'} → ${normalized}${unit ? ` ${unit}` : ''}`; return original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || 'No disponible'; }
+function val(s) { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; if (normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw)) return `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}`; return original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'; }
 function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
 function comparisonFor(base, alt) { const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : []; return differences.find((d) => canonical(d) === canonical(base)) || null; }
 function stateFor(base, alt) { const hit = comparisonFor(base, alt); if (hit?.state) return hit.state; return (alt?.specs || []).some((s) => canonical(s) === canonical(base)) ? 'not_comparable' : 'base_only'; }
-function valueFor(base, alt) { const hit = comparisonFor(base, alt); if (hit && Object.prototype.hasOwnProperty.call(hit, 'candidate')) return hit.candidate; return (alt?.specs || []).find((s) => canonical(s) === canonical(base)); }
+function valueFor(base, alt) { const hit = comparisonFor(base, alt); if (hit && hit.candidate !== null && hit.candidate !== undefined && hit.candidate !== '') return hit.candidate; return (alt?.specs || []).find((s) => canonical(s) === canonical(base)); }
 const COMPOUND_LABELS_ES = { diameter: 'Diámetro', length: 'Longitud', width: 'Ancho', height: 'Altura', depth: 'Profundidad' };
 function normalizedFor(base, alt) { const hit = comparisonFor(base, alt); return hit && hit.normalized_b !== null && hit.normalized_b !== undefined ? { value: hit.normalized_b, unit: hit.normalized_unit } : null; }
 function normalizedDisplayFor(normalized) {
@@ -169,7 +169,7 @@ export default function Comparar() {
                 const st = ci === 0 ? 'base' : stateFor(s, c);
                 const normalized = ci === 0 ? null : normalizedFor(s, c);
                 const normalizedDisplay = normalizedDisplayFor(normalized);
-                const display = candidate ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : 'No disponible';
+                const display = candidate ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
                 const stateClass = st === 'equal' ? 'text-white/80' : st === 'different' ? 'text-amber-200' : 'text-white/35';
                 return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass}`}>
                   <div className="min-w-0"><div className="font-mono leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-[9px] font-mono text-white/30">Normalizado: {normalizedDisplay}</div>}</div>
