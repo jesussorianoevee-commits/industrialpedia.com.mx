@@ -212,8 +212,8 @@ export default function Comparar() {
                     const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
                     const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
                     return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2 py-1.5 ${valueBg}`}>
-                      <div className="flex items-center gap-1.5"><span className="text-[8px]" aria-hidden="true">{indicator}</span><div className="truncate text-[9px] text-white/35">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
-                      <div className={`mt-0.5 font-mono text-[10px] font-semibold break-words ${valueTone}`}>{val(s)}</div>
+                      <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/45">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
+                      <div className={`mt-1 font-mono text-[13px] font-semibold leading-relaxed break-words ${valueTone}`}>{val(s)}</div>
                     </div>;
                   })}
                 </div>
