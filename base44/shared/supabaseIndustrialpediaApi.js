@@ -82,7 +82,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
 
   if (!canonicalId) throw new Error('No se recibió un identificador canónico del componente.');
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_v2`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_part_candidates_public_v1`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -155,7 +155,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   // v2 encuentra candidatos; compare_parts_v1 produce la comparación propiedad por propiedad.
   // Se ejecuta en un único RPC batch para evitar N llamadas HTTP desde el cliente.
   const candidateIds = alternatives.map((alt) => alt.id).filter(Boolean);
-  const batchResponse = candidateIds.length ? await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_parts_batch_v1`, {
+  const batchResponse = candidateIds.length ? await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_parts_batch_public_v1`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -227,7 +227,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     alternatives: enrichedAlternatives,
     compatibility_evaluable: true,
     decision,
-    source: 'Knowledge Core / compare_part_candidates_v2'
+    source: 'Knowledge Core / compare_part_candidates_public_v1'
   };
 }
 
