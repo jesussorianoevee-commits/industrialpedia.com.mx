@@ -10,7 +10,7 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
           <img
             src={CAT_IMAGE}
             alt="Industrialpedia cargando"
-            className="absolute inset-0 w-full h-full object-contain select-none"
+            className="absolute inset-0 w-full h-full object-contain select-none animate-[loader-bob_1.2s_steps(4,end)_infinite]"
             draggable="false"
           />
         </div>
@@ -28,7 +28,7 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
         <style>{`
           @keyframes loader-bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
           @keyframes loader-progress { 0% { transform: translateX(-140%); } 50% { transform: translateX(120%); } 100% { transform: translateX(320%); } }
-          @media (prefers-reduced-motion: reduce) { .loader-cat-base, .loader-gear, .loader-paw-top, .loader-paw-lower { animation: none; } }
+          @media (prefers-reduced-motion: reduce) { .animate-\[loader-bob_1\.2s_steps\(4\,end\)_infinite\] { animation: none; } }
         `}</style>
       </div>
     </div>
