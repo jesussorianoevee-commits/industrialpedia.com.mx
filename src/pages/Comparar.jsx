@@ -160,8 +160,8 @@ export default function Comparar() {
             <div className="mt-1 text-sm text-[#65a9e6]">{base.manufacturer_name || t.manufacturerNotIndicated}</div>
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
-            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/30">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-0.5 font-mono text-white/80">{val(s)}</div></div>)}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
+            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s)}</div></div>)}
           </div>
         </div>
       </section>
@@ -175,7 +175,7 @@ export default function Comparar() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
               {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
-              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
+              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
@@ -185,7 +185,7 @@ export default function Comparar() {
             const visualState = decisionVisualState(c);
             const visual = DECISION_VISUAL[visualState];
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
-              <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider`}><span className={`h-2 w-2 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
+              <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider`}><span className={`h-2.5 w-2.5 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-xs font-semibold">{equal}/{compared} {t.specsShort}</span></div>
               <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] px-3 py-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-white/55">Qué lo hace {visualState === 'compatible' ? 'compatible' : visualState === 'not_compatible' ? 'no compatible' : 'similar'}</div>
                 <div className="mt-1 text-sm leading-relaxed text-white/70">{visualState === 'compatible' ? `${equal} propiedades coinciden con la ficha base.` : visualState === 'not_compatible' ? `${evidence.different.length} propiedades presentan diferencias críticas.` : `${equal} propiedades coinciden y ${evidence.different.length} presentan diferencias o requieren revisión.`}</div>
@@ -221,7 +221,7 @@ export default function Comparar() {
               </div>}
               <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
-                <div className="mt-1 font-mono text-xs font-semibold text-white">{base.part_number}</div>
+                <div className="mt-1 font-mono text-sm font-semibold text-white">{base.part_number}</div>
                 {evidence.equal.length > 0 && <div className="mt-3 rounded-md border border-[#16c79a]/15 bg-[#16c79a]/[0.03] p-2"><div className="text-xs uppercase tracking-wider font-semibold text-[#16c79a]">{t.matchingSpecs || 'Lo que coincide'}</div><div className="mt-1.5 space-y-1">{evidence.equal.map((d, j) => <div key={j} className="text-sm leading-relaxed text-white/75"><span className="text-white/55">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/90">{compactComparisonValue(d.base)}</span> <span className="font-bold text-[#16c79a]">=</span> <span className="font-mono text-white/90">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
                 {evidence.different.length > 0 && <div className={`mt-3 rounded-md border p-2 ${visualState === 'not_compatible' ? 'border-red-400/20 bg-red-400/[0.04]' : 'border-amber-400/15 bg-amber-400/[0.03]'}`}><div className={`text-xs font-semibold uppercase tracking-wider ${visualState === 'not_compatible' ? 'text-red-300' : 'text-amber-300'}`}>{visualState === 'not_compatible' ? 'Lo que impide la compatibilidad' : (t.differentSpecs || 'Lo que difiere')}</div><div className="mt-1.5 space-y-1">{evidence.different.map((d, j) => <div key={j} className="text-sm leading-relaxed text-white/75"><span className="text-white/55">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/90">{compactComparisonValue(d.base)}</span> <span className={`font-bold ${visualState === 'not_compatible' ? 'text-red-300' : 'text-amber-300'}`}>≠</span> <span className="font-mono text-white/90">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
                 {evidence.equal.length === 0 && evidence.different.length === 0 && evidence.missing.length > 0 && <div className="mt-2 text-[10px] text-white/40">{t.insufficientData}</div>}
