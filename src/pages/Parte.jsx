@@ -75,7 +75,8 @@ export default function Parte() {
           description: p.description || p.name || '',
           validation_state: p.status || 'processed',
           display_name: p.name || p.product_name || p.part_number || '',
-          original_description: p.description || p.name || ''
+          original_description: p.description || p.name || '',
+          image_url: p.image_url || p.image || p.product_image_url || ''
         };
         try {
           const translations = await base44.entities.PartTranslation.filter(
@@ -171,13 +172,18 @@ export default function Parte() {
 
       <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto space-y-4 w-full min-w-0">
         <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 sm:p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+            <div className="min-w-0 flex-1">
               <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
               <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.part_number}</h1>
               <div className="text-white/50 text-sm">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
             </div>
-            <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
+            <div className="flex items-start gap-2 shrink-0">
+              {part.image_url && <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/10">
+                <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
+              </div>}
+              <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
+            </div>
           </div>
           {part.description && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
           {part.translation_status === 'machine_draft' && language !== 'es' && (
