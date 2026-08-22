@@ -78,7 +78,7 @@ export default function ResultCard({ result }) {
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
 
   const st = isVerified
-    ? { label: 'Verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
+    ? { label: t.verified, cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
     : result.discovery_state === 'discovered'
       ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
       : result.discovery_state === 'pending_verification'
@@ -92,7 +92,7 @@ export default function ResultCard({ result }) {
             {displayProductName || 'Producto no identificado'}
           </div>
           <div className="mt-1 text-white/50 text-xs">
-            {displayManufacturer || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}
+            {displayManufacturer || (result.discovery_state === 'discovered' ? t.externalSource : '')}
             {displayManufacturer && result.part_number ? ' · ' : ''}
             {result.part_number ? `${t.partNumber}: ${result.part_number}` : ''}
             {result.category ? ` · ${result.category}` : ''}
@@ -158,7 +158,7 @@ export default function ResultCard({ result }) {
           </span>
         ) : (
           <span className="flex items-center gap-1 text-[#e68a00]/75">
-            <AlertCircle className="w-3.5 h-3.5" /> sin evidencia
+            <AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}
           </span>
         )}
         {result.source_ids.length > 0 && (
