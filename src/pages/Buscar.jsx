@@ -270,7 +270,7 @@ export default function Buscar() {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
                         const value = s.partNumber || s.title;
-                        saveToHistory(value);
+                        saveToHistory(input.trim());
                         setSuggestions([]);
                         setInput(value);
                         setParams({ q: value });
