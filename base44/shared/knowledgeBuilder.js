@@ -348,7 +348,7 @@ export function selectSpecificationsForPart(specs, partCandidate) {
   const partNumber = normalizePartKey(partCandidate?.text);
   const marking = String(partCandidate?.part_marking || '').trim();
   return (specs || []).filter((spec) => {
-    const corpus = `${spec.attribute_name || ''} ${spec.original_value || ''} ${spec.evidence_context || ''}`;
+    const corpus = `${spec.attribute_name || ''} ${spec.original_value ?? ''} ${spec.evidence_context || ''}`;
     if (partNumber && normalizePartKey(corpus).includes(partNumber)) return true;
     const versions = versionTokens(corpus);
     if (!versions.length) return false;
