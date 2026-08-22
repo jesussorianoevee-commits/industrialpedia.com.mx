@@ -211,9 +211,19 @@ export default function Comparar() {
                     const valueTone = propertyState === 'equal' ? 'text-[#16c79a]' : isIncompatible ? 'text-red-300' : propertyState === 'different' ? 'text-amber-300' : 'text-white/55';
                     const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
                     const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
-                    return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2 py-1.5 ${valueBg}`}>
-                      <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/45">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
-                      <div className={`mt-1 font-mono text-[13px] font-semibold leading-relaxed break-words ${valueTone}`}>{val(s)}</div>
+                    const baseValueForCard = baseSpec ? val(baseSpec) : '—';
+                    return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2.5 py-2 ${valueBg}`}>
+                      <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div className="min-w-0 rounded border border-white/[0.06] bg-white/[0.025] px-2 py-1.5">
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/35">Original</div>
+                          <div className="mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed text-white/85">{baseValueForCard}</div>
+                        </div>
+                        <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Alternativa</div>
+                          <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s)}</div>
+                        </div>
+                      </div>
                     </div>;
                   })}
                 </div>
