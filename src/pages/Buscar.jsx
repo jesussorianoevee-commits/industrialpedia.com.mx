@@ -22,7 +22,7 @@ export default function Buscar() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
@@ -190,7 +190,7 @@ export default function Buscar() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setShowHistory(true)}
-            placeholder="Ej: DSNU-25-25-PPV-A, 6ES7214-1AG40-0XB0, cilindro Festo…"
+            placeholder={t.searchPlaceholder}
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-1.5"
             autoFocus
           />
@@ -202,7 +202,7 @@ export default function Buscar() {
             <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/40">
-                  <Clock className="w-3 h-3" /> Búsquedas recientes
+                  <Clock className="w-3 h-3" /> {t.recentSearches}
                 </div>
                 <button
                   type="button"
@@ -210,7 +210,7 @@ export default function Buscar() {
                   onClick={() => { setHistory([]); try { localStorage.removeItem('industrialpedia_search_history'); } catch {} }}
                   className="text-[10px] text-white/30 hover:text-white/60"
                 >
-                  Limpiar
+                  {t.clear}
                 </button>
               </div>
               <div className="max-h-[300px] overflow-y-auto">
@@ -277,10 +277,10 @@ export default function Buscar() {
       <main className="px-4 py-5 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="text-white/40 text-xs">
-            {!q && !area ? 'Escribe una refacción industrial para buscarla.' : (
+            {!q && !area ? t.searchParts : (
               <span className="flex items-center gap-2">
                 {kcLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                {kcLoading ? 'Cargando refacciones…' : `${kcData?.meta?.total ?? kcResults.length} refacciones`}
+                {kcLoading ? t.loadingParts : `${kcData?.meta?.total ?? kcResults.length} ${t.foundParts}`}
               </span>
             )}
           </div>
@@ -288,7 +288,7 @@ export default function Buscar() {
             onClick={() => setShowFilters((s) => !s)}
             className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs border border-white/10 rounded-lg px-2.5 py-1.5"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
+            <SlidersHorizontal className="w-3.5 h-3.5" /> {t.filters}
           </button>
         </div>
 
@@ -321,11 +321,11 @@ export default function Buscar() {
                     <Cog className="w-9 h-9 animate-spin text-[#5a9cd9]" />
                   </div>
                 </div>
-                <span className="mt-4 text-sm text-white/55">Cargando refacciones…</span>
+                <span className="mt-4 text-sm text-white/55">{t.loadingParts}</span>
               </div>
             ) : kcResults.length > 0 && (
               <section>
-                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `Refacciones · ${areaLabel}` : 'Refacciones encontradas'}</div>
+                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `${t.foundPartsLabel} · ${areaLabel}` : t.foundPartsLabel}</div>
                 <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
@@ -334,7 +334,7 @@ export default function Buscar() {
 
             {discoveryResults.length > 0 && (
               <section>
-                <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Fuentes estructuradas</div>
+                <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{t.structuredSources}</div>
                 <div className="space-y-3">
                   {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
                 </div>
