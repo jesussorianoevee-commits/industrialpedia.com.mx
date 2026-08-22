@@ -35,7 +35,7 @@ async function refreshIndex(base44, partId) {
   const part = await base44.asServiceRole.entities.Part.get(partId);
   const specs = await base44.asServiceRole.entities.Specification.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
   const evidence = await base44.asServiceRole.entities.Evidence.filter({ part_id: partId }, '-updated_date', 2000).catch(() => []);
-  const specText = specs.map((s) => [s.attribute_canonical || s.attribute_name || '', s.normalized_value || s.original_value || '', s.normalized_unit || s.original_unit || ''].join(' ')).join(' | ');
+  const specText = specs.map((s) => [s.attribute_canonical || s.attribute_name || '', s.normalized_value ?? s.original_value ?? '', s.normalized_unit ?? s.original_unit ?? ''].join(' ')).join(' | ');
   const searchText = [part.part_number, part.part_number_normalized, part.manufacturer_name, part.category, part.description, specText].filter(Boolean).join(' ');
   const payload = { part_id: part.id, part_number: part.part_number || '', part_number_normalized: part.part_number_normalized || '', manufacturer_name: part.manufacturer_name || '', category: part.category || '', description: part.description || '', search_text: searchText, spec_text: specText, validation_state: part.validation_state || 'published', evidence_count: evidence.length, source_count: new Set(specs.map((s) => s.source_id).filter(Boolean)).size, spec_count: specs.length };
   const existing = await base44.asServiceRole.entities.SearchIndex.filter({ part_id: partId }, 'updated_date', 1).catch(() => []);
