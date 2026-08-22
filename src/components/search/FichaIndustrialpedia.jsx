@@ -10,7 +10,7 @@ const SOURCE_TYPE_LABELS = {
 
 function isDisplayableSpec(spec) {
   const attribute = String(spec?.attribute_name || spec?.attribute || spec?.label || '').trim();
-  const value = String(spec?.original_value || spec?.normalized_value || spec?.value || '').trim();
+  const value = String(spec?.original_value ?? spec?.normalized_value ?? spec?.value ?? '').trim();
   const combined = `${attribute} ${value}`;
   if (!attribute || !value) return false;
   // Datos comerciales/logísticos no son especificaciones técnicas de la refacción.
@@ -76,8 +76,8 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const unverifiedSpecs = (Array.isArray(ficha?.unverified_specs) ? ficha.unverified_specs : []).filter(isDisplayableSpec);
   const basicSpecs = (Array.isArray(ficha?.basic_specs) ? ficha.basic_specs : []).filter(isDisplayableSpec);
   const specKeys = new Set([
-    ...specs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`),
-    ...unverifiedSpecs.map((s) => `${(s.attribute_name || s.attribute || '').toLowerCase()}|${String(s.normalized_value || s.original_value || '').toLowerCase()}`)
+    ...specs.map((s) => `${(s.attribute_name ?? s.attribute ?? '').toLowerCase()}|${String(s.normalized_value ?? s.original_value ?? '').toLowerCase()}`),
+    ...unverifiedSpecs.map((s) => `${(s.attribute_name ?? s.attribute ?? '').toLowerCase()}|${String(s.normalized_value ?? s.original_value ?? '').toLowerCase()}`)
   ]);
   const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute || '').toLowerCase()}|${String(s.value || '').toLowerCase()}`));
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
@@ -160,9 +160,9 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                     {specs.map((s, i) => (
                       <SpecRow
                         key={`${s.attribute_name || s.attribute}-${i}`}
-                        label={s.attribute_name || s.attribute}
-                        value={s.normalized_value || s.original_value}
-                        unit={s.normalized_unit || s.original_unit}
+                        label={s.attribute_name ?? s.attribute}
+                        value={s.normalized_value ?? s.original_value}
+                        unit={s.normalized_unit ?? s.original_unit}
                         page={s.page}
                         verified={Boolean(s.verified)}
                         sourceUrl={s.evidence?.source_url || ficha.source?.url}
@@ -187,9 +187,9 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                     {unverifiedSpecs.map((s, i) => (
                       <SpecRow
                         key={`unverified-${i}`}
-                        label={s.attribute_name || s.attribute}
-                        value={s.normalized_value || s.original_value}
-                        unit={s.normalized_unit || s.original_unit}
+                        label={s.attribute_name ?? s.attribute}
+                        value={s.normalized_value ?? s.original_value}
+                        unit={s.normalized_unit ?? s.original_unit}
                         page={s.page}
                         verified={false}
                         sourceUrl={s.evidence?.source_url || ficha.source?.url}
@@ -213,8 +213,8 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   {verifiedSpecs.map((s, i) => (
                     <SpecRow
                       key={`verified-${i}`}
-                      label={s.attribute_name || s.attribute}
-                      value={s.normalized_value || s.original_value}
+                      label={s.attribute_name ?? s.attribute}
+                      value={s.normalized_value ?? s.original_value}
                       unit={s.normalized_unit || s.original_unit}
                       page={s.page}
                       verified
