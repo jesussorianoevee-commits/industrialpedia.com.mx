@@ -37,11 +37,29 @@ function statusMeta(component, t) {
   const labels = {
     compatible: [t.compatible, t.compatible],
     not_compatible: [t.notCompatible, t.notCompatible],
-    review: [t.similar, t.technicalReview],
+    review: [t.technicalMatch || 'COINCIDENCIA TÉCNICA', t.technicalReview],
     insufficient: [t.insufficientData, t.insufficientData]
   };
   const [label, short] = labels[state] || labels.insufficient;
   return { ...base, label, short };
+}
+
+function evidenceSummary(component, language = 'es') {
+  const differences = Array.isArray(component?.comparison?.differences) ? component.comparison.differences : [];
+  const equal = differences.filter((d) => d?.state === 'equal').slice(0, 3);
+  const different = differences.filter((d) => d?.state === 'different').slice(0, 2);
+  const missing = differences.filter((d) => ['base_only', 'candidate_only', 'not_comparable'].includes(d?.state)).slice(0, 2);
+  return { equal, different, missing };
+}
+
+function compactComparisonValue(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) return value.map((item) => item?.normalized_value !== undefined ? `${item.normalized_value}${item.normalized_unit ? ` ${item.normalized_unit}` : ''}` : JSON.stringify(item)).join(' · ');
+    if (value.value !== undefined) return `${value.value}${value.unit ? ` ${value.unit}` : ''}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
 }
 
 function StatusBadge({ component, base = false, t }) {
