@@ -15,11 +15,11 @@ function isUsableImageUrl(value) {
 }
 
 const STATE_LABELS = {
-  published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
-  validated: { label: 'Validado', cls: 'text-[#5a9cd9] bg-[#5a9cd9]/10' },
-  incomplete: { label: 'Incompleto', cls: 'text-[#e68a00] bg-[#e68a00]/10' },
-  rejected: { label: 'Rechazado', cls: 'text-red-400 bg-red-400/10' },
-  processed: { label: 'Procesado', cls: 'text-white/50 bg-white/10' }
+  published: 'published',
+  validated: 'validated',
+  incomplete: 'incomplete',
+  rejected: 'rejected',
+  processed: 'processed'
 };
 
 export default function ResultCard({ result }) {
@@ -77,13 +77,14 @@ export default function ResultCard({ result }) {
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
 
+  const stateLabel = { published: t.published, validated: t.validated, incomplete: t.incomplete, rejected: t.rejected, processed: t.processed }[STATE_LABELS[result.validation_state]] || t.processed;
   const st = isVerified
     ? { label: t.verified, cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
     : result.discovery_state === 'discovered'
-      ? { label: 'Encontrado · pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
+      ? { label: t.foundPendingVerification, cls: 'text-[#e68a00] bg-[#e68a00]/10' }
       : result.discovery_state === 'pending_verification'
-        ? { label: 'Pendiente de verificación', cls: 'text-[#e68a00] bg-[#e68a00]/10' }
-        : (STATE_LABELS[result.validation_state] || STATE_LABELS.processed);
+        ? { label: t.pendingVerification, cls: 'text-[#e68a00] bg-[#e68a00]/10' }
+        : { label: stateLabel, cls: 'text-white/50 bg-white/10' };
   return (
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
