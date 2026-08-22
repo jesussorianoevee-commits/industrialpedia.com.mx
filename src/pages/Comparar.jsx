@@ -386,8 +386,9 @@ export default function Comparar() {
             {specRows.map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div>
               {cols.map((c, ci) => {
-                const candidate = ci === 0 ? s : valueFor(s, c);
-                const st = ci === 0 ? 'base' : stateFor(s, c);
+                const isBaseColumn = c.id === base.id;
+                const candidate = isBaseColumn ? s : valueFor(s, c);
+                const st = isBaseColumn ? 'base' : stateFor(s, c);
                 const normalized = ci === 0 ? null : normalizedFor(s, c);
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
                 const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
