@@ -108,8 +108,43 @@ const AREA_I18N = {
   }
 };
 
+const TERM_I18N = {
+  'Accesorios para válvulas': { en: 'Valve accessories', de: 'Ventilzubehör', fr: 'Accessoires de vannes', zh: '阀门附件' },
+  'Actuador eléctrico lineal': { en: 'Linear electric actuator', de: 'Elektrischer Linearantrieb', fr: 'Actionneur électrique linéaire', zh: '电动直线执行器' },
+  'Actuadores de proceso': { en: 'Process actuators', de: 'Prozessantriebe', fr: 'Actionneurs de process', zh: '过程执行器' },
+  'Amortiguadores': { en: 'Shock absorbers', de: 'Dämpfer', fr: 'Amortisseurs', zh: '缓冲器' },
+  'Cabezas de dosificación': { en: 'Dosing heads', de: 'Dosierköpfe', fr: 'Têtes de dosage', zh: '计量头' },
+  'Cables de conexión': { en: 'Connection cables', de: 'Anschlusskabel', fr: 'Câbles de connexion', zh: '连接电缆' },
+  'Cajas de switches': { en: 'Switch boxes', de: 'Schalterboxen', fr: 'Boîtiers de commutation', zh: '开关盒' },
+  'Sensores capacitivos': { en: 'Capacitive sensors', de: 'Kapazitive Sensoren', fr: 'Capteurs capacitifs', zh: '电容式传感器' },
+  'Sensores de fuerza': { en: 'Force sensors', de: 'Kraftsensoren', fr: 'Capteurs de force', zh: '力传感器' },
+  'Sensores inductivos': { en: 'Inductive sensors', de: 'Induktive Sensoren', fr: 'Capteurs inductifs', zh: '电感式传感器' },
+  'Sensores magnéticos': { en: 'Magnetic sensors', de: 'Magnetische Sensoren', fr: 'Capteurs magnétiques', zh: '磁性传感器' },
+  'Sensores ópticos': { en: 'Optical sensors', de: 'Optische Sensoren', fr: 'Capteurs optiques', zh: '光学传感器' },
+  'Actuador eléctrico guiado': { en: 'Guided electric actuator', de: 'Geführter elektrischer Antrieb', fr: 'Actionneur électrique guidé', zh: '导向电动执行器' },
+  'Actuadores eléctricos': { en: 'Electric actuators', de: 'Elektrische Antriebe', fr: 'Actionneurs électriques', zh: '电动执行器' },
+  'Cobots colaborativos': { en: 'Collaborative cobots', de: 'Kollaborative Cobots', fr: 'Cobots collaboratifs', zh: '协作机器人' },
+  'Interfaces de operador': { en: 'Operator interfaces', de: 'Bedienerschnittstellen', fr: 'Interfaces opérateur', zh: '操作员界面' },
+  'Módulos de sujeción y giro': { en: 'Gripping and rotary modules', de: 'Greif- und Drehmodule', fr: 'Modules de préhension et rotation', zh: '夹持与旋转模块' },
+  'Controladores': { en: 'Controllers', de: 'Steuerungen', fr: 'Contrôleurs', zh: '控制器' },
+  'Dispositivos aislados y a prueba de agua': { en: 'Isolated and waterproof devices', de: 'Isolierte und wasserdichte Geräte', fr: 'Dispositifs isolés et étanches', zh: '隔离及防水设备' },
+  'Dispositivos con seguro de media vuelta': { en: 'Half-turn locking devices', de: 'Halbdrehverriegelungen', fr: 'Dispositifs à verrouillage quart de tour', zh: '半转锁定装置' },
+  'Cables de conexión universales': { en: 'Universal connection cables', de: 'Universelle Anschlusskabel', fr: 'Câbles de connexion universels', zh: '通用连接电缆' },
+  'Acoplamientos': { en: 'Couplings', de: 'Kupplungen', fr: 'Accouplements', zh: '联轴器' },
+  'Rodamientos': { en: 'Bearings', de: 'Lager', fr: 'Roulements', zh: '轴承' },
+  'Correas y poleas': { en: 'Belts and pulleys', de: 'Riemen und Riemenscheiben', fr: 'Courroies et poulies', zh: '皮带和皮带轮' },
+  'Engranajes': { en: 'Gears', de: 'Zahnräder', fr: 'Engrenages', zh: '齿轮' },
+  'Ejes y chavetas': { en: 'Shafts and keys', de: 'Wellen und Passfedern', fr: 'Arbres et clavettes', zh: '轴和键' },
+  'Piñones': { en: 'Sprockets', de: 'Ritzel', fr: 'Pignons', zh: '链轮' }
+};
+
+export function localizeTaxonomyTerm(term, language = 'es') {
+  return TERM_I18N[term]?.[language] || term;
+}
+
 export function getLocalizedArea(area, language = 'es') {
   const localized = AREA_I18N[language]?.[area.id];
-  if (!localized) return area;
-  return { ...area, name: localized.name, description: localized.description };
+  const localizedSubcategories = area.subcategories?.map((term) => localizeTaxonomyTerm(term, language));
+  if (!localized && language === 'es') return area;
+  return { ...area, ...(localized || {}), subcategories: localizedSubcategories || area.subcategories };
 }
