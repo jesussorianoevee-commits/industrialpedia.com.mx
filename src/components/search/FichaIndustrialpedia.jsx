@@ -41,12 +41,12 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
   const text = `${value}${unit ? ` ${unit}` : ''}`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,40%)_1fr] gap-4 py-4 border-b border-white/[0.055] last:border-b-0">
+    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,40%)_1fr] gap-2 sm:gap-4 py-3.5 sm:py-4 border-b border-white/[0.055] last:border-b-0">
       <div className="flex items-start gap-2 min-w-0">
         <span className="text-[14px] sm:text-[15px] leading-6 text-white/55 font-mono break-words">{localizeSpecAttribute(label, language)}</span>
         <SourceBadge page={page} verified={verified} t={t} />
       </div>
-      <div className="min-w-0 text-right">
+      <div className="min-w-0 text-left sm:text-right">
         <div className="text-[15px] sm:text-[16px] leading-6 text-white/90 font-mono break-words">{text}</div>
         {sourceUrl && (
           <a
@@ -83,9 +83,9 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 ip-mobile-safe-bottom" onClick={onClose}>
       <div
-        className="bg-[#0b1015] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-3xl max-h-[94vh] overflow-y-auto shadow-2xl"
+        className="bg-[#0b1015] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-3xl max-h-[94vh] sm:max-h-[92vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-3 bg-[#0b1015]/95 backdrop-blur border-b border-white/10">
@@ -110,19 +110,19 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             <p className="text-[11px] text-white/35 text-center">{t.foundSourceNoPart}</p>
           </div>
         ) : !ficha ? null : (
-          <div className="p-4 sm:p-6 space-y-6">
-            <section className="rounded-xl border border-white/10 bg-[#10161d] p-5 sm:p-6">
+          <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
+            <section className="rounded-xl border border-white/10 bg-[#10161d] p-4 sm:p-6">
               <div className="flex items-start gap-4">
                 {ficha.image_url && !imgError ? (
                   <img
                     src={ficha.image_url}
                     alt=""
-                    className="h-24 w-24 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10 object-contain p-2"
+                    className="h-20 w-20 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10 object-contain p-2"
                     referrerPolicy="no-referrer"
                     onError={() => setImgError(true)}
                   />
                 ) : (
-                  <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
+                  <div className="h-20 w-20 sm:h-28 sm:w-28 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
                     <FileText className="w-6 h-6 text-white/20" />
                   </div>
                 )}
