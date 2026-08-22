@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, ShieldCheck } from 'lucide-react';
 import { POPULAR_TAGS } from '@/lib/taxonomy';
 
-export default function Hero({ partCount, loading }) {
+export default function Hero({ partCount, loading, lastUpdated }) {
   const [q, setQ] = useState('');
   const navigate = useNavigate();
   const submit = (e) => { e.preventDefault(); if (q.trim()) navigate(`/buscar?q=${encodeURIComponent(q.trim())}`); };
@@ -12,8 +12,13 @@ export default function Hero({ partCount, loading }) {
     <section className="px-5 pt-16 pb-10 md:pt-24 md:pb-16 text-center">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 ip-muted text-[10px] mb-6 tracking-[0.16em] uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/.7)]" />
-        {loading ? 'Knowledge Core' : `${partCount.toLocaleString()} refacciones publicadas`}
+        {loading ? 'Knowledge Core' : `${partCount.toLocaleString()} refacciones en el Knowledge Core`}
       </div>
+      {!loading && lastUpdated && (
+        <div className="text-[10px] ip-muted -mt-3 mb-5 opacity-70">
+          Actualizado automáticamente · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      )}
       <h1 className="text-[42px] md:text-[68px] leading-[0.98] font-bold tracking-[-0.045em] ip-text mb-5 max-w-4xl mx-auto">
         Encuentra tu <span className="ip-accent">refacción</span><br className="hidden sm:block" /> en segundos.
       </h1>
