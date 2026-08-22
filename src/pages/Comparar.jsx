@@ -35,7 +35,7 @@ function statusMeta(component) {
   return STATE[component?.comparison?.state] || STATE.insufficient;
 }
 
-function StatusBadge({ component, base = false }) {
+function StatusBadge({ component, base = false, t }) {
   if (base) return <span className="inline-flex items-center gap-1.5 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#16c79a]"><CheckCircle2 className="h-3.5 w-3.5" /> Componente base</span>;
   const meta = statusMeta(component);
   const Icon = meta.icon;
@@ -113,7 +113,7 @@ export default function Comparar() {
             {base.image_url ? <img src={base.image_url} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" /> : <div className="text-[10px] text-white/25">{t.noImage}</div>}
           </div>
           <div>
-            <StatusBadge component={base} base />
+            <StatusBadge component={base} base t={t} />
             <div className="mt-3 font-mono text-xl font-semibold text-white">{base.part_number}</div>
             <div className="mt-1 text-sm text-[#65a9e6]">{base.manufacturer_name || t.manufacturerNotIndicated}</div>
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
