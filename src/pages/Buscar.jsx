@@ -8,6 +8,7 @@ import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
 import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { translateParts, useLanguage } from '@/lib/i18n';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
@@ -21,6 +22,7 @@ export default function Buscar() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const { language } = useLanguage();
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
@@ -159,6 +161,20 @@ export default function Buscar() {
 
   const kcResults = kcData?.knowledge_core_results || [];
   const discoveryResults = kcData?.discovery_results || [];
+
+  // Localize the current result page in one batch. The original Part record
+  // remains the fallback and technical identifiers are never translated.
+  useEffect(() => {
+    let cancelled = false;
+    const localize = async () => {
+      if (!kcData || kcResults.length === 0) return;
+      const localized = await translateParts(kcResults, language);
+      if (cancelled) return;
+      if (localized !== kcResults) setKcData((prev) => prev ? { ...prev, knowledge_core_results: localized } : prev);
+    };
+    localize();
+    return () => { cancelled = true; };
+  }, [language, kcResults, kcData]);
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
 
   return (
