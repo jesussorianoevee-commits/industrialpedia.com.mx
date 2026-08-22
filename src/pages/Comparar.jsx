@@ -109,9 +109,9 @@ export default function Comparar() {
       </div>
     </header>
 
-    <main className="mx-auto max-w-7xl px-4 py-5 sm:py-7">
+    <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-7 w-full min-w-0">
       <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs text-[#65a9e6] hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
-      <div className="mb-6 flex items-end justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} {t.candidatesConsulted}</div>
       </div>
@@ -159,7 +159,7 @@ export default function Comparar() {
           </div>
         </section>
 
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
+        <div className="ip-scroll-x rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
@@ -214,7 +214,7 @@ export default function Comparar() {
           </div>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-[10px] text-white/45">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-white/45">
           <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#16c79a]" /> {STATUS_LABELS_ES.equal}</span>
           <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> {STATUS_LABELS_ES.different} (revisar)</span>
           <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 text-red-400" /> No coincide</span>
