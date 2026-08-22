@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "UiTranslationAudit"
+}

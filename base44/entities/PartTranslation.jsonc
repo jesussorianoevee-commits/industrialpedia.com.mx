@@ -20,6 +20,15 @@
     "description": {
       "type": "string"
     },
+    "category": {
+      "type": "string"
+    },
+    "subcategory": {
+      "type": "string"
+    },
+    "specifications": {
+      "type": "object"
+    },
     "status": {
       "type": "string",
       "enum": [
