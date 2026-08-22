@@ -224,7 +224,7 @@ const AREA_I18N = {
   },
   zh: {
     'fuera-alcance': { name: '不属于工业范围', description: '已识别但不属于工业技术备件或物料的产品。' },
-    'otros-mro': { name: 'MRO / 其他组件', description: '已识别但尚未归入更具体技术领域的组件和物料。' }
+    'otros-mro': { name: 'MRO / 其他组件', description: '已识别但尚未归入更具体技术领域的组件和物料。' },
     'infraestructura-almacenamiento': { name: '基础设施 / 存储', description: '工作台、货架、推车、容器及支持设施。' },
     'limpieza-epp': { name: '清洁 / PPE', description: '个人防护、洁净室和清洁用品。' },
     'instrumentacion-medicion': { name: '仪器 / 测量', description: '用于测量、记录、校准和验证过程变量的仪器。' },
