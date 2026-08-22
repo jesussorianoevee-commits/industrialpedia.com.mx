@@ -36,7 +36,7 @@ export function gatePart(rec) {
   }
 
   const specIncomplete = rec.specs.filter((s) => {
-    return !s.original_value || !s.evidence_text || !s.semantic_role || s.semantic_role !== 'TECHNICAL_SPECIFICATION' || !Number.isFinite(Number(s.page)) || Number(s.page) < 1;
+    return (s.original_value === null || s.original_value === undefined || String(s.original_value).trim() === '') || !s.evidence_text || !s.semantic_role || s.semantic_role !== 'TECHNICAL_SPECIFICATION' || !Number.isFinite(Number(s.page)) || Number(s.page) < 1;
   });
   if (specIncomplete.length === rec.specs.length) {
     return { pass: false, state: 'incomplete', causes: ['all specifications lack complete evidence'] };
