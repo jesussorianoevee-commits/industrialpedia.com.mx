@@ -65,7 +65,10 @@ export function localizeSpecAttribute(attribute, language = 'es') {
 export function localizeTechnicalTerm(term, language = 'es') {
   const raw = String(term || '').trim();
   if (!raw) return '';
-  return TECHNICAL_TERM_I18N[raw]?.[language] ?? TECHNICAL_TERM_I18N[raw.toLowerCase()]?.[language] ?? raw;
+  const direct = TECHNICAL_TERM_I18N[raw]?.[language] ?? TECHNICAL_TERM_I18N[raw.toLowerCase()]?.[language];
+  if (direct !== undefined) return direct;
+  const entry = Object.entries(TECHNICAL_TERM_I18N).find(([key]) => key.toLowerCase() === raw.toLowerCase());
+  return entry?.[1]?.[language] ?? raw;
 }
 
 export function localizedCount(count, singular, plural, language = 'es') {
