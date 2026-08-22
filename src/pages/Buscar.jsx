@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock } from 'lucide-react';
+import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock, Cog } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
@@ -293,8 +293,9 @@ export default function Buscar() {
         ) : (
           <div className="space-y-6">
             {kcLoading ? (
-              <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
-                <Loader2 className="w-4 h-4 animate-spin" /> Cargando refacciones…
+              <div className="flex flex-col items-center gap-3 py-10 justify-center">
+                <Cog className="w-8 h-8 animate-spin text-[#5a9cd9]" />
+                <span className="text-white/40 text-xs">Cargando refacciones…</span>
               </div>
             ) : kcResults.length > 0 && (
               <section>
