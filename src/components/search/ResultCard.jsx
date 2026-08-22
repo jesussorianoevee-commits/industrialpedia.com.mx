@@ -131,9 +131,7 @@ export default function ResultCard({ result }) {
       )}
       {result.discovery_state === 'discovered' && (
         <p className="text-white/35 text-[11px] mb-3">
-          {result.part_number
-            ? 'Fuente encontrada. La ficha técnica se construye directamente desde esta fuente, sin inventar datos.'
-            : 'Fuente encontrada. Esta consulta aún no identifica un número de parte concreto; revisa la fuente para ver los productos disponibles.'}
+          {result.part_number ? t.foundSourcePart : t.foundSourceNoPart}
         </p>
       )}
       {materializeError && (
@@ -192,7 +190,7 @@ export default function ResultCard({ result }) {
             rel="noreferrer"
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            Ver producto <ArrowRight className="w-3 h-3" />
+            {t.viewProduct} <ArrowRight className="w-3 h-3" />
           </a>
         ) : result.discovery_id && result.part_number ? (
           <button
@@ -225,12 +223,12 @@ export default function ResultCard({ result }) {
             rel="noreferrer"
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            Ver fuente <ArrowRight className="w-3 h-3" />
+            {t.viewSource} <ArrowRight className="w-3 h-3" />
           </a>
         ) : null}
         <button
           disabled
-          title="Pilar ENCONTRAR — próxima iteración"
+          title={t.findAlternatives}
           className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60"
         >
           {t.findAlternatives}
