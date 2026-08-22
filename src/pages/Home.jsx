@@ -13,19 +13,34 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refreshCount = async () => {
+    let refreshed = false;
+
+    // El total del catálogo y los conteos por área son fuentes independientes.
+    // Si una consulta de taxonomía tarda/falla, nunca debemos convertir un catálogo
+    // válido en "0 refacciones" en la UI.
     try {
-      // Catálogo canónico: Supabase. No usamos Base44 Part ni un límite de 1000.
       const stats = await getIndustrialpediaCatalogStats();
       const total = Number(stats?.count);
-      if (!Number.isFinite(total)) throw new Error('invalid_catalog_count');
-      const categoryStats = await getIndustrialpediaCategoryStats();
-      setCounts(categoryStats);
-      setPartCount(total);
-      setLastUpdated(new Date());
-      return true;
-    } catch (e) {
-      return false;
+      if (Number.isFinite(total)) {
+        setPartCount(total);
+        setLastUpdated(new Date());
+        refreshed = true;
+      }
+    } catch {
+      // Conservamos el último total válido.
     }
+
+    try {
+      const categoryStats = await getIndustrialpediaCategoryStats();
+      if (categoryStats && typeof categoryStats === 'object') {
+        setCounts(categoryStats);
+        refreshed = true;
+      }
+    } catch {
+      // Conservamos los últimos conteos válidos; nunca reemplazamos datos por ceros.
+    }
+
+    return refreshed;
   };
 
   useEffect(() => {
