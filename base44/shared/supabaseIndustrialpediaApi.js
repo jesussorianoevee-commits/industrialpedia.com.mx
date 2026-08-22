@@ -305,10 +305,15 @@ async function refreshIndustrialpediaCategoryStats() {
   // El RPC actual clasifica fila por fila y puede superar el timeout de anon.
   // Tres consultas concurrentes equilibran latencia y carga; un fallo individual
   // jamás destruye el snapshot completo.
-  const concurrency = 3;
-  for (let i = 0; i < CATEGORY_AREAS.length; i += concurrency) {
-    const batch = CATEGORY_AREAS.slice(i, i + concurrency);
-    const results = await Promise.all(batch.map(async (area) => {
+  // Mantener el camino estable para las 6 áreas originales: esas estadísticas
+  // ya están consolidadas y no deben depender de la nueva consulta por área.
+  const LEGACY_AREAS = ['neumatica', 'sensores', 'robotica', 'electronica-control', 'mecanica-transmision', 'sin_clasificar'];
+  const NEW_AREAS = CATEGORY_AREAS.filter((area) => !LEGACY_AREAS.includes(area));
+
+  const refreshAreaSet = async (areas, concurrency = 3) => {
+    for (let i = 0; i < areas.length; i += concurrency) {
+      const batch = areas.slice(i, i + concurrency);
+      const results = await Promise.all(batch.map(async (area) => {
       try {
         const result = await getIndustrialpediaAreaParts(area, 1, 0);
         const total = Number(result?.total);
@@ -318,15 +323,23 @@ async function refreshIndustrialpediaCategoryStats() {
       }
     }));
 
-    for (const [area, total] of results) {
-      if (total !== null) next[area] = total;
-    }
+      for (const [area, total] of results) {
+        if (total !== null) next[area] = total;
+      }
 
-    // Publicamos progreso real: si algunas áreas responden, la UI las recibe
-    // inmediatamente sin esperar a que terminen las restantes.
-    categoryStatsCache.value = next;
-    publishCategoryStats(next);
+      categoryStatsCache.value = next;
+      publishCategoryStats(next);
+    }
+  };
+
+  // La ruta legacy es la fuente estable para las áreas que ya existían.
+  // Solo las áreas nuevas dependen del clasificador v3 por área.
+  const legacyStats = await getIndustrialpediaLegacyAreaStats();
+  for (const [area, total] of Object.entries(legacyStats || {})) {
+    if (LEGACY_AREAS.includes(area) && Number.isFinite(Number(total))) next[area] = Number(total);
   }
+
+  await refreshAreaSet(NEW_AREAS, 3);
 
   next.sin_clasificar = Number.isFinite(next.sin_clasificar) ? next.sin_clasificar : 0;
   next['otras-refacciones'] = Number.isFinite(next['otras-refacciones']) ? next['otras-refacciones'] : 0;
@@ -337,6 +350,17 @@ async function refreshIndustrialpediaCategoryStats() {
   };
   publishCategoryStats(next);
   return next;
+}
+
+async function getIndustrialpediaLegacyAreaStats() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_stats_v1`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`, 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  if (!response.ok) throw new Error(`legacy_area_stats_http_${response.status}`);
+  const rows = await response.json();
+  return Object.fromEntries((Array.isArray(rows) ? rows : []).map((row) => [row.area, Number(row.count)]));
 }
 
 export async function getIndustrialpediaCategoryStats() {
