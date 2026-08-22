@@ -34,7 +34,7 @@ export default function Parte() {
   const [sources, setSources] = useState([]);
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -143,7 +143,7 @@ export default function Parte() {
   if (!part) {
     return (
       <div className="min-h-screen bg-[#0a0e12] grid-bg flex flex-col items-center justify-center gap-3">
-        <p className="text-white/50 text-sm">Componente no encontrado o no publicado.</p>
+        <p className="text-white/50 text-sm">{t.partNotFound}</p>
         <Link to="/buscar" className="text-[#5a9cd9] text-sm hover:underline">← Volver a BUSCAR</Link>
       </div>
     );
@@ -156,7 +156,7 @@ export default function Parte() {
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
         <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
-          <ArrowLeft className="w-4 h-4" /> Volver a BUSCAR
+          <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
         </button>
       </header>
 
@@ -172,13 +172,13 @@ export default function Parte() {
           </div>
           {part.description && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
           {part.translation_status === 'machine_draft' && language !== 'es' && (
-            <div className="mt-2 text-[10px] text-amber-300/60">Traducción automática · pendiente de revisión técnica</div>
+            <div className="mt-2 text-[10px] text-amber-300/60">{t.autoTranslation}</div>
           )}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
               <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} evidencia(s) del componente</span>
             ) : (
-              <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> sin evidencia documental</span>
+              <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}</span>
             )}
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function Parte() {
 
         {partEvidence.length > 0 && (
           <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
-            <div className="text-white font-semibold text-sm mb-2">Evidencia del componente</div>
+            <div className="text-white font-semibold text-sm mb-2">{t.componentEvidence}</div>
             <div className="space-y-2">
               {partEvidence.map((ev) => (
                 <div key={ev.id} className="text-[11px] text-white/55 leading-relaxed">
@@ -200,7 +200,7 @@ export default function Parte() {
         )}
 
         <div>
-          <h2 className="text-white font-semibold text-sm mb-3">Especificaciones</h2>
+          <h2 className="text-white font-semibold text-sm mb-3">{t.technicalSpecs}</h2>
           <SpecList specs={specs} evidenceBySpec={evidenceBySpec} provenanceBySpec={provenanceBySpec} />
         </div>
 
@@ -234,7 +234,7 @@ export default function Parte() {
 
         <div className="flex gap-2 pt-2">
           <button disabled title="Pilar ENCONTRAR — próxima iteración" className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Encontrar alternativas</button>
-          <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">Comparar</Link>
+          <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
         </div>
       </main>
     </div>
