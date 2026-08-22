@@ -12,7 +12,7 @@ const STEPS = [
 
 export default function TraceabilityChain({ counts }) {
   return (
-    <div className="bg-[#161a20] border border-white/10 rounded-xl p-4">
+    <div className="hidden">
       <div className="text-white/40 text-[11px] uppercase tracking-wide mb-3">Cadena de trazabilidad</div>
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
         {STEPS.map((s, i) => {
