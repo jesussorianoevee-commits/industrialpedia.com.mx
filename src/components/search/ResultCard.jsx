@@ -172,7 +172,9 @@ export default function ResultCard({ result }) {
         {result.source_url && (
           <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline">{t.viewSource}</a>
         )}
-        <span className="text-white/30 ml-auto capitalize">{result.match.replace(/_/g, ' ')}</span>
+        {result.match && !/^category$/i.test(String(result.match).trim()) && (
+          <span className="text-white/30 ml-auto capitalize">{result.match.replace(/_/g, ' ')}</span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
