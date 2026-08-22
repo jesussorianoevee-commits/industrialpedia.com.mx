@@ -239,22 +239,32 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   };
 }
 
+let categoryStatsCache = { value: null, expiresAt: 0 };
+
 export async function getIndustrialpediaCategoryStats() {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_stats_v1`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json'
-    },
-    body: '{}'
-  });
-  const data = await response.json().catch(() => null);
-  if (!response.ok || !Array.isArray(data)) {
-    throw new Error(data?.message || data?.error || `Catalog area stats HTTP ${response.status}`);
-  }
-  return Object.fromEntries(data.map((row) => [String(row.area), Number(row.count) || 0]));
+  // No usamos el RPC histórico de estadísticas: su taxonomía quedó desfasada.
+  // La fuente canónica de clasificación es industrialpedia_classify_area_v3,
+  // expuesta de forma segura a través del catálogo por área. Cada consulta con
+  // limit=1 devuelve result_count, por lo que no descargamos miles de piezas.
+  const now = Date.now();
+  if (categoryStatsCache.value && categoryStatsCache.expiresAt > now) return categoryStatsCache.value;
+
+  const areas = [
+    'neumatica', 'sensores', 'robotica', 'electronica-control', 'mecanica-transmision',
+    'fuera-alcance', 'infraestructura-almacenamiento', 'limpieza-epp',
+    'instrumentacion-medicion', 'laboratorio-cientifico', 'fluidos-bombeo',
+    'herramientas-mro', 'soldadura-union', 'consumibles-mro', 'proceso-maquinaria',
+    'otros-mro'
+  ];
+
+  const pairs = await Promise.all(areas.map(async (area) => {
+    const result = await getIndustrialpediaAreaParts(area, 1, 0);
+    return [area, Number(result?.total) || 0];
+  }));
+
+  const value = Object.fromEntries([...pairs, ['sin_clasificar', 0], ['otras-refacciones', 0]]);
+  categoryStatsCache = { value, expiresAt: now + 5 * 60 * 1000 };
+  return value;
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
