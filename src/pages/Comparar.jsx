@@ -254,10 +254,11 @@ export default function Comparar() {
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
                 const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
                 const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
-                const stateClass = st === 'equal' ? 'text-white/80' : st === 'different' ? 'text-amber-200' : 'text-white/35';
-                return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass}`}>
-                  <div className="min-w-0"><div className="font-mono leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-[9px] font-mono text-white/30">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
-                  {ci > 0 && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : <span className="text-white/20">—</span>)}
+                const stateClass = st === 'equal' ? 'text-[#16c79a]' : st === 'different' ? 'text-amber-300' : st === 'not_comparable' ? 'text-red-300' : 'text-white/35';
+                const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
+                return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
+                  <div className="min-w-0"><div className="font-mono leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-[9px] font-mono text-white/35">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
+                  {ci > 0 && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 text-red-300" /> : <span className="text-white/20">—</span>)}
                 </div>;
               })}
             </div>)}
