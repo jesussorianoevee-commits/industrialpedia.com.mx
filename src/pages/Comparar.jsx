@@ -154,7 +154,7 @@ export default function Comparar() {
       <>
         <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <div><h2 className="text-sm font-semibold text-white/90">{t.compatibilityMap}</h2><p className="mt-1 text-[11px] text-white/35">Cada alternativa se evalúa directamente contra el componente base.</p></div>
+            <div><h2 className="text-sm font-semibold text-white/90">{t.compatibilityMap}</h2><p className="mt-1 text-[11px] text-white/35">Primero se muestran las piezas candidatas; después se comparan sus fichas técnicas propiedad por propiedad contra el componente base.</p></div>
             <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-white/25">BASE → ALTERNATIVAS</span>
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
@@ -169,9 +169,17 @@ export default function Comparar() {
             const evidence = evidenceSummary(c, language);
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
-              <div className="mt-3 text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
-              <div className="mt-1 font-mono text-sm font-semibold text-white">{c.part_number}</div>
-              <div className="mt-0.5 truncate text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
+                  {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
+                  <div className="mt-1 font-mono text-sm font-semibold text-white">{c.part_number}</div>
+                  <div className="mt-0.5 truncate text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
+                </div>
+              </div>
+              {c.product_name && <div className="mt-3 text-[10px] leading-relaxed text-white/45">{c.product_name}</div>}
               <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
                 <div className="mt-1 font-mono text-xs font-semibold text-white">{base.part_number}</div>
@@ -187,13 +195,21 @@ export default function Comparar() {
           </div>
         </section>
 
+        <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-2 rounded-full bg-[#65a9e6]" />
+            <div><h2 className="text-sm font-semibold text-white/90">Fichas técnicas comparadas</h2><p className="mt-1 text-[11px] text-white/35">Aquí se ve exactamente qué dato de la ficha de cada fabricante coincide, difiere o falta.</p></div>
+          </div>
+        </section>
         <div className="ip-scroll-x rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
               {cols.map((c, i) => <div key={i} className="border-l border-white/[0.08] p-4">
                 <div className="flex items-start gap-3">
-                  {c.image_url && <img src={c.image_url} alt="" className="h-12 w-12 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+                    {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}
+                  </div>
                   <div className="min-w-0"><div className="font-mono text-sm font-semibold text-[#65a9e6] break-all">{c.part_number}</div><div className="mt-1 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-xs text-white/55">{c.product_name || c.description || ''}</div></div>
                 </div>
               </div>)}
