@@ -258,7 +258,7 @@ export async function getIndustrialpediaCategoryStats() {
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_parts_v1`, {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_parts_v2`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,

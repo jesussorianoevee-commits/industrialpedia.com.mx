@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "area": {
+      "type": "string"
+    },
+    "issue_type": {
+      "type": "string"
+    },
+    "sample_size": {
+      "type": "number"
+    },
+    "false_positive_count": {
+      "type": "number"
+    },
+    "false_negative_count": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "ClassificationAuditLog"
+}
