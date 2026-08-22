@@ -69,6 +69,10 @@ export default function ResultCard({ result }) {
   };
   const referenceSpecs = Object.fromEntries((Array.isArray(result.top_specs) ? result.top_specs : []).filter(s => s?.attribute && s?.value !== undefined && s?.value !== null && s?.value !== '').map(s => [s.attribute, s.unit ? { value: s.value, unit: s.unit } : s.value]));
   const isFestoDiscovery = String(result.manufacturer_name || '').toLowerCase() === 'festo' && result.discovery_state === 'discovered';
+  const normalizeIdentity = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const manufacturerIsSameAsPartNumber = Boolean(result.manufacturer_name && result.part_number && normalizeIdentity(result.manufacturer_name) === normalizeIdentity(result.part_number));
+  const displayProductName = result.title || result.product_name || result.product_identity?.short_description || '';
+  const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
 
   const st = isVerified
@@ -82,10 +86,15 @@ export default function ResultCard({ result }) {
     <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0">
-          <div className={`text-sm font-semibold truncate ${(result.part_number || result.product_identity?.identified) ? 'text-white' : 'text-white/50'}`}>
-            {result.part_number || result.product_identity?.short_description || 'Producto no identificado'}
+          <div className={`text-sm font-semibold leading-snug line-clamp-2 ${displayProductName ? 'text-white' : 'text-white/50'}`}>
+            {displayProductName || 'Producto no identificado'}
           </div>
-          <div className="text-white/50 text-xs">{result.manufacturer_name || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}{result.category ? ` · ${result.category}` : ''}</div>
+          <div className="mt-1 text-white/50 text-xs">
+            {displayManufacturer || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}
+            {displayManufacturer && result.part_number ? ' · ' : ''}
+            {result.part_number ? `Referencia: ${result.part_number}` : ''}
+            {result.category ? ` · ${result.category}` : ''}
+          </div>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
       </div>
