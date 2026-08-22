@@ -233,7 +233,7 @@ export default function Buscar() {
           {input.trim().length >= 3 && input.trim() !== q.trim() && (suggestionsLoading || suggestions.length > 0) && (
             <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
               {suggestionsLoading ? (
-                <div className="px-4 py-4 text-xs text-white/40 flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> Descubriendo productos…</div>
+                <div className="px-4 py-4 text-xs text-white/40 flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> {t.discoveringProducts}</div>
               ) : (
                 <div className="max-h-[430px] overflow-y-auto">
                   {suggestions.map((s, i) => (
@@ -305,7 +305,7 @@ export default function Buscar() {
         ) : kcError ? (
           <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-5 text-center">
             <p className="text-sm text-amber-200/80">{kcError}</p>
-            <button onClick={onReset} className="mt-3 text-xs text-[#5a9cd9] hover:underline">Reintentar</button>
+            <button onClick={onReset} className="mt-3 text-xs text-[#5a9cd9] hover:underline">{t.retry}</button>
           </div>
         ) : (
           <div className="space-y-6">
