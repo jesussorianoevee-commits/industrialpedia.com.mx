@@ -271,6 +271,32 @@ export default function Parte() {
           <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
         </div>
       </main>
+
+      {imagePreviewOpen && part.image_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Imagen ampliada de ${part.part_number || 'la pieza'}`}
+          onClick={() => setImagePreviewOpen(false)}
+        >
+          <div className="relative w-full max-w-4xl max-h-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setImagePreviewOpen(false)}
+              className="self-end mb-3 px-5 py-3 rounded-lg bg-white text-black font-semibold text-base"
+            >
+              Cerrar imagen
+            </button>
+            <img
+              src={part.image_url}
+              alt={`Imagen ampliada de ${part.part_number || 'la pieza'}`}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg bg-white p-2"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
