@@ -220,7 +220,7 @@ export default function Comparar() {
                           <div className="mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed text-white/85">{baseValueForCard}</div>
                         </div>
                         <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
-                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Alternativa</div>
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Alternativa · {c.part_number}</div>
                           <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s)}</div>
                         </div>
                       </div>
