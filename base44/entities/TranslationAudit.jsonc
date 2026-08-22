@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en",
+        "de",
+        "fr",
+        "zh"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "machine_draft",
+        "reviewed",
+        "published",
+        "failed"
+      ]
+    },
+    "source_hash": {
+      "type": "string"
+    },
+    "translation_version": {
+      "type": "integer"
+    },
+    "last_checked_at": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "part_id",
+    "language",
+    "status"
+  ],
+  "name": "TranslationAudit"
+}
