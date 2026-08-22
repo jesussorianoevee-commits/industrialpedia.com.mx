@@ -7,9 +7,18 @@ import { useLanguage } from '@/lib/i18n';
 
 export default function Hero({ partCount, loading, lastUpdated }) {
   const [q, setQ] = useState('');
+  const [history, setHistory] = useState(() => { try { return JSON.parse(localStorage.getItem('industrialpedia_search_history') || '[]'); } catch { return []; } });
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const suggestionTimer = useRef(null);
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const submit = (e) => { e.preventDefault(); if (q.trim()) navigate(`/buscar?q=${encodeURIComponent(q.trim())}`); };
+  const saveToHistory = (term) => { const clean = String(term || '').trim(); if (!clean) return; setHistory((prev) => { const next = [clean, ...prev.filter((s) => s !== clean)].slice(0, 8); try { localStorage.setItem('industrialpedia_search_history', JSON.stringify(next)); } catch {} return next; }); };
+  const historySuggestions = q.trim().length >= 2 ? history.filter((term) => term.toLowerCase().includes(q.trim().toLowerCase())).slice(0, 5) : [];
+  useEffect(() => { const term = q.trim(); if (suggestionTimer.current) clearTimeout(suggestionTimer.current); if (term.length < 2) { setSuggestions([]); setSuggestionsLoading(false); return; } suggestionTimer.current = setTimeout(async () => { setSuggestionsLoading(true); try { const res = await base44.functions.invoke('SugerenciasBuscar', { q: term }); setSuggestions((res.data?.suggestions || []).slice(0, 6)); } catch { setSuggestions([]); } finally { setSuggestionsLoading(false); } }, 180); return () => suggestionTimer.current && clearTimeout(suggestionTimer.current); }, [q]);
+  const goSearch = (term) => { const clean = String(term || '').trim(); if (!clean) return; saveToHistory(clean); setShowDropdown(false); navigate('/buscar?q=' + encodeURIComponent(clean)); };
+  const submit = (e) => { e.preventDefault(); goSearch(q); };
 
   return (
     <section className="px-5 pt-16 pb-10 md:pt-24 md:pb-16 text-center">
