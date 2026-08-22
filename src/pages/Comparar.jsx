@@ -43,7 +43,7 @@ function StatusBadge({ component, base = false }) {
   const equal = component?.comparison?.equal || 0;
   return <div className={`flex items-center justify-between rounded-lg border px-3 py-2 ${meta.cls}`}>
     <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider"><Icon className="h-3.5 w-3.5" />{meta.label}</span>
-    <span className="text-[10px] font-mono font-semibold">{equal}/{compared} SPECS</span>
+    <span className="text-[10px] font-mono font-semibold">{equal}/{compared} {t.specsShort}</span>
   </div>;
 }
 
@@ -104,18 +104,18 @@ export default function Comparar() {
       <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs text-[#65a9e6] hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex items-end justify-between gap-4">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
-        <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} candidatos consultados</div>
+        <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} {t.candidatesConsulted}</div>
       </div>
 
       <section className="mb-5 overflow-hidden rounded-xl border border-white/10 bg-[#0d141b]">
         <div className="grid gap-5 p-5 md:grid-cols-[150px_1fr_1fr] md:items-center">
           <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-[#091016]">
-            {base.image_url ? <img src={base.image_url} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" /> : <div className="text-[10px] text-white/25">Sin imagen</div>}
+            {base.image_url ? <img src={base.image_url} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" /> : <div className="text-[10px] text-white/25">{t.noImage}</div>}
           </div>
           <div>
             <StatusBadge component={base} base />
             <div className="mt-3 font-mono text-xl font-semibold text-white">{base.part_number}</div>
-            <div className="mt-1 text-sm text-[#65a9e6]">{base.manufacturer_name || 'Fabricante no indicado'}</div>
+            <div className="mt-1 text-sm text-[#65a9e6]">{base.manufacturer_name || t.manufacturerNotIndicated}</div>
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
@@ -133,17 +133,17 @@ export default function Comparar() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
               {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
-              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || 'Fabricante no indicado'}</div></div>
+              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
               {alternatives.map((c, i) => {
             const meta = statusMeta(c); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
-              <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} SPECS</span></div>
+              <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
               <div className="mt-3 text-xs text-white/50">{t.compatibility}</div>
               <div className="mt-1 text-sm font-semibold text-white/80">{meta.short}</div>
-              <div className="mt-2 text-[9px] text-white/30">Comparado contra: <span className="font-mono text-white/50">{base.part_number}</span></div>
+              <div className="mt-2 text-[9px] text-white/30">{t.comparedAgainst}: <span className="font-mono text-white/50">{base.part_number}</span></div>
             </div>;
           })}
             </div>
@@ -157,7 +157,7 @@ export default function Comparar() {
               {cols.map((c, i) => <div key={i} className="border-l border-white/[0.08] p-4">
                 <div className="flex items-start gap-3">
                   {c.image_url && <img src={c.image_url} alt="" className="h-12 w-12 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
-                  <div className="min-w-0"><div className="font-mono text-sm font-semibold text-[#65a9e6] break-all">{c.part_number}</div><div className="mt-1 text-[10px] text-white/40">{c.manufacturer_name || 'Fabricante no indicado'}</div><div className="mt-1 line-clamp-2 text-xs text-white/55">{c.product_name || c.description || ''}</div></div>
+                  <div className="min-w-0"><div className="font-mono text-sm font-semibold text-[#65a9e6] break-all">{c.part_number}</div><div className="mt-1 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-xs text-white/55">{c.product_name || c.description || ''}</div></div>
                 </div>
               </div>)}
             </div>
