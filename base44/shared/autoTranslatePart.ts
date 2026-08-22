@@ -81,6 +81,11 @@ export async function autoTranslatePart(base44: any, part: any) {
       if (!item?.name) continue;
       const name = cleanText(item.name);
       const description = cleanText(item.description || sourceDescription);
+      const category = cleanText(item.category || sourceCategory);
+      const subcategory = cleanText(item.subcategory || sourceSubcategory);
+      const specifications = item.specifications && typeof item.specifications === 'object' && !Array.isArray(item.specifications)
+        ? item.specifications
+        : {};
       // Guard against an accidental empty/unchanged machine output for a language.
       if (!name) continue;
       records.push({
@@ -88,6 +93,9 @@ export async function autoTranslatePart(base44: any, part: any) {
         language,
         name,
         description,
+        category,
+        subcategory,
+        specifications,
         status: 'machine_draft',
         source_language: sourceLanguage,
         translation_version: 1
