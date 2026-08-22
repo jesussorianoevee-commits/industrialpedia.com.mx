@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { base44 } from '@/api/base44Client';
 
 export const LANGUAGES = [
   { code: 'es', label: 'Español', flag: '🇪🇸' },
@@ -29,4 +30,39 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error('useLanguage must be used inside LanguageProvider');
   return context;
+}
+
+// Batch translation lookup: one request for a result page, with the original
+// Part data remaining the authoritative fallback. Machine drafts are exposed
+// transparently until reviewed/published rather than silently replacing source data.
+export async function translateParts(results, language) {
+  if (!Array.isArray(results) || results.length === 0 || !language) return results;
+  const ids = [...new Set(results.map((r) => r?.id).filter(Boolean))];
+  if (ids.length === 0) return results;
+  try {
+    const translations = await base44.entities.PartTranslation.filter(
+      { part_id: { $in: ids }, language },
+      null,
+      500,
+      0,
+      ['id', 'part_id', 'language', 'name', 'description', 'status', 'translation_version']
+    );
+    const byPart = new Map((translations || []).map((t) => [String(t.part_id), t]));
+    return results.map((result) => {
+      const translation = byPart.get(String(result.id));
+      if (!translation?.name) return result;
+      return {
+        ...result,
+        original_name: result.title || result.product_name || result.name || result.product_identity?.short_description || '',
+        original_description: result.description || '',
+        title: translation.name,
+        product_name: translation.name,
+        description: translation.description || result.description || '',
+        translation_status: translation.status || 'machine_draft',
+        translation_version: translation.translation_version || 1,
+      };
+    });
+  } catch {
+    return results;
+  }
 }
