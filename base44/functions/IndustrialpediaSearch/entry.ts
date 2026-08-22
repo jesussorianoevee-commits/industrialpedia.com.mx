@@ -1,6 +1,45 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { searchIndustrialpedia, INDUSTRIALPEDIA_API_VERSION } from '../../shared/supabaseIndustrialpediaApi.js';
 
+const GENERIC_QUERY_TERMS = new Set([
+  'sensor', 'sensores', 'industrial', 'industriales', 'refaccion', 'refacciones', 'repuesto', 'repuestos',
+  'componente', 'componentes', 'producto', 'productos', 'part', 'parts', 'device', 'devices'
+]);
+
+function normalizeText(value: any) {
+  return String(value || '').toLowerCase()
+    .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+    .replace(/[^a-z0-9./+-]+/g, ' ').replace(/\\s+/g, ' ').trim();
+}
+
+function queryTokens(value: any) {
+  return normalizeText(value).split(' ').filter((t) => t.length > 1);
+}
+
+function semanticFallbackScore(part: any, specs: any[], q: string) {
+  const tokens = queryTokens(q);
+  const useful = tokens.filter((t) => !GENERIC_QUERY_TERMS.has(t));
+  if (!useful.length) return 0;
+
+  const baseText = normalizeText([
+    part.part_number, part.part_number_normalized, part.manufacturer_name,
+    part.category, part.subcategory, part.description
+  ].filter(Boolean).join(' '));
+  const specText = specs.map((s) => normalizeText([
+    s.attribute_canonical, s.attribute_name, s.original_value, s.normalized_value,
+    s.original_unit, s.normalized_unit
+  ].filter(Boolean).join(' '))).join(' ');
+  const haystack = `${baseText} ${specText}`;
+  const hits = useful.filter((token) => haystack.includes(token)).length;
+  if (hits !== useful.length) return 0;
+
+  // Descripción + especificaciones técnicas cuentan más que una coincidencia
+  // genérica. No inventamos equivalencias: cada término debe existir en los datos.
+  const descHits = useful.filter((token) => baseText.includes(token)).length;
+  const specHits = useful.filter((token) => specText.includes(token)).length;
+  return 300 + descHits * 35 + specHits * 45;
+}
+
 function mapSupabaseResult(r: any) {
   return {
     id: r.part_id || null,
@@ -68,6 +107,79 @@ export default async function (req: Request) {
     // Knowledge Core search logic here.
     const api = await searchIndustrialpedia(q, limit, manufacturer);
     let knowledgeCore = Array.isArray(api.results) ? api.results.map(mapSupabaseResult) : [];
+
+    // SEMANTIC DESCRIPTION FALLBACK:
+    // La búsqueda canónica sigue siendo Supabase/Knowledge Core. Cuando una
+    // consulta descriptiva no devuelve suficientes candidatos, usamos el índice
+    // estructurado de Base44 como segunda capa para recuperar por descripción y
+    // especificaciones técnicas. Esto permite consultas como "sensor negro de
+    // 5 mm" sin obligar al usuario a conocer el número de parte.
+    // Cada término relevante debe estar demostrado en descripción o especificación;
+    // no se hacen coincidencias por palabras genéricas ni se inventan atributos.
+    if (q && knowledgeCore.length < limit) {
+      try {
+        const states = new Set(
+          Array.isArray(filters.validation_states) && filters.validation_states.length
+            ? filters.validation_states
+            : ['published', 'validated', 'incomplete']
+        );
+        const parts = await base44.asServiceRole.entities.Part.list('-updated_date', 5000);
+        const allowedParts = parts.filter((p: any) => {
+          if (!states.has(p.validation_state || 'processed')) return false;
+          if (requestedManufacturers.length && !requestedManufacturers.includes(p.manufacturer_name)) return false;
+          if (Array.isArray(filters.categories) && filters.categories.length && !filters.categories.includes(p.category)) return false;
+          return true;
+        });
+        const ids = allowedParts.map((p: any) => p.id).filter(Boolean);
+        const specs = ids.length
+          ? await base44.asServiceRole.entities.Specification.filter({ part_id: { $in: ids } }, '-updated_date', 10000).catch(() => [])
+          : [];
+        const specsByPart: Record<string, any[]> = {};
+        for (const s of specs) (specsByPart[s.part_id] ||= []).push(s);
+
+        const existingIds = new Set(knowledgeCore.map((r: any) => r.id).filter(Boolean));
+        const fallback = allowedParts.map((p: any) => {
+          const partSpecs = specsByPart[p.id] || [];
+          const score = semanticFallbackScore(p, partSpecs, q);
+          if (!score || existingIds.has(p.id)) return null;
+          return {
+            id: p.id,
+            part_number: p.part_number || '',
+            manufacturer_name: p.manufacturer_name || '',
+            category: p.category || '',
+            description: p.description || '',
+            specifications: Object.fromEntries(partSpecs.map((s: any) => [
+              s.attribute_canonical || s.attribute_name,
+              { value: s.normalized_value ?? s.original_value ?? '', unit: s.normalized_unit ?? s.original_unit ?? '' }
+            ]).filter(([k]) => k)),
+            title: p.description || p.part_number || '',
+            image_url: p.image_url || '',
+            image_verification_status: null,
+            image_source: null,
+            image_is_primary: false,
+            validation_state: p.validation_state || 'incomplete',
+            match: 'semantic_description',
+            has_evidence: false,
+            evidence_count: 0,
+            spec_count: partSpecs.length,
+            source_ids: partSpecs.map((s: any) => s.source_id).filter(Boolean),
+            discovery_state: null,
+            source_url: null,
+            document_url: null,
+            top_specs: partSpecs.slice(0, 6).map((s: any) => ({
+              attribute: s.attribute_canonical || s.attribute_name,
+              value: s.normalized_value ?? s.original_value,
+              unit: s.normalized_unit ?? s.original_unit,
+              validated: s.validation_state === 'published' || s.validation_state === 'validated'
+            })),
+            api_match_type: 'semantic_description',
+            api_score: score
+          };
+        }).filter(Boolean);
+        fallback.sort((a: any, b: any) => (b.api_score || 0) - (a.api_score || 0));
+        knowledgeCore = [...knowledgeCore, ...fallback].slice(0, limit);
+      } catch { /* la capa canónica sigue siendo suficiente si el fallback falla */ }
+    }
 
     const allowedStates = Array.isArray(filters.validation_states) && filters.validation_states.length
       ? new Set(filters.validation_states)
