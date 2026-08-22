@@ -79,7 +79,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
     ...specs.map((s) => `${(s.attribute_name ?? s.attribute ?? '').toLowerCase()}|${String(s.normalized_value ?? s.original_value ?? '').toLowerCase()}`),
     ...unverifiedSpecs.map((s) => `${(s.attribute_name ?? s.attribute ?? '').toLowerCase()}|${String(s.normalized_value ?? s.original_value ?? '').toLowerCase()}`)
   ]);
-  const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute || '').toLowerCase()}|${String(s.value || '').toLowerCase()}`));
+  const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute ?? '').toLowerCase()}|${String(s.value ?? '').toLowerCase()}`));
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
 
   return (
@@ -215,7 +215,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                       key={`verified-${i}`}
                       label={s.attribute_name ?? s.attribute}
                       value={s.normalized_value ?? s.original_value}
-                      unit={s.normalized_unit || s.original_unit}
+                      unit={s.normalized_unit ?? s.original_unit}
                       page={s.page}
                       verified
                       sourceUrl={ficha.source?.url}
