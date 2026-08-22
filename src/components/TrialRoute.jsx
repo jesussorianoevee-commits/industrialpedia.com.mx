@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 
 const TRIAL_LIMIT = 3;
@@ -17,6 +17,7 @@ function getTrialUses() {
 export default function TrialRoute({ children }) {
   const { isAuthenticated, isLoadingAuth } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [allowed, setAllowed] = useState(null);
 
   useEffect(() => {
@@ -42,7 +43,28 @@ export default function TrialRoute({ children }) {
 
   if (!allowed) {
     const returnTo = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />;
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-5">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          <h2 className="text-xl font-semibold">¿Deseas probar más?</h2>
+          <p className="mt-3 text-sm text-muted-foreground">Regístrate :)</p>
+          <button
+            type="button"
+            onClick={() => navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`)}
+            className="mt-6 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Registrarme
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="mt-3 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Volver al inicio
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return children;
