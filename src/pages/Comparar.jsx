@@ -186,10 +186,7 @@ export default function Comparar() {
             const visual = DECISION_VISUAL[visualState];
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider`}><span className={`h-2.5 w-2.5 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-xs font-semibold">{equal}/{compared} {t.specsShort}</span></div>
-              <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] px-3 py-2">
-                <div className="text-xs font-bold uppercase tracking-wider text-white/55">Qué lo hace {visualState === 'compatible' ? 'compatible' : visualState === 'not_compatible' ? 'no compatible' : 'similar'}</div>
-                <div className="mt-1 text-sm leading-relaxed text-white/70">{visualState === 'compatible' ? `${equal} propiedades coinciden con la ficha base.` : visualState === 'not_compatible' ? `${evidence.different.length} propiedades presentan diferencias críticas.` : `${equal} propiedades coinciden y ${evidence.different.length} presentan diferencias o requieren revisión.`}</div>
-              </div>
+              <div className="mt-2 text-sm font-medium text-white/65">{visualState === 'compatible' ? `${equal} datos coinciden` : visualState === 'not_compatible' ? `${evidence.different.length} diferencias críticas` : `${equal} datos coinciden · ${evidence.different.length} diferentes`}</div>
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
                   {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
@@ -229,15 +226,10 @@ export default function Comparar() {
                 </div>
                 {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
               </div>}
-              <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
-                <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
-                <div className="mt-1 font-mono text-sm font-semibold text-white">{base.part_number}</div>
-                {evidence.equal.length > 0 && <div className="mt-3 rounded-md border border-[#16c79a]/15 bg-[#16c79a]/[0.03] p-2"><div className="text-xs uppercase tracking-wider font-semibold text-[#16c79a]">{t.matchingSpecs || 'Lo que coincide'}</div><div className="mt-1.5 space-y-1">{evidence.equal.map((d, j) => <div key={j} className="text-sm leading-relaxed text-white/75"><span className="text-white/55">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/90">{compactComparisonValue(d.base)}</span> <span className="font-bold text-[#16c79a]">=</span> <span className="font-mono text-white/90">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
-                {evidence.different.length > 0 && <div className={`mt-3 rounded-md border p-2 ${visualState === 'not_compatible' ? 'border-red-400/20 bg-red-400/[0.04]' : 'border-amber-400/15 bg-amber-400/[0.03]'}`}><div className={`text-xs font-semibold uppercase tracking-wider ${visualState === 'not_compatible' ? 'text-red-300' : 'text-amber-300'}`}>{visualState === 'not_compatible' ? 'Lo que impide la compatibilidad' : (t.differentSpecs || 'Lo que difiere')}</div><div className="mt-1.5 space-y-1">{evidence.different.map((d, j) => <div key={j} className="text-sm leading-relaxed text-white/75"><span className="text-white/55">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/90">{compactComparisonValue(d.base)}</span> <span className={`font-bold ${visualState === 'not_compatible' ? 'text-red-300' : 'text-amber-300'}`}>≠</span> <span className="font-mono text-white/90">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
-                {evidence.equal.length === 0 && evidence.different.length === 0 && evidence.missing.length > 0 && <div className="mt-2 text-[10px] text-white/40">{t.insufficientData}</div>}
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+                <span className="text-sm text-white/55">Resultado</span>
+                <span className="text-base font-semibold text-white/90">{meta.short}</span>
               </div>
-              <div className="mt-3 text-sm text-white/65">{t.compatibility}</div>
-              <div className="mt-1 text-base font-semibold text-white/90">{meta.short}</div>
             </div>;
           })}
             </div>
@@ -247,7 +239,7 @@ export default function Comparar() {
         <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
           <div className="mb-4 flex items-start gap-3">
             <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#65a9e6]" />
-            <div><h2 className="text-lg font-semibold text-white/95">En qué se parecen y en qué se diferencian</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Comparamos cada dato de la pieza original con todas las alternativas encontradas. Así puedes ver rápidamente qué es igual y qué cambia.</p></div>
+            <div><h2 className="text-lg font-semibold text-white/95">Comparación completa</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí puedes revisar todos los datos frente a la pieza original.</p></div>
           </div>
           <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
             <div className="min-w-[640px]">
