@@ -303,7 +303,7 @@ export async function extractPDF(data) {
 export function extractStructuredSpecs(extracted) {
   const out = [];
   for (const row of extracted?.specTable || []) {
-    if (!row.attribute || row.ambiguous_value || !row.value || !/\d/.test(row.value)) continue;
+    if (!row.attribute || row.ambiguous_value || row.value === null || row.value === undefined || String(row.value).trim() === '' || !/\d/.test(String(row.value))) continue;
     const clean = sanitizeExtractedPair(row.attribute, row.value);
     if (!clean) continue;
     out.push({
