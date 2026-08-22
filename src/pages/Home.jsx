@@ -56,11 +56,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const handleCategoryStatsUpdated = (event) => {
+      if (event?.detail && typeof event.detail === 'object') {
+        setCounts(event.detail);
+      }
+    };
     const interval = setInterval(refreshCount, 30000);
     const handleFocus = () => refreshCount();
+    window.addEventListener('industrialpedia:category-stats-updated', handleCategoryStatsUpdated);
     window.addEventListener('focus', handleFocus);
     return () => {
       clearInterval(interval);
+      window.removeEventListener('industrialpedia:category-stats-updated', handleCategoryStatsUpdated);
       window.removeEventListener('focus', handleFocus);
     };
   }, []);
