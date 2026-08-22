@@ -25,13 +25,9 @@ import { LanguageProvider } from '@/lib/i18n';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
+  // Industrialpedia branded loader while auth/public settings initialize.
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <IndustrialpediaLoader fullScreen />
-      </div>
-    );
+    return <IndustrialpediaLoader fullScreen />;
   }
 
   // Handle authentication errors
