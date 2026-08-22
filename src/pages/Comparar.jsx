@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] text-[#16c79a]', icon: ShieldCheck },
@@ -15,9 +15,9 @@ const PROPERTY_LABELS_ES = {
   size: 'Tamaño', voltage: 'Voltaje', current: 'Corriente', capacity: 'Capacidad', quantity: 'Cantidad', material: 'Material', resistance: 'Resistencia', temperature: 'Temperatura', frequency: 'Frecuencia', power: 'Potencia', pressure: 'Presión', flow: 'Flujo', diameter: 'Diámetro', length: 'Longitud', width: 'Ancho', height: 'Altura', weight: 'Peso', volume: 'Volumen', area: 'Área', speed: 'Velocidad', torque: 'Torque', stroke: 'Carrera', mounting: 'Montaje', connection: 'Conexión', connector: 'Conector', interface: 'Interfaz', protection: 'Protección', rating: 'Clasificación', thread: 'Rosca', port: 'Puerto'
 };
 const STATUS_LABELS_ES = { equal: 'Igual', different: 'Diferente', base_only: 'Solo base', candidate_only: 'Solo alternativa', not_comparable: 'No comparable' };
-function propertyLabel(value) {
+function propertyLabel(value, language = 'es') {
   const raw = String(value || '').trim();
-  return PROPERTY_LABELS_ES[raw.toLowerCase()] || raw;
+  return localizeSpecAttribute(PROPERTY_LABELS_ES[raw.toLowerCase()] || raw, language);
 }
 function val(s) { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; if (normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw)) return `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}`; return original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'; }
 function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
@@ -119,7 +119,7 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
-            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/30">{propertyLabel(s.attribute_name || s.attribute)}</div><div className="mt-0.5 font-mono text-white/80">{val(s)}</div></div>)}
+            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/30">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-0.5 font-mono text-white/80">{val(s)}</div></div>)}
           </div>
         </div>
       </section>
@@ -163,7 +163,7 @@ export default function Comparar() {
             </div>
 
             {specRows.map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute)}</div>
+              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div>
               {cols.map((c, ci) => {
                 const candidate = ci === 0 ? s : valueFor(s, c);
                 const st = ci === 0 ? 'base' : stateFor(s, c);
