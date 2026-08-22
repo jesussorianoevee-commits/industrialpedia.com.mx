@@ -28,7 +28,7 @@ function extractBasicSpecs(snippet, rawContent) {
   const out = [];
   for (const s of merged) {
     const attr = String(s.attribute || '').trim().slice(0, 60);
-    const val = String(s.value || '').trim().slice(0, 80);
+    const val = String(s.value ?? '').trim().slice(0, 80);
     if (!attr || !val || !/\d/.test(val)) continue;
     if (isUnsafeExtractedPair(attr, val)) continue;
     if (BASIC_BLOCK.test(attr)) continue;
