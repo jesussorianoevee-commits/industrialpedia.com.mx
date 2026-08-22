@@ -32,6 +32,23 @@ export function useLanguage() {
   return context;
 }
 
+const SPEC_ATTRIBUTE_I18N = {
+  material: { es: 'Material', en: 'Material', de: 'Material', fr: 'Matière', zh: '材料' },
+  'model number': { es: 'Número de modelo', en: 'Model number', de: 'Modellnummer', fr: 'Numéro de modèle', zh: '型号' },
+  'product name': { es: 'Nombre del producto', en: 'Product name', de: 'Produktname', fr: 'Nom du produit', zh: '产品名称' },
+  leg: { es: 'Pata', en: 'Leg', de: 'Schenkel', fr: 'Patte', zh: '支腿' },
+  legs: { es: 'Patas', en: 'Legs', de: 'Schenkel', fr: 'Pattes', zh: '支腿' },
+  'rubber stopper': { es: 'Tope de goma', en: 'Rubber stopper', de: 'Gummistopfen', fr: 'Butée en caoutchouc', zh: '橡胶塞' },
+  'rubber guard': { es: 'Protector de goma', en: 'Rubber guard', de: 'Gummischutz', fr: 'Protection en caoutchouc', zh: '橡胶护套' },
+  'adapter (mm)': { es: 'Adaptador (mm)', en: 'Adapter (mm)', de: 'Adapter (mm)', fr: 'Adaptateur (mm)', zh: '适配器 (mm)' },
+  'outer cylinder length (mm)': { es: 'Longitud exterior del cilindro (mm)', en: 'Outer cylinder length (mm)', de: 'Äußere Zylinderlänge (mm)', fr: 'Longueur extérieure du cylindre (mm)', zh: '外圆柱长度 (mm)' }
+};
+
+export function localizeSpecAttribute(attribute, language = 'es') {
+  const key = String(attribute || '').trim().toLowerCase();
+  return SPEC_ATTRIBUTE_I18N[key]?.[language] || attribute;
+}
+
 // Batch translation lookup: one request for a result page, with the original
 // Part data remaining the authoritative fallback. Machine drafts are exposed
 // transparently until reviewed/published rather than silently replacing source data.
