@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Search, ArrowRight, ShieldCheck, Clock, Loader2, Globe } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { POPULAR_TAGS } from '@/lib/taxonomy';
 import { useLanguage } from '@/lib/i18n';
 
