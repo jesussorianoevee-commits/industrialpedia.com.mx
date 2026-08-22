@@ -201,8 +201,8 @@ export default function Buscar() {
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
-      <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <form onSubmit={submit} className="relative mx-auto max-w-2xl flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-full pl-3 pr-1.5 py-1">
+      <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-3 sm:px-4 py-2.5 sm:py-3 ip-mobile-safe-top">
+        <form onSubmit={submit} className="relative mx-auto max-w-2xl flex items-center gap-1.5 sm:gap-2 bg-[#161a20] border border-white/10 rounded-full pl-2.5 sm:pl-3 pr-1.5 py-1">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -215,7 +215,7 @@ export default function Buscar() {
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-1.5"
             autoFocus
           />
-          <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-sm font-semibold px-4 py-1.5 rounded-full transition-colors">
+          <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 sm:py-1.5 rounded-full transition-colors shrink-0">
             {t.search}
           </button>
 
@@ -312,8 +312,8 @@ export default function Buscar() {
         </form>
       </header>
 
-      <main className="px-4 py-5 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+      <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto w-full">
+        <div className="flex items-center justify-between gap-2 mb-4">
           <div className="text-white/40 text-xs">
             {!q && !area ? t.searchParts : (
               <span className="flex items-center gap-2">
