@@ -50,8 +50,9 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/oauth/consent" element={<OAuthConsent />} />
+      {/* La portada es pública: debe ser visible antes de iniciar sesión. */}
+      <Route path="/" element={<Home />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/" element={<Home />} />
         <Route path="/buscar" element={<Buscar />} />
         <Route path="/parte/:id" element={<Parte />} />
         <Route path="/comparar/:id" element={<Comparar />} />
