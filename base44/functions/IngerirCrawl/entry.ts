@@ -6,6 +6,7 @@ import { extractPDF, extractStructuredSpecs } from '../../shared/pdfExtract.js';
 import { extractCandidates, selectPartNumber, selectPartNumbers, selectSpecificationsForPart } from '../../shared/knowledgeBuilder.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { validateDownloadedDocument } from '../../shared/documentIntegrity.js';
+import { autoTranslatePart } from '../../shared/autoTranslatePart.ts';
 
 // PIPELINE MASIVO DE INGESTA DETERMINÍSTICA (sin IA) desde CrawlDocument.
 // Cola (IngestionTask) -> extraccion PDF/HTML -> estructuracion -> normalizacion ->
@@ -435,6 +436,7 @@ export default async function (req) {
               part_number: partRecData.part_number, part_number_normalized: partRecData.part_number_normalized,
               category: (source && source.name) || '', description: partRecData.description, validation_state: 'published'
             });
+            await autoTranslatePart(base44, partRec);
             const partEv = await base44.asServiceRole.entities.Evidence.create({
               document_id: docRec.id, part_id: partRec.id,
               raw_text: partCandidate.context_text || partCandidate.text,
@@ -547,6 +549,7 @@ export default async function (req) {
           part_number: rec.part_number, part_number_normalized: rec.part_number_normalized,
           category: (source && source.name) || '', description: rec.description, validation_state: 'published'
         });
+        await autoTranslatePart(base44, partRec);
         const partEv = await base44.asServiceRole.entities.Evidence.create({
           document_id: docRec.id,
           part_id: partRec.id,
