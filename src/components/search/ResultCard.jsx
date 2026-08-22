@@ -75,6 +75,7 @@ export default function ResultCard({ result }) {
   const manufacturerIsSameAsPartNumber = Boolean(result.manufacturer_name && result.part_number && normalizeIdentity(result.manufacturer_name) === normalizeIdentity(result.part_number));
   const displayProductName = result.title || result.product_name || result.product_identity?.short_description || '';
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
+  const displayCategory = result.category && !/^category$/i.test(String(result.category).trim()) ? result.category : '';
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
 
   const stateLabel = { published: t.published, validated: t.validated, incomplete: t.incomplete, rejected: t.rejected, processed: t.processed }[STATE_LABELS[result.validation_state]] || t.processed;
@@ -96,7 +97,7 @@ export default function ResultCard({ result }) {
             {displayManufacturer || (result.discovery_state === 'discovered' ? t.externalSource : '')}
             {displayManufacturer && result.part_number ? ' · ' : ''}
             {result.part_number ? `${t.partNumber}: ${result.part_number}` : ''}
-            {result.category ? ` · ${result.category}` : ''}
+            {displayCategory ? ` · ${displayCategory}` : ''}
           </div>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
@@ -118,7 +119,7 @@ export default function ResultCard({ result }) {
         </div>
         <div className="min-w-0 flex-1">
           {result.source_title && result.source_title !== result.part_number && result.source_title.trim() !== (result.description || '').trim() && (
-            <div className="text-white/25 text-[10px] leading-snug mb-1">Título de la fuente: {result.source_title}</div>
+            <div className="text-white/25 text-[10px] leading-snug mb-1">{t.sourceTitle}: {result.source_title}</div>
           )}
           {result.description && (
             <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>
@@ -149,7 +150,7 @@ export default function ResultCard({ result }) {
           ))}
           {result.spec_count > 4 && (
             <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[11px]">
-              +{result.spec_count - 4} specs
+              +{result.spec_count - 4} {t.specs}
             </span>
           )}
         </div>
@@ -167,11 +168,11 @@ export default function ResultCard({ result }) {
         )}
         {result.source_ids.length > 0 && (
           <span className="flex items-center gap-1 text-white/40">
-            <FileText className="w-3.5 h-3.5" /> {result.source_ids.length} fuente(s)
+            <FileText className="w-3.5 h-3.5" /> {result.source_ids.length} {result.source_ids.length === 1 ? t.source : t.sources}
           </span>
         )}
         {result.source_url && (
-          <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline">Ver fuente</a>
+          <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline">{t.viewSource}</a>
         )}
         <span className="text-white/30 ml-auto capitalize">{result.match.replace(/_/g, ' ')}</span>
       </div>
