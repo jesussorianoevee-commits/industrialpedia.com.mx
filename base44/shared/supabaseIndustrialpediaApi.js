@@ -285,7 +285,11 @@ function readCategoryStatsSnapshot() {
 
 let categoryStatsCache = {
   value: readCategoryStatsSnapshot(),
-  expiresAt: 0,
+  // Do not start the expensive background area refresh during the first
+  // navigation window. The user can click a family immediately after Home
+  // renders; competing area RPCs were able to cause statement_timeout in the
+  // browse request. Counts are refreshed later without blocking navigation.
+  expiresAt: Date.now() + 30 * 1000,
   refreshPromise: null
 };
 
@@ -303,8 +307,8 @@ async function refreshIndustrialpediaCategoryStats() {
   const next = { ...previous };
 
   // El RPC actual clasifica fila por fila y puede superar el timeout de anon.
-  // Tres consultas concurrentes equilibran latencia y carga; un fallo individual
-  // jamás destruye el snapshot completo.
+  // Una sola consulta por vez evita competir con la navegación por familia;
+  // un fallo individual jamás destruye el snapshot completo.
   // Mantener el camino estable para las 6 áreas originales: esas estadísticas
   // ya están consolidadas y no deben depender de la nueva consulta por área.
   const LEGACY_AREAS = ['neumatica', 'sensores', 'robotica', 'electronica-control', 'mecanica-transmision', 'sin_clasificar'];
@@ -339,7 +343,7 @@ async function refreshIndustrialpediaCategoryStats() {
     if (LEGACY_AREAS.includes(area) && Number.isFinite(Number(total))) next[area] = Number(total);
   }
 
-  await refreshAreaSet(NEW_AREAS, 3);
+  await refreshAreaSet(NEW_AREAS, 1);
 
   next.sin_clasificar = Number.isFinite(next.sin_clasificar) ? next.sin_clasificar : 0;
   next['otras-refacciones'] = Number.isFinite(next['otras-refacciones']) ? next['otras-refacciones'] : 0;
