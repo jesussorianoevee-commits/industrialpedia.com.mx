@@ -7,6 +7,7 @@ import { useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
+import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
@@ -218,6 +219,8 @@ export default function Parte() {
         </div>
 
         <TraceabilityChain counts={{ parts: 1, specs: specs.length, provenance: Object.values(provenanceBySpec).flat().length, evidence: partEvidence.length + Object.values(evidenceBySpec).flat().length, documents: docs.length, sources: sources.length }} />
+
+        <CompatibilityCommunity part={part} />
 
         {partEvidence.length > 0 && (
           <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
