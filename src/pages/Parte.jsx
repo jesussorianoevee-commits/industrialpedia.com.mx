@@ -169,9 +169,9 @@ export default function Parte() {
         </button>
       </header>
 
-      <main className="px-4 py-5 max-w-2xl mx-auto space-y-4">
-        <div className="bg-[#161a20] border border-white/10 rounded-xl p-5">
-          <div className="flex items-start justify-between gap-3 mb-2">
+      <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto space-y-4 w-full min-w-0">
+        <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
             <div>
               <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
               <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.part_number}</h1>
@@ -241,7 +241,7 @@ export default function Parte() {
           </div>
         )}
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <button disabled title="Pilar ENCONTRAR — próxima iteración" className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Encontrar alternativas</button>
           <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
         </div>
