@@ -59,6 +59,22 @@ export const AREAS = [
     moreCount: 24
   },
   {
+    id: 'infraestructura-almacenamiento',
+    name: 'Infraestructura / Almacenamiento',
+    icon: Package,
+    description: 'Bancos, racks, carros, contenedores y mobiliario de soporte para operación y laboratorio.',
+    subcategories: ['Bancos de trabajo', 'Racks', 'Carros y wagons', 'Contenedores', 'Almacenamiento'],
+    moreCount: 0
+  },
+  {
+    id: 'limpieza-epp',
+    name: 'Limpieza / EPP',
+    icon: Package,
+    description: 'Protección personal, limpieza de áreas y materiales para control de contaminación.',
+    subcategories: ['EPP', 'Cleanroom', 'Limpieza', 'Protección ESD', 'Paños y swabs'],
+    moreCount: 0
+  },
+  {
     id: 'instrumentacion-medicion',
     name: 'Instrumentación / Medición',
     icon: Radar,
@@ -131,6 +147,8 @@ export const POPULAR_TAGS = ['Balluff', 'Eaton', 'Aubo'];
 const AREA_I18N = {
   es: {},
   en: {
+    'infraestructura-almacenamiento': { name: 'Infrastructure / Storage', description: 'Benches, racks, carts, containers and support furniture for operations and laboratories.' },
+    'limpieza-epp': { name: 'Cleaning / PPE', description: 'Personal protection, cleanroom and cleaning materials.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Measurement', description: 'Instruments for measuring, recording, calibrating and verifying process variables.' },
     'laboratorio-cientifico': { name: 'Laboratory / Scientific', description: 'Laboratory equipment, supplies and accessories for sample preparation, analysis and handling.' },
     'fluidos-bombeo': { name: 'Fluids / Pumping', description: 'Pumps, heads, tubing and components for fluid transfer and handling.' },
@@ -147,6 +165,8 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Other spare parts', description: 'Available spare parts that do not yet have enough technical classification for an area.' }
   },
   de: {
+    'infraestructura-almacenamiento': { name: 'Infrastruktur / Lagerung', description: 'Arbeitsbänke, Regale, Wagen, Behälter und unterstützende Ausstattung.' },
+    'limpieza-epp': { name: 'Reinigung / PSA', description: 'Persönliche Schutzausrüstung, Reinraum- und Reinigungsmaterialien.' },
     'instrumentacion-medicion': { name: 'Messtechnik / Instrumentierung', description: 'Mess-, Prüf-, Kalibrier- und Aufzeichnungsinstrumente für Prozessgrößen.' },
     'laboratorio-cientifico': { name: 'Labor / Wissenschaft', description: 'Laborgeräte, Verbrauchsmaterialien und Zubehör für Probenvorbereitung und Analyse.' },
     'fluidos-bombeo': { name: 'Fluide / Pumpen', description: 'Pumpen, Pumpenköpfe, Schläuche und Komponenten für Flüssigkeitstransport.' },
@@ -163,6 +183,8 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Andere Ersatzteile', description: 'Verfügbare Ersatzteile ohne ausreichende technische Klassifizierung für einen Bereich.' }
   },
   fr: {
+    'infraestructura-almacenamiento': { name: 'Infrastructure / Stockage', description: 'Établis, rayonnages, chariots, conteneurs et mobilier de support.' },
+    'limpieza-epp': { name: 'Nettoyage / EPI', description: 'Protection individuelle, salle propre et matériel de nettoyage.' },
     'instrumentacion-medicion': { name: 'Instrumentation / Mesure', description: 'Instruments de mesure, d’enregistrement et d’étalonnage des variables de procédé.' },
     'laboratorio-cientifico': { name: 'Laboratoire / Scientifique', description: 'Équipements, consommables et accessoires de laboratoire pour la préparation et l’analyse.' },
     'fluidos-bombeo': { name: 'Fluides / Pompage', description: 'Pompes, têtes, tubes et composants pour le transfert des fluides.' },
@@ -179,6 +201,8 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Autres pièces', description: 'Pièces disponibles qui ne disposent pas encore d’une classification technique suffisante.' }
   },
   zh: {
+    'infraestructura-almacenamiento': { name: '基础设施 / 存储', description: '工作台、货架、推车、容器及支持设施。' },
+    'limpieza-epp': { name: '清洁 / PPE', description: '个人防护、洁净室和清洁用品。' },
     'instrumentacion-medicion': { name: '仪器 / 测量', description: '用于测量、记录、校准和验证过程变量的仪器。' },
     'laboratorio-cientifico': { name: '实验室 / 科学', description: '用于样品制备、分析和处理的实验室设备、耗材及附件。' },
     'fluidos-bombeo': { name: '流体 / 泵送', description: '用于流体输送和处理的泵、泵头、管路及组件。' },
