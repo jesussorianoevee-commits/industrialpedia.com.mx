@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { useLanguage } from '@/lib/i18n';
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] text-[#16c79a]', icon: ShieldCheck },
@@ -54,6 +55,7 @@ export default function Comparar() {
   const [error, setError] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
   const [expandedResults, setExpandedResults] = useState(false);
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -62,7 +64,7 @@ export default function Comparar() {
         setData(result);
       } catch (e) { setError(e?.message || 'No se pudo ejecutar el comparador.'); }
     })();
-  }, [id, partNumberHint]);
+  }, [id, partNumberHint, language]);
 
   if (!data && !error) return <div className="min-h-screen bg-[#080d12] flex items-center justify-center text-white/45 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Buscando alternativas compatibles…</div>;
   if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={() => window.history.back()} className="text-[#65a9e6]">← Volver a ficha</button></div>;
@@ -93,15 +95,15 @@ export default function Comparar() {
       <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
         <button type="button" onClick={() => window.history.back()} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></button>
         <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
-        <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>Buscar</span><span className="rounded-full bg-[#102333] px-4 py-2 text-[#65a9e6]">Comparar</span><span>Fabricantes</span><span>Recursos</span></div>
-        <div className="ml-auto flex items-center gap-2"><span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">ES</span><span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">◐</span></div>
+        <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 text-[#65a9e6]">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
+        <div className="ml-auto flex items-center gap-2"><span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">{language.toUpperCase()}</span><span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">◐</span></div>
       </div>
     </header>
 
     <main className="mx-auto max-w-7xl px-4 py-5 sm:py-7">
       <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs text-[#65a9e6] hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex items-end justify-between gap-4">
-        <div><h1 className="text-2xl font-semibold tracking-tight">Comparación técnica</h1><p className="mt-1 text-sm text-white/45">Compara especificaciones técnicas sin declarar intercambiabilidad cuando faltan requisitos críticos.</p></div>
+        <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} candidatos consultados</div>
       </div>
 
@@ -125,13 +127,13 @@ export default function Comparar() {
       <>
         <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <div><h2 className="text-sm font-semibold text-white/90">Mapa de compatibilidad</h2><p className="mt-1 text-[11px] text-white/35">Cada alternativa se evalúa directamente contra el componente base.</p></div>
+            <div><h2 className="text-sm font-semibold text-white/90">{t.compatibilityMap}</h2><p className="mt-1 text-[11px] text-white/35">Cada alternativa se evalúa directamente contra el componente base.</p></div>
             <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-white/25">BASE → ALTERNATIVAS</span>
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
               {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
-              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">COMPONENTE BASE</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || 'Fabricante no indicado'}</div></div>
+              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-0.5 truncate text-[10px] text-white/40">{base.manufacturer_name || 'Fabricante no indicado'}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
@@ -139,7 +141,7 @@ export default function Comparar() {
             const meta = statusMeta(c); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} SPECS</span></div>
-              <div className="mt-3 text-xs text-white/50">Compatibilidad</div>
+              <div className="mt-3 text-xs text-white/50">{t.compatibility}</div>
               <div className="mt-1 text-sm font-semibold text-white/80">{meta.short}</div>
               <div className="mt-2 text-[9px] text-white/30">Comparado contra: <span className="font-mono text-white/50">{base.part_number}</span></div>
             </div>;
@@ -151,7 +153,7 @@ export default function Comparar() {
         <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">Especificación</div>
+              <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
               {cols.map((c, i) => <div key={i} className="border-l border-white/[0.08] p-4">
                 <div className="flex items-start gap-3">
                   {c.image_url && <img src={c.image_url} alt="" className="h-12 w-12 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
@@ -180,8 +182,8 @@ export default function Comparar() {
 
         {(data.candidates_considered || 0) > alternatives.length && !expandedResults && !loadingMore && (
           <div className="mt-5 flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#0d141b] px-5 py-4 text-center">
-            <div className="text-xs font-medium text-white/65">¿No encontraste lo que buscas?</div>
-            <div className="text-[10px] text-white/35">Podemos ampliar la búsqueda para mostrarte más alternativas.</div>
+            <div className="text-xs font-medium text-white/65">{t.noMore}</div>
+            <div className="text-[10px] text-white/35">{t.expandSearch}</div>
             <button
               type="button"
               disabled={loadingMore}
@@ -198,7 +200,7 @@ export default function Comparar() {
                 }
               }}
               className="mt-1 rounded-lg border border-[#65a9e6]/35 bg-[#65a9e6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.14] disabled:opacity-50"
-            >Ver más alternativas</button>
+            >{t.moreAlternatives}</button>
           </div>
         )}
 
