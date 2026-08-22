@@ -59,10 +59,66 @@ export const AREAS = [
     moreCount: 24
   },
   {
+    id: 'instrumentacion-medicion',
+    name: 'Instrumentación / Medición',
+    icon: Radar,
+    description: 'Instrumentos para medir, registrar, calibrar y verificar variables de proceso.',
+    subcategories: ['Medidores de flujo', 'Medición de vibración', 'Registradores de datos', 'Balanzas', 'Termómetros', 'Calibradores'],
+    moreCount: 0
+  },
+  {
+    id: 'laboratorio-cientifico',
+    name: 'Laboratorio / Científico',
+    icon: Package,
+    description: 'Equipos, consumibles y accesorios de laboratorio para preparación, análisis y manejo de muestras.',
+    subcategories: ['Manejo de líquidos', 'Mezcla y agitación', 'Vidriería', 'Preparación de muestras', 'Tamizado', 'Molienda'],
+    moreCount: 0
+  },
+  {
+    id: 'fluidos-bombeo',
+    name: 'Fluidos / Bombeo',
+    icon: Wind,
+    description: 'Bombas, cabezales, tubos y componentes para transferencia y manejo de fluidos.',
+    subcategories: ['Bombas', 'Bombas de proceso', 'Tubos y mangueras', 'Cabezas de bomba', 'Accesorios de bombeo'],
+    moreCount: 0
+  },
+  {
+    id: 'herramientas-mro',
+    name: 'Herramientas / MRO',
+    icon: Cog,
+    description: 'Herramientas, máquinas de taller y elementos utilizados para mantenimiento y fabricación.',
+    subcategories: ['Corte', 'Taladrado', 'Desbaste', 'Mecanizado', 'Prensas', 'Herramientas manuales'],
+    moreCount: 0
+  },
+  {
+    id: 'soldadura-union',
+    name: 'Soldadura / Unión',
+    icon: Cpu,
+    description: 'Equipos y consumibles para soldadura, retrabajo y procesos de unión.',
+    subcategories: ['Soldadores', 'Consumibles de soldadura', 'Electrodos', 'Extracción de humos', 'Accesorios'],
+    moreCount: 0
+  },
+  {
+    id: 'consumibles-mro',
+    name: 'Consumibles / MRO',
+    icon: Package,
+    description: 'Consumibles, abrasivos, EPP y accesorios de mantenimiento que no requieren un área de proceso específica.',
+    subcategories: ['EPP', 'Abrasivos', 'Cintas y adhesivos', 'Filtros', 'Accesorios de mantenimiento'],
+    moreCount: 0
+  },
+  {
+    id: 'proceso-maquinaria',
+    name: 'Proceso / Maquinaria',
+    icon: Cog,
+    description: 'Maquinaria y equipos de proceso que no pertenecen a una disciplina técnica específica.',
+    subcategories: ['Mezclado', 'Molienda', 'Trituración', 'Prensado', 'Procesamiento'],
+    moreCount: 0
+  },
+  {
     id: 'otras-refacciones',
     name: 'Otras refacciones',
     icon: Package,
-    description: 'Refacciones disponibles que aún no cuentan con una clasificación técnica suficiente para asignarlas a un área.',
+    description: 'Refacciones que todavía no pueden identificarse con evidencia suficiente.',
     subcategories: [],
     moreCount: 0,
     statsKey: 'sin_clasificar'
@@ -75,6 +131,14 @@ export const POPULAR_TAGS = ['Balluff', 'Eaton', 'Aubo'];
 const AREA_I18N = {
   es: {},
   en: {
+    'instrumentacion-medicion': { name: 'Instrumentation / Measurement', description: 'Instruments for measuring, recording, calibrating and verifying process variables.' },
+    'laboratorio-cientifico': { name: 'Laboratory / Scientific', description: 'Laboratory equipment, supplies and accessories for sample preparation, analysis and handling.' },
+    'fluidos-bombeo': { name: 'Fluids / Pumping', description: 'Pumps, heads, tubing and components for fluid transfer and handling.' },
+    'herramientas-mro': { name: 'Tools / MRO', description: 'Tools, workshop machines and maintenance/manufacturing equipment.' },
+    'soldadura-union': { name: 'Welding / Joining', description: 'Equipment and consumables for welding, rework and joining processes.' },
+    'consumibles-mro': { name: 'Consumables / MRO', description: 'Consumables, abrasives, PPE and maintenance accessories.' },
+    'proceso-maquinaria': { name: 'Process / Machinery', description: 'Process machinery and equipment without a more specific technical discipline.' },
+
     neumatica: { name: 'Pneumatics', description: 'Valves, cylinders, grippers and compressed-air systems.' },
     sensores: { name: 'Sensors', description: 'Inductive, capacitive, photoelectric sensors and encoders.' },
     robotica: { name: 'Robotics', description: 'Servo motors, gearboxes and components for robotic cells.' },
@@ -83,6 +147,14 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Other spare parts', description: 'Available spare parts that do not yet have enough technical classification for an area.' }
   },
   de: {
+    'instrumentacion-medicion': { name: 'Messtechnik / Instrumentierung', description: 'Mess-, Prüf-, Kalibrier- und Aufzeichnungsinstrumente für Prozessgrößen.' },
+    'laboratorio-cientifico': { name: 'Labor / Wissenschaft', description: 'Laborgeräte, Verbrauchsmaterialien und Zubehör für Probenvorbereitung und Analyse.' },
+    'fluidos-bombeo': { name: 'Fluide / Pumpen', description: 'Pumpen, Pumpenköpfe, Schläuche und Komponenten für Flüssigkeitstransport.' },
+    'herramientas-mro': { name: 'Werkzeuge / MRO', description: 'Werkzeuge, Werkstattmaschinen und Instandhaltungsausrüstung.' },
+    'soldadura-union': { name: 'Schweißen / Fügen', description: 'Ausrüstung und Verbrauchsmaterialien zum Schweißen und Fügen.' },
+    'consumibles-mro': { name: 'Verbrauchsmaterial / MRO', description: 'Verbrauchsmaterialien, Schleifmittel, PSA und Instandhaltungszubehör.' },
+    'proceso-maquinaria': { name: 'Prozess / Maschinen', description: 'Prozessmaschinen und Anlagen ohne spezifischere technische Disziplin.' },
+
     neumatica: { name: 'Pneumatik', description: 'Ventile, Zylinder, Greifer und Druckluftsysteme.' },
     sensores: { name: 'Sensoren', description: 'Induktive, kapazitive, photoelektrische Sensoren und Encoder.' },
     robotica: { name: 'Robotik', description: 'Servomotoren, Getriebe und Komponenten für Roboterzellen.' },
@@ -91,6 +163,14 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Andere Ersatzteile', description: 'Verfügbare Ersatzteile ohne ausreichende technische Klassifizierung für einen Bereich.' }
   },
   fr: {
+    'instrumentacion-medicion': { name: 'Instrumentation / Mesure', description: 'Instruments de mesure, d’enregistrement et d’étalonnage des variables de procédé.' },
+    'laboratorio-cientifico': { name: 'Laboratoire / Scientifique', description: 'Équipements, consommables et accessoires de laboratoire pour la préparation et l’analyse.' },
+    'fluidos-bombeo': { name: 'Fluides / Pompage', description: 'Pompes, têtes, tubes et composants pour le transfert des fluides.' },
+    'herramientas-mro': { name: 'Outils / MRO', description: 'Outils, machines d’atelier et équipements de maintenance.' },
+    'soldadura-union': { name: 'Soudage / Assemblage', description: 'Équipements et consommables de soudage et d’assemblage.' },
+    'consumibles-mro': { name: 'Consommables / MRO', description: 'Consommables, abrasifs, EPI et accessoires de maintenance.' },
+    'proceso-maquinaria': { name: 'Procédé / Machines', description: 'Machines et équipements de procédé sans discipline technique plus précise.' },
+
     neumatica: { name: 'Pneumatique', description: 'Vannes, vérins, préhenseurs et systèmes d’air comprimé.' },
     sensores: { name: 'Capteurs', description: 'Capteurs inductifs, capacitifs, photoélectriques et codeurs.' },
     robotica: { name: 'Robotique', description: 'Servomoteurs, réducteurs et composants pour cellules robotisées.' },
@@ -99,6 +179,14 @@ const AREA_I18N = {
     'otras-refacciones': { name: 'Autres pièces', description: 'Pièces disponibles qui ne disposent pas encore d’une classification technique suffisante.' }
   },
   zh: {
+    'instrumentacion-medicion': { name: '仪器 / 测量', description: '用于测量、记录、校准和验证过程变量的仪器。' },
+    'laboratorio-cientifico': { name: '实验室 / 科学', description: '用于样品制备、分析和处理的实验室设备、耗材及附件。' },
+    'fluidos-bombeo': { name: '流体 / 泵送', description: '用于流体输送和处理的泵、泵头、管路及组件。' },
+    'herramientas-mro': { name: '工具 / MRO', description: '维修、加工和制造使用的工具及车间设备。' },
+    'soldadura-union': { name: '焊接 / 连接', description: '焊接、返修和连接工艺所用设备及耗材。' },
+    'consumibles-mro': { name: '耗材 / MRO', description: '耗材、磨料、个人防护用品和维修附件。' },
+    'proceso-maquinaria': { name: '工艺 / 机械设备', description: '不属于更具体技术领域的工艺机械和设备。' },
+
     neumatica: { name: '气动', description: '阀、气缸、夹爪和压缩空气系统。' },
     sensores: { name: '传感器', description: '电感式、电容式、光电传感器和编码器。' },
     robotica: { name: '机器人技术', description: '伺服电机、减速机和机器人单元组件。' },
