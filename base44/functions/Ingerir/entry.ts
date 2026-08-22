@@ -44,7 +44,7 @@ function parseCSV(text) {
   for (let r = 1; r < rows.length; r++) {
     if (!rows[r].some((x) => x.trim() !== '') && rows[r].length === 1) continue;
     const o = {};
-    header.forEach((h, i) => { o[h] = (rows[r][i] || '').trim(); });
+    header.forEach((h, i) => { o[h] = rows[r][i] === null || rows[r][i] === undefined ? '' : String(rows[r][i]).trim(); });
     out.push(o);
   }
   return out;
