@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { useLanguage } from '@/lib/i18n';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 
@@ -33,6 +34,7 @@ export default function Parte() {
   const [sources, setSources] = useState([]);
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { language } = useLanguage();
 
   useEffect(() => {
     (async () => {
@@ -70,8 +72,27 @@ export default function Parte() {
           manufacturer_name: p.manufacturer || '',
           category: p.category || '',
           description: p.description || p.name || '',
-          validation_state: p.status || 'processed'
+          validation_state: p.status || 'processed',
+          display_name: p.name || p.product_name || p.part_number || '',
+          original_description: p.description || p.name || ''
         };
+        try {
+          const translations = await base44.entities.PartTranslation.filter(
+            { part_id: p.id, language },
+            null,
+            5,
+            0,
+            ['name', 'description', 'status', 'translation_version']
+          );
+          const translation = translations?.[0];
+          if (translation?.name) {
+            normalizedPart.display_name = translation.name;
+            normalizedPart.description = translation.description || normalizedPart.description;
+            normalizedPart.translation_status = translation.status || 'machine_draft';
+          }
+        } catch {
+          // Original Knowledge Core content remains the fallback.
+        }
         setPart(normalizedPart);
 
         // La API canónica devuelve specifications; resultados antiguos de Base44
@@ -114,7 +135,7 @@ export default function Parte() {
         setLoading(false);
       }
     })();
-  }, [id, partNumberHint]);
+  }, [id, partNumberHint, language]);
 
   if (loading) {
     return <div className="min-h-screen bg-[#0a0e12] grid-bg flex items-center justify-center text-white/40 text-sm">Cargando componente…</div>;
@@ -143,12 +164,16 @@ export default function Parte() {
         <div className="bg-[#161a20] border border-white/10 rounded-xl p-5">
           <div className="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h1 className="text-white font-bold text-lg">{part.part_number}</h1>
+              <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
+              <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.part_number}</h1>
               <div className="text-white/50 text-sm">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
             </div>
             <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
           </div>
           {part.description && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
+          {part.translation_status === 'machine_draft' && language !== 'es' && (
+            <div className="mt-2 text-[10px] text-amber-300/60">Traducción automática · pendiente de revisión técnica</div>
+          )}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
               <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} evidencia(s) del componente</span>
