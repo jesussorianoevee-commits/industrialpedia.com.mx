@@ -60,9 +60,12 @@ export async function autoTranslatePart(base44: any, part: any) {
               properties: {
                 language: { type: 'string', enum: LANGUAGES },
                 name: { type: 'string' },
-                description: { type: 'string' }
+                description: { type: 'string' },
+                category: { type: 'string' },
+                subcategory: { type: 'string' },
+                specifications: { type: 'object' }
               },
-              required: ['language', 'name', 'description']
+              required: ['language', 'name', 'description', 'category', 'subcategory', 'specifications']
             }
           }
         },
