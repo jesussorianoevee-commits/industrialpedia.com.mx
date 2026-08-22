@@ -282,9 +282,9 @@ export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) 
       image_verification_status: null,
       image_source: null,
       image_is_primary: false,
-      source_ids: [],
+      source_ids: Array.isArray(r.source_ids) ? r.source_ids.filter(Boolean) : [],
       discovery_state: null,
-      source_url: null,
+      source_url: r.source_url || null,
       document_url: null,
       top_specs: r.specifications ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]) => ({
         attribute,
