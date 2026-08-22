@@ -6,6 +6,7 @@ import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
+import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
@@ -13,6 +14,7 @@ export default function Buscar() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const q = params.get('q') || '';
+  const area = params.get('area') || '';
   const [input, setInput] = useState(q);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
@@ -44,6 +46,24 @@ export default function Buscar() {
       return next;
     });
   };
+
+  const runAreaBrowse = useCallback(async (areaKey) => {
+    const reqId = ++searchReqId.current;
+    setKcLoading(true);
+    setKcData(null);
+    setKcError(null);
+    try {
+      const res = await getIndustrialpediaAreaParts(areaKey, 25, 0);
+      if (searchReqId.current !== reqId) return;
+      setKcData({ knowledge_core_results: res.results, discovery_results: [], web_results: [], facets: { manufacturers: [], categories: [] }, meta: { mode: 'area', area: areaKey, total: res.total } });
+    } catch (e) {
+      if (searchReqId.current !== reqId) return;
+      setKcData(null);
+      setKcError(e.message || 'Error al cargar las refacciones');
+    } finally {
+      if (searchReqId.current === reqId) setKcLoading(false);
+    }
+  }, []);
 
   const runSearch = useCallback(async (query, f) => {
     const reqId = ++searchReqId.current;
@@ -78,13 +98,15 @@ export default function Buscar() {
 
   useEffect(() => {
     setInput(q);
-    if (q) {
+    if (area) {
+      runAreaBrowse(area);
+    } else if (q) {
       runSearch(q, filters);
     } else {
       setKcData(null);
       setKcError(null);
     }
-  }, [q, filters, runSearch]);
+  }, [q, area, filters, runSearch, runAreaBrowse]);
 
   // Autocompletado determinístico: consulta únicamente nuestro Knowledge Core,
   // DiscoveryIndex y Manufacturer. Nunca llama Tavily/Google mientras se escribe.
@@ -236,10 +258,10 @@ export default function Buscar() {
       <main className="px-4 py-5 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="text-white/40 text-xs">
-            {!q ? 'Escribe una refacción industrial para buscarla.' : (
+            {!q && !area ? 'Escribe una refacción industrial para buscarla.' : (
               <span className="flex items-center gap-2">
                 {kcLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                {kcLoading ? 'Buscando en Knowledge Core…' : `${kcResults.length} resultado(s) en Knowledge Core`}
+                {kcLoading ? 'Cargando refacciones…' : `${kcData?.meta?.total ?? kcResults.length} refacciones`}
               </span>
             )}
           </div>
@@ -257,7 +279,7 @@ export default function Buscar() {
           </div>
         )}
 
-        {!q ? (
+        {!q && !area ? (
           <div className="space-y-6">
             <EmptyState q={q} onReset={onReset} />
           </div>
@@ -268,14 +290,13 @@ export default function Buscar() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Knowledge Core verificado */}
             {kcLoading ? (
               <div className="flex items-center gap-2 py-8 justify-center text-white/40 text-xs">
-                <Loader2 className="w-4 h-4 animate-spin" /> Buscando en Knowledge Core…
+                <Loader2 className="w-4 h-4 animate-spin" /> Cargando refacciones…
               </div>
             ) : kcResults.length > 0 && (
               <section>
-                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">Knowledge Core</div>
+                <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `Refacciones · ${area}` : 'Refacciones encontradas'}</div>
                 <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
