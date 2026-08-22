@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage } from '@/lib/i18n';
+import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 
@@ -146,7 +147,7 @@ export default function Parte() {
   }, [id, partNumberHint, language]);
 
   if (loading) {
-    return <div className="min-h-screen bg-[#0a0e12] grid-bg flex items-center justify-center text-white/40 text-sm">Cargando componente…</div>;
+    return <IndustrialpediaLoader fullScreen label={t.loadingParts} />;
   }
   if (!part) {
     return (
