@@ -166,14 +166,21 @@ export default function Comparar() {
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
               {alternatives.map((c, i) => {
             const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
+            const evidence = evidenceSummary(c, language);
             return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
               <div className="flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-wider">{meta.label}</span><span className="font-mono text-[10px] font-semibold">{equal}/{compared} {t.specsShort}</span></div>
               <div className="mt-3 text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
               <div className="mt-1 font-mono text-sm font-semibold text-white">{c.part_number}</div>
               <div className="mt-0.5 truncate text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
+              <div className="mt-3 rounded-lg border border-white/[0.07] bg-black/[0.10] p-3">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.comparedAgainst}</div>
+                <div className="mt-1 font-mono text-xs font-semibold text-white">{base.part_number}</div>
+                {evidence.equal.length > 0 && <div className="mt-3"><div className="text-[9px] uppercase tracking-wider text-[#16c79a]/80">{t.matchingSpecs || 'Propiedades que coinciden'}</div><div className="mt-1.5 space-y-1">{evidence.equal.map((d, j) => <div key={j} className="text-[10px] text-white/60"><span className="text-white/35">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/80">{compactComparisonValue(d.base)}</span> <span className="text-[#16c79a]">=</span> <span className="font-mono text-white/80">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
+                {evidence.different.length > 0 && <div className="mt-3"><div className="text-[9px] uppercase tracking-wider text-amber-300/80">{t.differentSpecs || 'Propiedades diferentes'}</div><div className="mt-1.5 space-y-1">{evidence.different.map((d, j) => <div key={j} className="text-[10px] text-white/60"><span className="text-white/35">{propertyLabel(d.attribute_name || d.attribute_canonical, language)}:</span> <span className="font-mono text-white/75">{compactComparisonValue(d.base)}</span> <span className="text-amber-300">≠</span> <span className="font-mono text-white/75">{compactComparisonValue(d.candidate)}</span></div>)}</div></div>}
+                {evidence.equal.length === 0 && evidence.different.length === 0 && evidence.missing.length > 0 && <div className="mt-2 text-[10px] text-white/40">{t.insufficientData}</div>}
+              </div>
               <div className="mt-3 text-xs text-white/50">{t.compatibility}</div>
               <div className="mt-1 text-sm font-semibold text-white/80">{meta.short}</div>
-              <div className="mt-2 text-[9px] text-white/30">{t.comparedAgainst}: <span className="font-mono text-white/50">{base.part_number}</span></div>
             </div>;
           })}
             </div>
