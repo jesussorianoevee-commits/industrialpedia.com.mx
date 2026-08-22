@@ -114,7 +114,7 @@ export default function Comparar() {
   const base = data.base;
   const alternatives = data.alternatives || [];
   const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
-  const cols = [base, ...alternatives];
+  const cols = [...alternatives, base];
   const specRows = [...(base.specs || [])];
   const seenProperties = new Set(specRows.map((s) => canonical(s)));
   for (const alt of alternatives) {
@@ -299,7 +299,7 @@ export default function Comparar() {
         <div className="mb-4 md:hidden space-y-3">
           {alternatives.map((c, ci) => {
             const mobileRows = specRows.map((s) => {
-              const baseValue = s.original_value !== null && s.original_value !== undefined && s.original_value !== ''
+              const originalValue = s.original_value !== null && s.original_value !== undefined && s.original_value !== ''
                 ? val(s)
                 : '—';
               const candidate = valueFor(s, c);
@@ -307,7 +307,7 @@ export default function Comparar() {
               const candidateValue = candidate !== null && candidate !== undefined && candidate !== ''
                 ? (typeof candidate === 'object' ? val(candidate) : String(candidate))
                 : '—';
-              return { s, baseValue, candidateValue, state };
+              return { s, originalValue, candidateValue, state };
             }).filter((row) => row.baseValue !== '—' || row.candidateValue !== '—');
             const visible = expandedMobileSpecs[c.id] ? mobileRows : mobileRows.slice(0, 8);
             return (
