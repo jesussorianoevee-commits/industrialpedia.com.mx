@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { normalizeUnit, splitValueUnit, normalizePartNumber } from '../../shared/normalize.js';
+import { autoTranslatePart } from '../../shared/autoTranslatePart.ts';
 
 // JOB DE INGESTA DETERMINÍSTICO (sin IA).
 // Flujo: DOCUMENTO → PARSEO → EXTRACCIÓN (por mapa) → NORMALIZACIÓN →
@@ -208,6 +209,7 @@ export default async function (req) {
         description: b.rec.description,
         validation_state: 'published'
       });
+      await autoTranslatePart(base44, partRec);
 
       // Evidence a nivel parte (evidencia documental del registro completo).
       const partEvidence = await base44.asServiceRole.entities.Evidence.create({
