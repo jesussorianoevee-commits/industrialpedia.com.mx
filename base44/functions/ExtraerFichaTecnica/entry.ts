@@ -10,6 +10,7 @@ import { gateSpec } from '../../shared/qualityGateway.js';
 import { deriveProductIdentity } from '../../shared/productIdentity.js';
 import { selectBestImage } from '../../shared/imageResolver.js';
 import { getSourcePolicy, classifyRegisteredDomain } from '../../shared/sourceRegistry.js';
+import { autoTranslatePart } from '../../shared/autoTranslatePart.ts';
 
 // EXTRAER FICHA TÉCNICA — construye la ficha Industrialpedia directamente desde
 // una fuente encontrada por Google (página oficial, distribuidor o datasheet PDF).
@@ -397,6 +398,8 @@ async function feedKnowledgeCore(base44: any, ficha: any, url: string, isPdf: bo
     if (catalogId && discoveryId) {
       await base44.asServiceRole.entities.CatalogProduct.update(catalogId, { discovery_id: discoveryId }).catch(() => {});
     }
+    const persistedPart = await base44.asServiceRole.entities.Part.get(partId).catch(() => null);
+    if (persistedPart) await autoTranslatePart(base44, { ...persistedPart, name: ficha.product_name, description: ficha.description });
     return { queued: true, part_id: partId, catalog_id: catalogId, discovery_id: discoveryId };
   } catch (e) {
     return { queued: false, reason: String(e?.message || e) };
