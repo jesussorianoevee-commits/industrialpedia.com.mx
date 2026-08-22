@@ -247,67 +247,111 @@ const CATEGORY_AREAS = [
   'otros-mro'
 ];
 
-// No hay conteos hardcodeados: un valor 0 solo es válido cuando Supabase lo confirma.
+// Bootstrap/cache: nunca representa la fuente de verdad. Es únicamente el último
+// estado confirmado para evitar que una consulta lenta convierta la UI en ceros.
+// La fuente de verdad sigue siendo Supabase y se revalida en segundo plano.
+const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
+  consumibles_mro: 312,
+  'electronica-control': 14,
+  'fluidos-bombeo': 292,
+  'fuera-alcance': 79,
+  'herramientas-mro': 340,
+  'infraestructura-almacenamiento': 1288,
+  'instrumentacion-medicion': 285,
+  'laboratorio-cientifico': 3863,
+  'limpieza-epp': 527,
+  'mecanica-transmision': 68,
+  neumatica: 13,
+  'otros-mro': 335,
+  'proceso-maquinaria': 6,
+  robotica: 2,
+  sensores: 183,
+  'soldadura-union': 101,
+  sin_clasificar: 0,
+  'otras-refacciones': 0
+};
+
+function readCategoryStatsSnapshot() {
+  try {
+    const raw = localStorage.getItem('industrialpedia_category_stats_v3');
+    if (!raw) return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.value || typeof parsed.value !== 'object') return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+    return { ...VERIFIED_CATEGORY_STATS_BOOTSTRAP, ...parsed.value };
+  } catch {
+    return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+  }
+}
+
 let categoryStatsCache = {
-  value: null,
+  value: readCategoryStatsSnapshot(),
   expiresAt: 0,
   refreshPromise: null
 };
 
-async function refreshIndustrialpediaCategoryStats() {
-  const previous = categoryStatsCache.value || {};
-  const next = {};
+function publishCategoryStats(value) {
+  try {
+    localStorage.setItem('industrialpedia_category_stats_v3', JSON.stringify({ value, savedAt: Date.now() }));
+  } catch {}
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('industrialpedia:category-stats-updated', { detail: value }));
+  }
+}
 
-  // El RPC actual ejecuta una clasificación por fila. Un lote pequeño de
-  // consultas reduce mucho el tiempo total sin volver a saturar PostgREST.
+async function refreshIndustrialpediaCategoryStats() {
+  const previous = categoryStatsCache.value || VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+  const next = { ...previous };
+
+  // El RPC actual clasifica fila por fila y puede superar el timeout de anon.
+  // Tres consultas concurrentes equilibran latencia y carga; un fallo individual
+  // jamás destruye el snapshot completo.
   const concurrency = 3;
   for (let i = 0; i < CATEGORY_AREAS.length; i += concurrency) {
     const batch = CATEGORY_AREAS.slice(i, i + concurrency);
     const results = await Promise.all(batch.map(async (area) => {
       try {
         const result = await getIndustrialpediaAreaParts(area, 1, 0);
-        return [area, Number(result?.total)];
+        const total = Number(result?.total);
+        return [area, Number.isFinite(total) && total >= 0 ? total : null];
       } catch {
         return [area, null];
       }
     }));
 
     for (const [area, total] of results) {
-      // Si una consulta aislada falla, conservamos el último valor confirmado
-      // en vez de convertir silenciosamente esa categoría en cero.
-      if (Number.isFinite(total) && total >= 0) next[area] = total;
-      else if (Number.isFinite(previous[area])) next[area] = previous[area];
-      else throw new Error(`category_stats_unavailable:${area}`);
+      if (total !== null) next[area] = total;
     }
+
+    // Publicamos progreso real: si algunas áreas responden, la UI las recibe
+    // inmediatamente sin esperar a que terminen las restantes.
+    categoryStatsCache.value = next;
+    publishCategoryStats(next);
   }
 
-  next.sin_clasificar = 0;
-  next['otras-refacciones'] = 0;
-
+  next.sin_clasificar = Number.isFinite(next.sin_clasificar) ? next.sin_clasificar : 0;
+  next['otras-refacciones'] = Number.isFinite(next['otras-refacciones']) ? next['otras-refacciones'] : 0;
   categoryStatsCache = {
     value: next,
     expiresAt: Date.now() + 5 * 60 * 1000,
     refreshPromise: null
   };
+  publishCategoryStats(next);
   return next;
 }
 
 export async function getIndustrialpediaCategoryStats() {
   const now = Date.now();
-  if (categoryStatsCache.value && categoryStatsCache.expiresAt > now) {
-    return categoryStatsCache.value;
+  const snapshot = categoryStatsCache.value || VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+
+  // Nunca bloqueamos el primer render esperando 16 consultas costosas.
+  // Supabase revalida en segundo plano y publica cada actualización.
+  if (!categoryStatsCache.refreshPromise && categoryStatsCache.expiresAt <= now) {
+    categoryStatsCache.refreshPromise = refreshIndustrialpediaCategoryStats()
+      .catch(() => snapshot)
+      .finally(() => { categoryStatsCache.refreshPromise = null; });
   }
 
-  // Deduplicamos refreshes: el intervalo de 30 s y el evento focus pueden
-  // dispararse juntos, pero solo habrá una actualización contra Supabase.
-  if (!categoryStatsCache.refreshPromise) {
-    categoryStatsCache.refreshPromise = refreshIndustrialpediaCategoryStats()
-      .catch((error) => {
-        categoryStatsCache.refreshPromise = null;
-        throw error;
-      });
-  }
-  return categoryStatsCache.refreshPromise;
+  return snapshot;
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
