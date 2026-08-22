@@ -3,7 +3,7 @@ import CategoryCard from './CategoryCard';
 import { useLanguage } from '@/lib/i18n';
 
 export default function CategorySection({ counts }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   return (
     <section className="px-5 py-6">
       <div className="flex items-baseline justify-between mb-4">
