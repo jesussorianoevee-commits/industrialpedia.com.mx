@@ -323,7 +323,7 @@ export default function Comparar() {
                   </div>
                 </div>
                 <div className="px-3 py-2 text-[9px] text-white/30 border-b border-white/[0.06]">
-                  <span className="text-white/50">Base:</span> {base.part_number} · <span className="text-white/50">Alternativa:</span> {c.part_number}
+                  <span className="text-white/50">Comparativa:</span> {c.part_number} · <span className="text-white/50">Original:</span> {base.part_number}
                 </div>
                 <div className="divide-y divide-white/[0.06]">
                   {visible.map(({ s, originalValue, candidateValue, state }, j) => {
@@ -389,7 +389,7 @@ export default function Comparar() {
                 const isBaseColumn = c.id === base.id;
                 const candidate = isBaseColumn ? s : valueFor(s, c);
                 const st = isBaseColumn ? 'base' : stateFor(s, c);
-                const normalized = ci === 0 ? null : normalizedFor(s, c);
+                const normalized = isBaseColumn ? null : normalizedFor(s, c);
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
                 const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
                 const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
@@ -397,7 +397,7 @@ export default function Comparar() {
                 const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                 return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
                   <div className="min-w-0"><div className="font-mono text-sm leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-xs font-mono text-white/50">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
-                  {ci > 0 && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 text-red-300" /> : <span className="text-white/20">—</span>)}
+                  {!isBaseColumn && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 text-red-300" /> : <span className="text-white/20">—</span>)}
                 </div>;
               })}
             </div>)}
