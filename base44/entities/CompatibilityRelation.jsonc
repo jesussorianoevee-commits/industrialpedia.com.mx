@@ -1,0 +1,55 @@
+{
+  "name": "CompatibilityRelation",
+  "type": "object",
+  "properties": {
+    "source_part_id": {
+      "type": "string"
+    },
+    "target_part_id": {
+      "type": "string"
+    },
+    "relation_type": {
+      "type": "string",
+      "enum": [
+        "compatible_with",
+        "replacement_for"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "community_observed",
+        "technically_supported",
+        "documented",
+        "rejected"
+      ],
+      "default": "candidate"
+    },
+    "positive_confirmations": {
+      "type": "number",
+      "default": 0
+    },
+    "negative_reports": {
+      "type": "number",
+      "default": 0
+    },
+    "unique_contributors": {
+      "type": "number",
+      "default": 0
+    },
+    "confidence_score": {
+      "type": "number"
+    },
+    "last_confirmation_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "source_part_id",
+    "target_part_id",
+    "relation_type",
+    "status"
+  ]
+}
