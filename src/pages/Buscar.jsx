@@ -240,8 +240,25 @@ export default function Buscar() {
             </div>
           )}
 
-          {input.trim().length >= 3 && input.trim() !== q.trim() && (suggestionsLoading || suggestions.length > 0) && (
+          {input.trim().length >= 2 && input.trim() !== q.trim() && (historySuggestions.length > 0 || suggestionsLoading || suggestions.length > 0) && (
             <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
+              {historySuggestions.length > 0 && (
+                <div className="border-b border-white/5">
+                  <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-white/35 flex items-center gap-1.5"><Clock className="w-3 h-3" /> {t.recentSearches}</div>
+                  {historySuggestions.map((term, i) => (
+                    <button
+                      key={`history-${term}-${i}`}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => { saveToHistory(term); setSuggestions([]); setInput(term); setShowHistory(false); setParams({ q: term }); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-white/5 transition-colors"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-white/30 shrink-0" />
+                      <span className="text-sm text-white/75 truncate">{term}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
               {suggestionsLoading ? (
                 <div className="px-4 py-4 text-xs text-white/40 flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> {t.discoveringProducts}</div>
               ) : (
