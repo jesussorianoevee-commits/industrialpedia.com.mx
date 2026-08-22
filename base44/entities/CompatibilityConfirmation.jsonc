@@ -11,6 +11,9 @@
     "target_part_id": {
       "type": "string"
     },
+    "target_part_number": {
+      "type": "string"
+    },
     "contributor_user_id": {
       "type": "string"
     },
@@ -39,7 +42,7 @@
   },
   "required": [
     "source_part_id",
-    "target_part_id",
+    "target_part_number",
     "contributor_user_id",
     "outcome",
     "experience_type"
