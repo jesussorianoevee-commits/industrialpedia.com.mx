@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Loader2, Plus, Trash2, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { decideIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { useLanguage } from '@/lib/i18n';
 
 const STATUS = {
   recommended: { label: 'RECOMENDADA', cls: 'text-[#16c79a] border-[#16c79a]/30 bg-[#16c79a]/[0.05]', icon: CheckCircle2 },
@@ -30,6 +31,7 @@ export default function Decidir() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const cleanRequirements = useMemo(() => Object.fromEntries(requirements.filter((r) => r.key.trim() && r.value.trim()).map((r) => [r.key.trim(), r.value.trim()])), [requirements]);
 
@@ -62,32 +64,32 @@ export default function Decidir() {
         <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-4">
           <Link to="/" className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4" /></Link>
           <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
-          <span className="text-xs text-white/35">Decisión técnica</span>
+          <span className="text-xs text-white/35">{t.technicalDecision}</span>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Decidir</h1>
-          <p className="mt-1 max-w-2xl text-sm text-white/45">Define la necesidad técnica y deja que Industrialpedia filtre el Knowledge Core. La decisión no sustituye la validación de seguridad, instalación o documentación del fabricante.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.decisionTitle}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-white/45">{t.decisionSubtitle}</p>
         </div>
 
         <form onSubmit={decide} className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
           <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
             <label className="block">
-              <span className="text-[10px] uppercase tracking-wider text-white/35">Familia técnica</span>
+              <span className="text-[10px] uppercase tracking-wider text-white/35">{t.technicalFamily}</span>
               <input value={family} onChange={(e) => setFamily(e.target.value)} placeholder="Ej. sensor, cilindro, motor" className="mt-2 w-full rounded-lg border border-white/10 bg-[#080d12] px-3 py-2.5 text-sm text-white outline-none focus:border-[#65a9e6]/50" />
             </label>
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-white/35">Requisitos técnicos</span>
-                <button type="button" onClick={addRequirement} className="inline-flex items-center gap-1 text-[10px] text-[#65a9e6] hover:text-white"><Plus className="h-3.5 w-3.5" /> Agregar</button>
+                <span className="text-[10px] uppercase tracking-wider text-white/35">{t.requirements}</span>
+                <button type="button" onClick={addRequirement} className="inline-flex items-center gap-1 text-[10px] text-[#65a9e6] hover:text-white"><Plus className="h-3.5 w-3.5" /> {t.add}</button>
               </div>
               <div className="mt-2 space-y-2">
                 {requirements.map((row, index) => (
                   <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                    <input value={row.key} onChange={(e) => updateRequirement(index, 'key', e.target.value)} placeholder="Atributo" className="min-w-0 rounded-lg border border-white/10 bg-[#080d12] px-3 py-2 text-xs text-white outline-none focus:border-[#65a9e6]/50" />
-                    <input value={row.value} onChange={(e) => updateRequirement(index, 'value', e.target.value)} placeholder="Valor requerido" className="min-w-0 rounded-lg border border-white/10 bg-[#080d12] px-3 py-2 text-xs text-white outline-none focus:border-[#65a9e6]/50" />
+                    <input value={row.key} onChange={(e) => updateRequirement(index, 'key', e.target.value)} placeholder={t.attribute} className="min-w-0 rounded-lg border border-white/10 bg-[#080d12] px-3 py-2 text-xs text-white outline-none focus:border-[#65a9e6]/50" />
+                    <input value={row.value} onChange={(e) => updateRequirement(index, 'value', e.target.value)} placeholder={t.requiredValue} className="min-w-0 rounded-lg border border-white/10 bg-[#080d12] px-3 py-2 text-xs text-white outline-none focus:border-[#65a9e6]/50" />
                     <button type="button" onClick={() => removeRequirement(index)} aria-label="Eliminar requisito" className="rounded-lg border border-white/10 px-2 text-white/30 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 ))}
@@ -98,7 +100,7 @@ export default function Decidir() {
           {error && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-xs text-amber-100/75">{error}</div>}
           <button type="submit" disabled={loading} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#65a9e6] px-5 py-2.5 text-xs font-semibold text-[#080d12] hover:bg-[#78b5ea] disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            {loading ? 'Evaluando…' : 'Tomar decisión'}
+            {loading ? t.evaluating : t.takeDecision}
           </button>
         </form>
 
@@ -106,7 +108,7 @@ export default function Decidir() {
           <section className="mt-5 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold">Resultado</h2>
+                <h2 className="text-sm font-semibold">{t.result}</h2>
                 <p className="mt-1 text-[10px] text-white/30">{data.count ?? results.length} resultado(s) evaluado(s) · fuente: Knowledge Core</p>
               </div>
               <span className="rounded-md border border-[#16c79a]/20 bg-[#16c79a]/[0.04] px-2 py-1 text-[9px] uppercase tracking-wider text-[#16c79a]/75">Determinístico</span>
@@ -115,7 +117,7 @@ export default function Decidir() {
             {results.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-[#0d141b] p-7 text-center">
                 <XCircle className="mx-auto h-5 w-5 text-white/25" />
-                <div className="mt-2 text-sm text-white/55">No hay componentes que puedan demostrarse como candidatos con los datos actuales.</div>
+                <div className="mt-2 text-sm text-white/55">{t.noResults}</div>
                 <div className="mt-1 text-[10px] text-white/30">Esto no significa que no exista una solución; significa que el Knowledge Core no tiene evidencia suficiente para esta consulta.</div>
               </div>
             ) : results.map((result, index) => {
