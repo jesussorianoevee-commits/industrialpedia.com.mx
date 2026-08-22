@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "es",
+        "en",
+        "de",
+        "fr",
+        "zh"
+      ]
+    },
+    "text": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "draft"
+      ]
+    }
+  },
+  "required": [],
+  "name": "UiTranslation"
+}

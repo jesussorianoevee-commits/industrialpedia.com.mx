@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
+import { useLanguage } from '@/lib/i18n';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -55,6 +56,7 @@ export default function ResultCard({ result }) {
   const [materializeError, setMaterializeError] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
+  const { language, t } = useLanguage();
   const isVerified = imageVerified || result.discovery_state === 'verified' ||
     (['published', 'validated'].includes(result.validation_state) && Boolean(result.has_evidence));
   const inferReferenceCategory = () => {
@@ -92,7 +94,7 @@ export default function ResultCard({ result }) {
           <div className="mt-1 text-white/50 text-xs">
             {displayManufacturer || (result.discovery_state === 'discovered' ? 'Fuente externa' : '')}
             {displayManufacturer && result.part_number ? ' · ' : ''}
-            {result.part_number ? `Referencia: ${result.part_number}` : ''}
+            {result.part_number ? `${language === 'zh' ? '参考编号' : language === 'de' ? 'Referenz' : language === 'fr' ? 'Référence' : language === 'en' ? 'Part number' : 'Referencia'}: ${result.part_number}` : ''}
             {result.category ? ` · ${result.category}` : ''}
           </div>
         </div>
@@ -110,7 +112,7 @@ export default function ResultCard({ result }) {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">Sin imagen verificada</span>
+            <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{language === 'zh' ? '无已验证图片' : language === 'de' ? 'Kein verifiziertes Bild' : language === 'fr' ? 'Aucune image vérifiée' : language === 'en' ? 'No verified image' : 'Sin imagen verificada'}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -176,7 +178,7 @@ export default function ResultCard({ result }) {
             to={`/parte/${result.id}${result.part_number ? `?pn=${encodeURIComponent(result.part_number)}` : ''}`}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            Ver componente <ArrowRight className="w-3 h-3" />
+            {language === 'zh' ? '查看组件' : language === 'de' ? 'Komponente öffnen' : language === 'fr' ? 'Voir le composant' : language === 'en' ? 'View component' : 'Ver componente'} <ArrowRight className="w-3 h-3" />
           </Link>
         ) : result.catalog_id && result.source_url ? (
           <a
@@ -209,7 +211,7 @@ export default function ResultCard({ result }) {
             }}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] disabled:opacity-60 text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            {materializing ? 'Creando ficha…' : 'Ver ficha técnica'} <ArrowRight className="w-3 h-3" />
+            {materializing ? (language === 'zh' ? '正在创建资料…' : language === 'de' ? 'Datenblatt wird erstellt…' : language === 'fr' ? 'Création de la fiche…' : language === 'en' ? 'Creating sheet…' : 'Creando ficha…') : (language === 'zh' ? '查看技术资料' : language === 'de' ? 'Technisches Datenblatt' : language === 'fr' ? 'Voir la fiche technique' : language === 'en' ? 'View technical sheet' : 'Ver ficha técnica')} <ArrowRight className="w-3 h-3" />
           </button>
         ) : result.source_url ? (
           <a
@@ -226,7 +228,7 @@ export default function ResultCard({ result }) {
           title="Pilar ENCONTRAR — próxima iteración"
           className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60"
         >
-          Encontrar alternativas
+          {language === 'zh' ? '查找替代品' : language === 'de' ? 'Alternativen finden' : language === 'fr' ? 'Trouver des alternatives' : language === 'en' ? 'Find alternatives' : 'Encontrar alternativas'}
         </button>
         {canCompareReference ? (
           <button
@@ -251,10 +253,10 @@ export default function ResultCard({ result }) {
             }}
             className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
           >
-            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Comparando…</> : <><GitCompareArrows className="w-3 h-3" /> Comparar alternativas</>}
+            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {language === 'zh' ? '比较中…' : language === 'de' ? 'Vergleich…' : language === 'fr' ? 'Comparaison…' : language === 'en' ? 'Comparing…' : 'Comparando…'}</> : <><GitCompareArrows className="w-3 h-3" /> {language === 'zh' ? '比较替代品' : language === 'de' ? 'Alternativen vergleichen' : language === 'fr' ? 'Comparer les alternatives' : language === 'en' ? 'Compare alternatives' : 'Comparar alternativas'}</>}
           </button>
         ) : (
-          <button disabled title="Se habilita cuando la referencia externa tiene suficientes especificaciones técnicas." className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Comparar</button>
+          <button disabled title="Se habilita cuando la referencia externa tiene suficientes especificaciones técnicas." className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.compare}</button>
         )}
       </div>
     </div>
