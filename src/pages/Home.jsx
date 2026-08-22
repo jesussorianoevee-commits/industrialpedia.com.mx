@@ -6,7 +6,7 @@ import CategorySection from '@/components/landing/CategorySection';
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { AREAS } from '@/lib/taxonomy';
-import { getIndustrialpediaCatalogStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
   const [partCount, setPartCount] = useState(0);
@@ -20,6 +20,8 @@ export default function Home() {
       const stats = await getIndustrialpediaCatalogStats();
       const total = Number(stats?.count);
       if (!Number.isFinite(total)) throw new Error('invalid_catalog_count');
+      const categoryStats = await getIndustrialpediaCategoryStats();
+      setCounts(categoryStats);
       setPartCount(total);
       setLastUpdated(new Date());
       return true;
