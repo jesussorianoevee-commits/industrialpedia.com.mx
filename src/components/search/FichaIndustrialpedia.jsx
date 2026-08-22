@@ -42,7 +42,7 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl, language, t })
   return (
     <div className="grid grid-cols-[minmax(0,40%)_1fr] gap-4 py-4 border-b border-white/[0.055] last:border-b-0">
       <div className="flex items-start gap-2 min-w-0">
-        <span className="text-[14px] sm:text-[15px] leading-6 text-white/55 font-mono break-words">{label}</span>
+        <span className="text-[14px] sm:text-[15px] leading-6 text-white/55 font-mono break-words">{localizeSpecAttribute(label, language)}</span>
         <SourceBadge page={page} verified={verified} t={t} />
       </div>
       <div className="min-w-0 text-right">
