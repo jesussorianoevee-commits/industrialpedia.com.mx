@@ -66,6 +66,11 @@ export function useLanguage() {
 
 const SPEC_ATTRIBUTE_I18N = {
   material: { es: 'Material', en: 'Material', de: 'Material', fr: 'Matière', zh: '材料' },
+  'device role': { es: 'Función del dispositivo', en: 'Device role', de: 'Geräterolle', fr: 'Rôle de l’appareil', zh: '设备角色' },
+  'io capacity': { es: 'Capacidad de E/S', en: 'I/O capacity', de: 'E/A-Kapazität', fr: 'Capacité E/S', zh: 'I/O 容量' },
+  'supply voltage': { es: 'Voltaje de alimentación', en: 'Supply voltage', de: 'Versorgungsspannung', fr: 'Tension d’alimentation', zh: '供电电压' },
+  'network protocol': { es: 'Protocolo de red', en: 'Network protocol', de: 'Netzwerkprotokoll', fr: 'Protocole réseau', zh: '网络协议' },
+  'overall length': { es: 'Longitud total', en: 'Overall length', de: 'Gesamtlänge', fr: 'Longueur totale', zh: '总长度' },
   'model number': { es: 'Número de modelo', en: 'Model number', de: 'Modellnummer', fr: 'Numéro de modèle', zh: '型号' },
   'product name': { es: 'Nombre del producto', en: 'Product name', de: 'Produktname', fr: 'Nom du produit', zh: '产品名称' },
   leg: { es: 'Pata', en: 'Leg', de: 'Schenkel', fr: 'Patte', zh: '支腿' },
@@ -199,9 +204,18 @@ const SPEC_WORD_I18N = {
   accuracy: { es: 'precisión', en: 'accuracy', de: 'Genauigkeit', fr: 'précision', zh: '精度' }
 };
 
+function normalizeI18nKey(value) {
+  return String(value || '')
+    .trim()
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
 export function localizeSpecAttribute(attribute, language = 'es') {
   const original = String(attribute || '').trim();
-  const key = original.toLowerCase();
+  const key = normalizeI18nKey(original);
   if (!original) return '';
   if (SPEC_ATTRIBUTE_I18N[key]?.[language]) return SPEC_ATTRIBUTE_I18N[key][language];
 
@@ -216,6 +230,15 @@ export function localizeSpecAttribute(attribute, language = 'es') {
 }
 
 const TECHNICAL_PHRASE_I18N = {
+  'interface module': { es: 'módulo de interfaz', en: 'interface module', de: 'Schnittstellenmodul', fr: 'module d’interface', zh: '接口模块' },
+  '2-port interface module': { es: 'módulo de interfaz de 2 puertos', en: '2-port interface module', de: '2-Port-Schnittstellenmodul', fr: 'module d’interface à 2 ports', zh: '2 端口接口模块' },
+  'supporting up to': { es: 'compatible con hasta', en: 'supporting up to', de: 'unterstützt bis zu', fr: 'prenant en charge jusqu’à', zh: '最多支持' },
+  'i/o modules': { es: 'módulos de E/S', en: 'I/O modules', de: 'E/A-Module', fr: 'modules E/S', zh: 'I/O 模块' },
+  'io device': { es: 'dispositivo de E/S', en: 'I/O device', de: 'E/A-Gerät', fr: 'appareil E/S', zh: 'I/O 设备' },
+  'printed circuit boards': { es: 'placas de circuito impreso', en: 'printed circuit boards', de: 'Leiterplatten', fr: 'circuits imprimés', zh: '印刷电路板' },
+  'tweezers for': { es: 'Pinzas para', en: 'Tweezers for', de: 'Pinzette für', fr: 'Pincettes pour', zh: '用于的镊子' },
+  'overall length': { es: 'Longitud total', en: 'Overall length', de: 'Gesamtlänge', fr: 'Longueur totale', zh: '总长度' },
+  'high feature': { es: 'versión avanzada', en: 'High Feature', de: 'High-Feature-Version', fr: 'version avancée', zh: '高级版本' },
   'pressure gauge': { es: 'Manómetro de presión', en: 'Pressure gauge', de: 'Manometer', fr: 'Manomètre', zh: '压力表' },
   'model number': { es: 'Número de modelo', en: 'Model number', de: 'Modellnummer', fr: 'Numéro de modèle', zh: '型号' },
   'measurement range': { es: 'Rango de medición', en: 'Measurement range', de: 'Messbereich', fr: 'Plage de mesure', zh: '测量范围' },
@@ -270,8 +293,8 @@ export function localizeSpecValue(value, language = 'es') {
   if (value === null || value === undefined) return value;
   const raw = String(value).trim();
   if (!raw || language === 'en') return raw;
-  const key = raw.toLowerCase().replace(/[\s-]+/g, '_');
-  return TECHNICAL_VALUE_I18N[key]?.[language] || raw;
+  const key = normalizeI18nKey(raw).replace(/\s+/g, '_');
+  return TECHNICAL_VALUE_I18N[key]?.[language] || localizeTechnicalText(raw, language);
 }
 
 export function localizeTechnicalTerm(term, language = 'es') {
@@ -358,11 +381,14 @@ export async function translateParts(results, language) {
     // Legacy parts may predate the automatic translation pipeline. Backfill
     // only the visible result page, bounded by the server to prevent a bulk
     // translation job from being triggered by a normal search.
-    const missingIds = ids.filter((id) => !(translations || []).some((t) => String(t.part_id) === String(id)));
-    if (missingIds.length) {
+    const needsRefresh = ids.filter((id) => {
+      const current = (translations || []).find((t) => String(t.part_id) === String(id));
+      return !current || !current.name || !current.description || current.status === 'machine_draft';
+    });
+    if (needsRefresh.length) {
       try {
         await base44.functions.invoke('EnsurePartTranslations', {
-          part_ids: missingIds.slice(0, 10),
+          part_ids: needsRefresh.slice(0, 10),
           language
         });
         translations = await base44.entities.PartTranslation.filter(
