@@ -5,30 +5,49 @@ const CAT_IMAGE = 'data:image/webp;base64,UklGRs4NAABXRUJQVlA4IMINAABQNgCdASqAAI
 export default function IndustrialpediaLoader({ fullScreen = false, label = 'Cargando Industrialpedia…' }) {
   return (
     <div className={fullScreen ? 'fixed inset-0 z-[9999] flex items-center justify-center bg-[#080d12]' : 'flex min-h-[360px] items-center justify-center'}>
-      <div className="relative flex flex-col items-center justify-center">
-        <div className="relative w-64 h-64 sm:w-72 sm:h-72">
+      <div className="relative flex w-full flex-col items-center justify-center px-4">
+        <div className="relative h-48 w-48 sm:h-56 sm:w-56">
           <img
             src={CAT_IMAGE}
             alt="Industrialpedia cargando"
-            className="absolute inset-0 w-full h-full object-contain select-none animate-[loader-bob_1.2s_steps(4,end)_infinite]"
+            className="absolute inset-0 h-full w-full select-none object-contain loader-mascot"
             draggable="false"
           />
         </div>
-        <div className="mt-2 flex items-center gap-2 text-xs tracking-[0.18em] uppercase text-white/45">
+        <div className="mt-3 flex items-center gap-2 text-center text-[11px] sm:text-xs tracking-[0.16em] uppercase text-white/50">
           <span>{label}</span>
           <span className="inline-flex gap-0.5" aria-hidden="true">
-            <span className="animate-bounce [animation-delay:-0.3s]">.</span>
-            <span className="animate-bounce [animation-delay:-0.15s]">.</span>
-            <span className="animate-bounce">.</span>
+            <span className="loader-dot loader-dot-1">.</span>
+            <span className="loader-dot loader-dot-2">.</span>
+            <span className="loader-dot loader-dot-3">.</span>
           </span>
         </div>
-        <div className="mt-3 h-px w-40 overflow-hidden bg-white/10">
-          <div className="h-full w-1/3 bg-[#5a9cd9] animate-[loader-progress_1.5s_ease-in-out_infinite]" />
+        <div className="mt-3 h-px w-40 max-w-[60vw] overflow-hidden bg-white/10">
+          <div className="h-full w-1/3 bg-[#5a9cd9] loader-progress" />
         </div>
         <style>{`
-          @keyframes loader-bob { 0%,100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(1px,-1px) rotate(0.4deg); } 50% { transform: translate(0,0) rotate(0deg); } 75% { transform: translate(-1px,1px) rotate(-0.4deg); } }
+          .loader-mascot {
+            image-rendering: auto;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            will-change: transform, filter;
+            animation: loader-bob 1.8s ease-in-out infinite;
+            filter: drop-shadow(0 14px 22px rgba(0,0,0,.28));
+          }
+          .loader-dot { animation: loader-dot 1.15s ease-in-out infinite; }
+          .loader-dot-1 { animation-delay: -0.24s; }
+          .loader-dot-2 { animation-delay: -0.12s; }
+          .loader-dot-3 { animation-delay: 0s; }
+          .loader-progress { animation: loader-progress 1.5s ease-in-out infinite; }
+          @keyframes loader-bob {
+            0%,100% { transform: translate3d(0,0,0) scale(1); filter: drop-shadow(0 14px 22px rgba(0,0,0,.28)); }
+            50% { transform: translate3d(0,-7px,0) scale(1.012); filter: drop-shadow(0 20px 26px rgba(0,0,0,.34)); }
+          }
+          @keyframes loader-dot { 0%,80%,100% { opacity: .28; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
           @keyframes loader-progress { 0% { transform: translateX(-140%); } 50% { transform: translateX(120%); } 100% { transform: translateX(320%); } }
-          @media (prefers-reduced-motion: reduce) { img[alt="Industrialpedia cargando"] { animation: none; } }
+          @media (prefers-reduced-motion: reduce) {
+            .loader-mascot, .loader-dot, .loader-progress { animation: none !important; }
+          }
         `}</style>
       </div>
     </div>
