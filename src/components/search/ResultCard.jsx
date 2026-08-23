@@ -65,7 +65,7 @@ export default function ResultCard({ result }) {
       // adquisición determinística por número de parte exacto. No hay IA, no hay
       // coincidencias aproximadas y nunca se reutiliza la imagen de otra pieza.
       if (!initialUrl && exactPartNumber) {
-        const cacheKey = `industrialpedia:image:${exactPartNumber.toLowerCase()}`;
+        const cacheKey = `industrialpedia:image:v2:${String(result.manufacturer_name || '').toLowerCase()}:${exactPartNumber.toLowerCase()}`;
         try {
           const cached = sessionStorage.getItem(cacheKey);
           if (cached) {
@@ -80,6 +80,7 @@ export default function ResultCard({ result }) {
           const acquired = await resolveProductImage({
             partNumber: exactPartNumber,
             manufacturer: result.manufacturer_name || '',
+            sourceUrl: result.source_url || result.document_url || result.image_source || '',
             existingUrl: ''
           });
           const acquiredUrl = acquired.image_url || '';
