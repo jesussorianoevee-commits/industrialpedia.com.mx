@@ -3,7 +3,7 @@ import { secrets, waitUntil } from 'base44:runtime';
 import { discoverTavilyIndustrial, brandTokensFromQuery, isLikelyIndustrialTavilyResult, isProductResultForManufacturer, isCorporateOnlyResult, rankIndustrialResults, classifySource, isQueryRelevantIndustrialResult } from '../../shared/tavilySearch.js';
 import { normalizePartNumber, looksLikePartNumber } from '../../shared/searchRules.js';
 import { persistDiscoveryResults } from '../../shared/discoveryPersist.js';
-import { isUsableProductImageCandidate } from '../../shared/imageResolver.js';
+import { isUsableProductImageCandidate, selectBestImage } from '../../shared/imageResolver.js';
 import { isTechnicalSpecification } from '../../shared/semanticResolver.js';
 import { sanitizeResultIdentity } from '../../shared/identityGuard.js';
 import { getSourcePolicy } from '../../shared/sourceRegistry.js';
@@ -78,7 +78,7 @@ export default async function (req: Request) {
         { query_normalized: queryNorm }, '-created_date', 1
       );
       if (cachedRecs.length && Array.isArray(cachedRecs[0].results) && cachedRecs[0].results.length) {
-        const safeCachedResults = cachedRecs[0].results
+        const cachedCandidates = cachedRecs[0].results
           .filter((r: any) =>
             !isCorporateOnlyResult(r) &&
             isLikelyIndustrialTavilyResult(r, query) &&
@@ -88,10 +88,6 @@ export default async function (req: Request) {
           )
           .map((r: any) => {
             const reclassified = reclassifyCachedSource(r);
-            // Sanitizar identidad: descartar manufacturer_name o part_number
-            // derivados de tokens de la consulta o términos genéricos. Los
-            // resultados cacheados pueden haberse guardado antes de las reglas
-            // actuales de validación de identidad.
             const copy = sanitizeResultIdentity(reclassified, query);
             if (!isUsableProductImageCandidate(copy.image_url, copy.title, copy.description || copy.snippet)) {
               copy.image_url = '';
@@ -103,6 +99,45 @@ export default async function (req: Request) {
               : [];
             return copy;
           });
+
+        // El cache puede haberse creado antes de que existiera el resolver de
+        // imágenes o cuando Tavily no entregó una miniatura. Si falta imagen,
+        // reintentamos únicamente contra la MISMA URL fuente y con el contexto
+        // de ese producto; nunca reutilizamos una imagen de otro resultado.
+        const safeCachedResults = await Promise.all(cachedCandidates.map(async (copy: any) => {
+          if (copy.image_url || !copy.url) return copy;
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            const page = await fetch(copy.url, {
+              redirect: 'follow',
+              headers: { 'User-Agent': 'Mozilla/5.0 Industrialpedia/1.0', 'Accept': 'text/html,application/xhtml+xml' },
+              signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (!page.ok) return copy;
+            const html = (await page.text()).slice(0, 500000);
+            const resolved = selectBestImage({
+              html,
+              markdown: copy.raw_content || copy.snippet || '',
+              tavily_image_url: copy.image_url || '',
+              tavily_images: copy.images || [],
+              product_context: {
+                manufacturer: copy.manufacturer_name || copy.product_identity?.manufacturer || '',
+                partNumber: copy.part_number || copy.product_identity?.part_number || '',
+                query,
+                source_url: copy.url
+              }
+            });
+            if (resolved?.image_url) {
+              copy.image_url = resolved.image_url;
+              copy.image_method = resolved.method || '';
+              copy.image_confidence = resolved.confidence || 0;
+              copy.image_source_url = resolved.source_url || copy.url;
+            }
+          } catch { /* mantener resultado sin imagen si la fuente no es accesible */ }
+          return copy;
+        }));
         if (safeCachedResults.length) {
           // Re-aplica el ranking de calidad a los resultados cacheados: así una
           // mejora del clasificador no queda anulada por datos guardados en orden
