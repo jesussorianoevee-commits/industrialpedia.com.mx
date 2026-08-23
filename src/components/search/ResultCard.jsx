@@ -196,7 +196,11 @@ export default function ResultCard({ result }) {
               className="w-full h-full object-contain p-1.5"
               loading="lazy"
               referrerPolicy="no-referrer"
-              onError={() => setImageSrc('')}
+              onError={() => {
+                clearProductImageCache(result.part_number, result.manufacturer_name || '');
+                if (imageRetry < 1) setImageRetry((n) => n + 1);
+                else setImageSrc('');
+              }}
             />
           ) : imageLookupPending ? (
             <Loader2 className="w-5 h-5 text-[#5a9cd9]/60 animate-spin" aria-label="Buscando imagen" />
