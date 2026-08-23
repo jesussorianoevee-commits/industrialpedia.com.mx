@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
+import { normalizeImageUrl, resolveProductImage } from '@/lib/productImage';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
@@ -26,13 +27,13 @@ const STATE_LABELS = {
 export default function ResultCard({ result }) {
   const navigate = useNavigate();
   const [materializing, setMaterializing] = useState(false);
-  const [imageSrc, setImageSrc] = useState(result.image_url || '');
+  const [imageSrc, setImageSrc] = useState(normalizeImageUrl(result.image_url));
   const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
   const [imageLookupPending, setImageLookupPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const initialUrl = typeof result.image_url === 'string' ? result.image_url.trim() : '';
+    const initialUrl = normalizeImageUrl(result.image_url);
     const exactPartNumber = String(result.part_number || '').trim();
     setImageSrc(initialUrl);
     setImageVerified(result.image_verification_status === 'verified');
@@ -76,18 +77,19 @@ export default function ResultCard({ result }) {
 
         if (!cancelled) setImageLookupPending(true);
         try {
-          const response = await base44.functions.invoke('AdquirirImagenAPI', {
-            part_number: exactPartNumber
+          const acquired = await resolveProductImage({
+            partNumber: exactPartNumber,
+            manufacturer: result.manufacturer_name || '',
+            existingUrl: ''
           });
-          const acquired = response?.data?.result || {};
-          const acquiredUrl = typeof acquired.image_url === 'string' ? acquired.image_url.trim() : '';
+          const acquiredUrl = acquired.image_url || '';
           try {
             sessionStorage.setItem(cacheKey, JSON.stringify(acquiredUrl
-              ? { image_url: acquiredUrl, verified: acquired.status === 'verified_candidate' }
-              : { status: 'not_found' }
+              ? { image_url: acquiredUrl, verified: acquired.verified === true }
+              : { status: acquired.status || 'not_found' }
             ));
           } catch {}
-          if (acquiredUrl) useImage(acquiredUrl, acquired.status === 'verified_candidate');
+          if (acquiredUrl) useImage(acquiredUrl, acquired.verified === true);
         } catch {
           // La ausencia o fallo de una API externa no debe inventar una imagen.
         } finally {
