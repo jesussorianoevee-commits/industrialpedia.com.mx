@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, 
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
+import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] text-[#16c79a]', icon: ShieldCheck },
@@ -110,7 +111,11 @@ export default function Comparar() {
     })();
   }, [id, partNumberHint, language]);
 
-  if (!data && !error) return <div className="min-h-screen bg-[#080d12] flex items-center justify-center text-white/45 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Buscando alternativas compatibles…</div>;
+  if (!data && !error) return (
+    <div className="min-h-screen bg-[#080d12]">
+      <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Buscando alternativas compatibles' : 'Searching compatible alternatives'} />
+    </div>
+  );
   if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={() => window.history.back()} className="text-[#65a9e6]">← Volver a ficha</button></div>;
 
   const base = data.base;
