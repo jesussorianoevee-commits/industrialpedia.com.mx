@@ -179,7 +179,18 @@ export default function Parte() {
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <button type="button" onClick={() => navigate('/buscar')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm" aria-label={t.backToSearch}> 
+        <button
+          type="button"
+          onClick={() => {
+            // Al volver desde una ficha conservamos exactamente la búsqueda y los
+            // parámetros anteriores. Solo usamos /buscar como respaldo si la ficha
+            // fue abierta directamente y no existe una pantalla previa en el historial.
+            if (window.history.length > 1) navigate(-1);
+            else navigate('/buscar', { replace: true });
+          }}
+          className="flex items-center gap-2 text-white/60 hover:text-white text-sm"
+          aria-label={t.backToSearch}
+        >
           <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
         </button>
       </header>
