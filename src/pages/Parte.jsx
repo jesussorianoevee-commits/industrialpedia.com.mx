@@ -147,7 +147,7 @@ export default function Parte() {
     return (
       <div className="min-h-screen bg-[#0a0e12] grid-bg flex flex-col items-center justify-center gap-3">
         <p className="text-white/50 text-sm">{t.partNotFound}</p>
-        <Link to="/buscar" className="text-[#5a9cd9] text-sm hover:underline">← Volver a BUSCAR</Link>
+        <Link to="/buscar" className="text-[#5a9cd9] text-sm hover:underline">← {t.backToSearch}</Link>
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function Parte() {
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <button type="button" onClick={() => navigate('/buscar')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm" aria-label="Volver al buscador">
+        <button type="button" onClick={() => navigate('/buscar')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm" aria-label={t.backToSearch}> 
           <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
         </button>
       </header>
@@ -181,8 +181,8 @@ export default function Parte() {
                 type="button"
                 onClick={() => setImagePreviewOpen(true)}
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/10 cursor-pointer hover:border-[#5a9cd9] focus:outline-none focus:ring-2 focus:ring-[#5a9cd9]"
-                aria-label={`Ver imagen ampliada de ${part.part_number || 'la pieza'}`}
-                title="Toca la imagen para ampliarla"
+                aria-label={`${t.enlargeImage}: ${part.part_number || t.partNumber}`}
+                title={t.tapImageToEnlarge}
               >
                 <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
               </button>}
@@ -195,7 +195,7 @@ export default function Parte() {
           )}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
-              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.componentEvidence}</span>
+              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.evidenceCount}</span>
             ) : (
               <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}</span>
             )}
@@ -227,7 +227,7 @@ export default function Parte() {
 
         {docs.length > 0 && (
           <div>
-            <h2 className="text-white font-semibold text-sm mb-2">Documento</h2>
+            <h2 className="text-white font-semibold text-sm mb-2">{t.document}</h2>
             <div className="space-y-2">
               {docs.map((d) => (
                 <a key={d.id} href={d.file_url} target="_blank" rel="noreferrer" className="block bg-[#161a20] border border-white/10 rounded-lg p-3 hover:border-white/20">
@@ -242,7 +242,7 @@ export default function Parte() {
 
         {sources.length > 0 && (
           <div>
-            <h2 className="text-white font-semibold text-sm mb-2">Fuentes</h2>
+            <h2 className="text-white font-semibold text-sm mb-2">{t.sourcesTitle}</h2>
             <div className="space-y-2">
               {sources.map((s) => (
                 <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="block bg-[#161a20] border border-white/10 rounded-lg p-3 text-white/60 text-xs hover:border-white/20">
@@ -264,7 +264,7 @@ export default function Parte() {
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
-          aria-label={`Imagen ampliada de ${part.part_number || 'la pieza'}`}
+          aria-label={`${t.enlargeImage}: ${part.part_number || t.partNumber}`}
           onClick={() => setImagePreviewOpen(false)}
         >
           <div className="relative w-full max-w-4xl max-h-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
@@ -273,11 +273,11 @@ export default function Parte() {
               onClick={() => setImagePreviewOpen(false)}
               className="self-end mb-3 px-5 py-3 rounded-lg bg-white text-black font-semibold text-base"
             >
-              Cerrar imagen
+              {t.closeImage}
             </button>
             <img
               src={part.image_url}
-              alt={`Imagen ampliada de ${part.part_number || 'la pieza'}`}
+              alt={`${t.imageOf} ${part.part_number || t.partNumber}`}
               className="max-w-full max-h-[80vh] object-contain rounded-lg bg-white p-2"
               referrerPolicy="no-referrer"
             />
