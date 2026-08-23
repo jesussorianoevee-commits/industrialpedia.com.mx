@@ -262,7 +262,7 @@ const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
   'limpieza-epp': 527,
   'mecanica-transmision': 68,
   // Verificado contra la clasificación canónica v4 (incluye señal de fabricante y exclusiones de falsos positivos).
-  neumatica: 52,
+  neumatica: 50,
   'otros-mro': 335,
   'proceso-maquinaria': 6,
   robotica: 2,
@@ -274,7 +274,7 @@ const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
 
 function readCategoryStatsSnapshot() {
   try {
-    // v4 invalida snapshots calculados con reglas anteriores de clasificación.
+    // v5 invalida snapshots calculados con reglas anteriores de clasificación.
     // Nunca debemos mostrar primero un conteo de una taxonomía vieja y después
     // reemplazarlo por otro al terminar la revalidación.
     const raw = localStorage.getItem('industrialpedia_category_stats_v5');
