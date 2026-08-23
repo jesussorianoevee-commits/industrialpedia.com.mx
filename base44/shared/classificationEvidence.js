@@ -76,9 +76,15 @@ function phrasePositions(text, phrase) {
 
 function isNegated(tokens, position) {
   // Keep scope local: negation may be adjacent or separated by up to two tokens
-  // ("no es neumatico", "sin sistema neumatico").
-  const window = tokens.slice(Math.max(0, position - 3), position);
-  return window.some((token) => ['non', 'not', 'no', 'sin'].includes(token));
+  // ("no es neumatico", "sin sistema neumatico"). "Sin embargo" is a discourse
+  // connector, not a product negation, so it must not suppress later evidence.
+  const start = Math.max(0, position - 3);
+  for (let index = start; index < position; index += 1) {
+    const token = tokens[index];
+    if (token === 'sin' && tokens[index + 1] === 'embargo') continue;
+    if (['non', 'not', 'no', 'sin'].includes(token)) return true;
+  }
+  return false;
 }
 
 function termOccurrences(text, definitions) {
