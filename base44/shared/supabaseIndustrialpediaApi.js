@@ -285,51 +285,22 @@ function publishCategoryStats(value) {
   }
 }
 
+async function getIndustrialpediaCanonicalAreaStats() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_stats_v1`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`, 'Content-Type': 'application/json' },
+    body: '{}'
+  });
+  if (!response.ok) throw new Error(`category_area_stats_http_${response.status}`);
+  const rows = await response.json();
+  return Object.fromEntries((Array.isArray(rows) ? rows : []).map((row) => [row.area, Number(row.count)]));
+}
+
 async function refreshIndustrialpediaCategoryStats() {
-  const previous = categoryStatsCache.value || VERIFIED_CATEGORY_STATS_BOOTSTRAP;
-  const next = { ...previous };
-
-  // El RPC actual clasifica fila por fila y puede superar el timeout de anon.
-  // Una sola consulta por vez evita competir con la navegación por familia;
-  // un fallo individual jamás destruye el snapshot completo.
-  // Mantener el camino estable para las 6 áreas originales: esas estadísticas
-  // ya están consolidadas y no deben depender de la nueva consulta por área.
-  const LEGACY_AREAS = ['neumatica', 'sensores', 'robotica', 'electronica-control', 'mecanica-transmision', 'sin_clasificar'];
-  const NEW_AREAS = CATEGORY_AREAS.filter((area) => !LEGACY_AREAS.includes(area));
-
-  const refreshAreaSet = async (areas, concurrency = 3) => {
-    for (let i = 0; i < areas.length; i += concurrency) {
-      const batch = areas.slice(i, i + concurrency);
-      const results = await Promise.all(batch.map(async (area) => {
-      try {
-        const result = await getIndustrialpediaAreaParts(area, 1, 0);
-        const total = Number(result?.total);
-        return [area, Number.isFinite(total) && total >= 0 ? total : null];
-      } catch {
-        return [area, null];
-      }
-    }));
-
-      for (const [area, total] of results) {
-        if (total !== null) next[area] = total;
-      }
-
-      categoryStatsCache.value = next;
-      publishCategoryStats(next);
-    }
-  };
-
-  // La ruta legacy es la fuente estable para las áreas que ya existían.
-  // Solo las áreas nuevas dependen del clasificador v3 por área.
-  const legacyStats = await getIndustrialpediaLegacyAreaStats();
-  for (const [area, total] of Object.entries(legacyStats || {})) {
-    if (LEGACY_AREAS.includes(area) && Number.isFinite(Number(total))) next[area] = Number(total);
-  }
-
-  await refreshAreaSet(NEW_AREAS, 1);
-
-  next.sin_clasificar = Number.isFinite(next.sin_clasificar) ? next.sin_clasificar : 0;
-  next['otras-refacciones'] = Number.isFinite(next['otras-refacciones']) ? next['otras-refacciones'] : 0;
+  // Un solo RPC canónico calcula todos los conteos con exactamente la misma
+  // versión del clasificador que usa industrialpedia_catalog_area_parts_v2.
+  const canonical = await getIndustrialpediaCanonicalAreaStats();
+  const next = { ...EMPTY_CATEGORY_STATS, ...canonical };
   categoryStatsCache = {
     value: next,
     expiresAt: Date.now() + 5 * 60 * 1000,
@@ -339,23 +310,10 @@ async function refreshIndustrialpediaCategoryStats() {
   return next;
 }
 
-async function getIndustrialpediaLegacyAreaStats() {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_stats_v1`, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`, 'Content-Type': 'application/json' },
-    body: '{}'
-  });
-  if (!response.ok) throw new Error(`legacy_area_stats_http_${response.status}`);
-  const rows = await response.json();
-  return Object.fromEntries((Array.isArray(rows) ? rows : []).map((row) => [row.area, Number(row.count)]));
-}
-
 export async function getIndustrialpediaCategoryStats() {
   const now = Date.now();
-  const snapshot = categoryStatsCache.value || VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+  const snapshot = categoryStatsCache.value || { ...EMPTY_CATEGORY_STATS };
 
-  // Nunca bloqueamos el primer render esperando 16 consultas costosas.
-  // Supabase revalida en segundo plano y publica cada actualización.
   if (!categoryStatsCache.refreshPromise && categoryStatsCache.expiresAt <= now) {
     categoryStatsCache.refreshPromise = refreshIndustrialpediaCategoryStats()
       .catch(() => snapshot)
