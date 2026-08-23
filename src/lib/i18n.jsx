@@ -92,6 +92,16 @@ const SPEC_ATTRIBUTE_I18N = {
   'connection points count': { es: 'Cantidad de puntos de conexión', en: 'Connection points count', de: 'Anzahl der Anschlusspunkte', fr: 'Nombre de points de connexion', zh: '连接点数量' },
   size: { es: 'Tamaño', en: 'Size', de: 'Größe', fr: 'Taille', zh: '尺寸' },
   voltage: { es: 'Voltaje', en: 'Voltage', de: 'Spannung', fr: 'Tension', zh: '电压' },
+  'output voltage': { es: 'Voltaje de salida', en: 'Output voltage', de: 'Ausgangsspannung', fr: 'Tension de sortie', zh: '输出电压' },
+  'output voltage range': { es: 'Rango de voltaje de salida', en: 'Output voltage range', de: 'Ausgangsspannungsbereich', fr: 'Plage de tension de sortie', zh: '输出电压范围' },
+  'input voltage': { es: 'Voltaje de entrada', en: 'Input voltage', de: 'Eingangsspannung', fr: 'Tension d’entrée', zh: '输入电压' },
+  'input voltage range': { es: 'Rango de voltaje de entrada', en: 'Input voltage range', de: 'Eingangsspannungsbereich', fr: 'Plage de tension d’entrée', zh: '输入电压范围' },
+  'output current': { es: 'Corriente de salida', en: 'Output current', de: 'Ausgangsstrom', fr: 'Courant de sortie', zh: '输出电流' },
+  'output current range': { es: 'Rango de corriente de salida', en: 'Output current range', de: 'Ausgangsstrombereich', fr: 'Plage de courant de sortie', zh: '输出电流范围' },
+  'input current': { es: 'Corriente de entrada', en: 'Input current', de: 'Eingangsstrom', fr: 'Courant d’entrée', zh: '输入电流' },
+  'accuracy': { es: 'Precisión', en: 'Accuracy', de: 'Genauigkeit', fr: 'Précision', zh: '精度' },
+  'voltage accuracy': { es: 'Precisión de voltaje', en: 'Voltage accuracy', de: 'Spannungsgenauigkeit', fr: 'Précision de tension', zh: '电压精度' },
+  'current accuracy': { es: 'Precisión de corriente', en: 'Current accuracy', de: 'Stromgenauigkeit', fr: 'Précision du courant', zh: '电流精度' },
   current: { es: 'Corriente', en: 'Current', de: 'Strom', fr: 'Courant', zh: '电流' },
   capacity: { es: 'Capacidad', en: 'Capacity', de: 'Kapazität', fr: 'Capacité', zh: '容量' },
   quantity: { es: 'Cantidad', en: 'Quantity', de: 'Menge', fr: 'Quantité', zh: '数量' },
@@ -170,7 +180,10 @@ const SPEC_WORD_I18N = {
   voltage: { es: 'voltaje', en: 'voltage', de: 'Spannung', fr: 'tension', zh: '电压' },
   current: { es: 'corriente', en: 'current', de: 'Strom', fr: 'courant', zh: '电流' },
   power: { es: 'potencia', en: 'power', de: 'Leistung', fr: 'puissance', zh: '功率' },
-  frequency: { es: 'frecuencia', en: 'frequency', de: 'Frequenz', fr: 'fréquence', zh: '频率' }
+  frequency: { es: 'frecuencia', en: 'frequency', de: 'Frequenz', fr: 'fréquence', zh: '频率' },
+  output: { es: 'salida', en: 'output', de: 'Ausgang', fr: 'sortie', zh: '输出' },
+  input: { es: 'entrada', en: 'input', de: 'Eingang', fr: 'entrée', zh: '输入' },
+  accuracy: { es: 'precisión', en: 'accuracy', de: 'Genauigkeit', fr: 'précision', zh: '精度' }
 };
 
 export function localizeSpecAttribute(attribute, language = 'es') {
