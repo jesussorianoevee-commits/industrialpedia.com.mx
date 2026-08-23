@@ -217,9 +217,6 @@ export default function ResultCard({ result }) {
           )}
         </div>
       </div>
-      {result.translation_status === 'machine_draft' && language !== 'es' && (
-        <p className="text-amber-300/60 text-[10px] mb-2">{t.autoTranslation}</p>
-      )}
       {result.discovery_state === 'discovered' && (
         <p className="text-white/35 text-[11px] mb-3">
           {result.part_number ? t.foundSourcePart : t.foundSourceNoPart}
