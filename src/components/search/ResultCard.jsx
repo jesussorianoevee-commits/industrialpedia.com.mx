@@ -94,8 +94,8 @@ export default function ResultCard({ result }) {
         ? { label: t.pendingVerification, cls: 'text-[#e68a00] bg-[#e68a00]/10' }
         : { label: stateLabel, cls: 'text-white/50 bg-white/10' };
   return (
-    <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 hover:border-white/20 transition-colors">
-      <div className="flex items-start justify-between gap-3 mb-2">
+    <div className="bg-[#161a20] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-[0_16px_38px_-30px_rgba(0,0,0,.9)] hover:border-[#5a9cd9]/35 hover:bg-[#181d24] transition-all">
+      <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-white/[0.06]">
         <div className="min-w-0">
           <div className={`text-sm font-semibold leading-snug line-clamp-2 ${displayProductName ? 'text-white' : 'text-white/50'}`}>
             {displayProductName || 'Producto no identificado'}
@@ -107,11 +107,11 @@ export default function ResultCard({ result }) {
             {displayCategory ? ` · ${displayCategory}` : ''}
           </div>
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
+        <span className={`text-[10px] px-2.5 py-1 rounded-full ${st.cls} shrink-0`}>{st.label}</span>
       </div>
 
       <div className="mb-3 flex gap-3">
-        <div className="w-[68px] h-[68px] sm:w-20 sm:h-20 shrink-0 rounded-xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden">
+        <div className="w-[72px] h-[72px] sm:w-20 sm:h-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden shadow-inner">
           {isUsableImageUrl(imageSrc) ? (
             <img
               src={imageSrc}
@@ -129,7 +129,7 @@ export default function ResultCard({ result }) {
             <div className="text-white/25 text-[10px] leading-snug mb-1">{t.sourceTitle}: {result.source_title}</div>
           )}
           {result.description && (
-            <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>
+            <p className="text-white/55 text-xs leading-relaxed line-clamp-3 sm:line-clamp-2">{result.description}</p>
           )}
         </div>
       </div>
@@ -147,21 +147,21 @@ export default function ResultCard({ result }) {
       {compareError && <p className="text-amber-300 text-[11px] mb-3">{compareError}</p>}
 
       {result.top_specs.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {result.top_specs.slice(0, 4).map((s, i) => (
-            <span key={i} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/55 text-[11px]">
+            <span key={i} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/55 text-[11px]">
               {localizeSpecAttribute(s.attribute, language)}: {s.value}{s.unit ? ` ${s.unit}` : ''}
             </span>
           ))}
           {result.spec_count > 4 && (
-            <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/40 text-[11px]">
+            <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/40 text-[11px]">
               +{localizedCount(result.spec_count - 4, t.spec, t.specs, language)}
             </span>
           )}
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-3 text-[11px]">
+      <div className="flex items-center gap-2 mb-4 text-[11px]">
         {result.has_evidence ? (
           <span className="flex items-center gap-1 text-[#47bcb6]">
             <ShieldCheck className="w-3.5 h-3.5" /> {result.evidence_count} {t.evidence}
@@ -184,11 +184,11 @@ export default function ResultCard({ result }) {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pt-3 border-t border-white/[0.06]">
         {result.id ? (
           <Link
             to={`/parte/${result.id}`}
-            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
           >
             {t.viewComponent} <ArrowRight className="w-3 h-3" />
           </Link>
@@ -197,7 +197,7 @@ export default function ResultCard({ result }) {
             href={result.source_url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
           >
             {t.viewProduct} <ArrowRight className="w-3 h-3" />
           </a>
@@ -230,7 +230,7 @@ export default function ResultCard({ result }) {
             href={result.source_url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
           >
             {t.viewSource} <ArrowRight className="w-3 h-3" />
           </a>
