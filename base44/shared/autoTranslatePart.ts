@@ -172,7 +172,7 @@ export async function autoTranslatePart(base44: any, part: any, options: { langu
       // A first-pass machine draft is not accepted blindly. If it still leaks
       // English into a non-English target, run a single-language repair pass so
       // Spanish screens cannot persistently show mixed source text.
-      if (translationNeedsRepair(item, language)) {
+      if (!item || translationNeedsRepair(item, language)) {
         const repaired = await repairTargetLanguage(base44, language, {
           manufacturer: sourceManufacturer,
           partNumber: sourcePartNumber,
@@ -182,7 +182,7 @@ export async function autoTranslatePart(base44: any, part: any, options: { langu
           subcategory: sourceSubcategory,
           specifications: sourceSpecifications
         }).catch(() => null);
-        if (repaired) item = { ...item, ...repaired, language };
+        if (repaired) item = { ...(item || {}), ...repaired, language };
       }
       if (!item?.name) continue;
       // Defensive normalization: the LLM is instructed to produce a technical
