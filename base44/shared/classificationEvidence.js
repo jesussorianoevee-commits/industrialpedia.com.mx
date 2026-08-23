@@ -78,6 +78,98 @@ const RULES = [
     minScore: 35,
     manufacturerCorroborationMinProductScore: 30,
     manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'sensores',
+    include: [
+      { term: 'proximity sensor', weight: 45 }, { term: 'inductive sensor', weight: 45 },
+      { term: 'photoelectric sensor', weight: 45 }, { term: 'temperature sensor', weight: 40 },
+      { term: 'probe sensor', weight: 40 }, { term: 'sensor de proximidad', weight: 45 },
+      { term: 'sensor inductivo', weight: 45 }, { term: 'sensor fotoelectrico', weight: 45 },
+      { term: 'sensor de temperatura', weight: 40 }, { term: 'ph sensor', weight: 40 },
+      { term: 'handle probe sensor', weight: 45 }, { term: 'sensing range', weight: 20 },
+      { term: 'switching frequency', weight: 20 }, { term: 'sensor', weight: 15 }
+    ],
+    exclude: ['pressure gauge', 'tire pressure gauge'],
+    manufacturerHints: ['balluff', 'ifm', 'keyence', 'omron', 'sick', 'turck'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'robotica',
+    include: [
+      { term: 'servo motor', weight: 45 }, { term: 'servo drive', weight: 45 },
+      { term: 'robot controller', weight: 45 }, { term: 'industrial robot', weight: 50 },
+      { term: 'robotic arm', weight: 50 }, { term: 'encoder interface', weight: 20 },
+      { term: 'servo motion control', weight: 35 }
+    ],
+    exclude: [],
+    manufacturerHints: ['siemens', 'fanuc', 'abb', 'kuka', 'yaskawa', 'staubli'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'electronica-control',
+    include: [
+      { term: 'power supply', weight: 40 }, { term: 'dc power supply', weight: 45 },
+      { term: 'stabilized dc power supply', weight: 50 }, { term: 'fieldbus node', weight: 45 },
+      { term: 'io device', weight: 35 }, { term: 'plc', weight: 40 },
+      { term: 'programmable logic controller', weight: 50 }, { term: 'network protocol', weight: 20 },
+      { term: 'profinet', weight: 30 }, { term: 'simatic et 200', weight: 45 },
+      { term: 'fuente de alimentacion', weight: 45 }, { term: 'controlador programable', weight: 50 }
+    ],
+    exclude: ['fume hood fan unit', 'pcb cutter'],
+    manufacturerHints: ['siemens', 'omron', 'schneider electric', 'allen bradley', 'mitsubishi electric'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'instrumentacion-medicion',
+    include: [
+      { term: 'pressure gauge', weight: 45 }, { term: 'ph meter', weight: 45 },
+      { term: 'wind velocity meter', weight: 45 }, { term: 'wind flow meter', weight: 45 },
+      { term: 'measurement range', weight: 20 }, { term: 'measuring range', weight: 20 },
+      { term: 'straight scale', weight: 40 }, { term: 'automatic scale', weight: 40 },
+      { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 },
+      { term: 'manometro', weight: 45 }, { term: 'medidor de presion', weight: 45 }
+    ],
+    exclude: [],
+    manufacturerHints: ['testo', 'fluke', 'mitutoyo', 'shinwa'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'laboratorio-cientifico',
+    include: [
+      { term: 'silicone tube', weight: 40 }, { term: 'laboratory tube', weight: 45 },
+      { term: 'stirring shaft', weight: 45 }, { term: 'ptfe stirring shaft', weight: 50 },
+      { term: 'laboratory condenser', weight: 50 }, { term: 'heat resistance range', weight: 20 },
+      { term: 'pharmed', weight: 30 }
+    ],
+    exclude: [],
+    manufacturerHints: ['as one'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'fluidos-bombeo',
+    include: [
+      { term: 'pressure pump', weight: 45 }, { term: 'centrifugal pump', weight: 45 },
+      { term: 'peristaltic pump', weight: 45 }, { term: 'tubing pump', weight: 45 },
+      { term: 'tube pump', weight: 40 }, { term: 'pump tube', weight: 35 },
+      { term: 'maximum flow rate', weight: 20 }, { term: 'discharge pressure', weight: 20 },
+      { term: 'bomba de presion', weight: 45 }, { term: 'bomba peristaltica', weight: 45 }
+    ],
+    exclude: ['vacuum pump'],
+    manufacturerHints: ['jabsco', 'grundfos', 'ebara'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
   }
 ];
 
