@@ -281,8 +281,14 @@ export default function Parte() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <button disabled title={t.findAlternatives} className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.findAlternatives}</button>
-          <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
+          <button
+            type="button"
+            onClick={() => navigate(`/comparar/${encodeURIComponent(part.id)}?pn=${encodeURIComponent(part.part_number || '')}`)}
+            className="flex-1 text-white text-xs font-semibold px-3 py-2 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+          >
+            {t.findAlternatives}
+          </button>
+          <Link to={`/comparar/${encodeURIComponent(part.id)}?pn=${encodeURIComponent(part.part_number || '')}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
         </div>
       </main>
 
