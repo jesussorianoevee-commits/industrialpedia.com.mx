@@ -247,59 +247,38 @@ const CATEGORY_AREAS = [
   'otros-mro'
 ];
 
-// Bootstrap/cache: nunca representa la fuente de verdad. Es únicamente el último
-// estado confirmado para evitar que una consulta lenta convierta la UI en ceros.
-// La fuente de verdad sigue siendo Supabase y se revalida en segundo plano.
-const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
-  consumibles_mro: 312,
-  'electronica-control': 14,
-  'fluidos-bombeo': 292,
-  'fuera-alcance': 79,
-  'herramientas-mro': 340,
-  'infraestructura-almacenamiento': 1288,
-  'instrumentacion-medicion': 285,
-  'laboratorio-cientifico': 3863,
-  'limpieza-epp': 527,
-  'mecanica-transmision': 68,
-  // Verificado contra la clasificación canónica v4 (incluye señal de fabricante y exclusiones de falsos positivos).
-  neumatica: 50,
-  'otros-mro': 335,
-  'proceso-maquinaria': 6,
-  robotica: 2,
-  sensores: 183,
-  'soldadura-union': 101,
-  sin_clasificar: 0,
-  'otras-refacciones': 0
-};
+// Fuente única de verdad para los conteos por área.
+// No se conservan números hardcodeados: una cifra antigua no puede sobrevivir a
+// un cambio de clasificador y contradecir la misma consulta que abre el área.
+const EMPTY_CATEGORY_STATS = Object.fromEntries([
+  ...CATEGORY_AREAS,
+  'sin_clasificar',
+  'otras-refacciones'
+].map((area) => [area, 0]));
+
+const CATEGORY_STATS_STORAGE_KEY = 'industrialpedia_category_stats_v6';
 
 function readCategoryStatsSnapshot() {
   try {
-    // v5 invalida snapshots calculados con reglas anteriores de clasificación.
-    // Nunca debemos mostrar primero un conteo de una taxonomía vieja y después
-    // reemplazarlo por otro al terminar la revalidación.
-    const raw = localStorage.getItem('industrialpedia_category_stats_v5');
-    if (!raw) return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+    const raw = localStorage.getItem(CATEGORY_STATS_STORAGE_KEY);
+    if (!raw) return { ...EMPTY_CATEGORY_STATS };
     const parsed = JSON.parse(raw);
-    if (!parsed?.value || typeof parsed.value !== 'object') return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
-    return { ...VERIFIED_CATEGORY_STATS_BOOTSTRAP, ...parsed.value };
+    if (!parsed?.value || typeof parsed.value !== 'object') return { ...EMPTY_CATEGORY_STATS };
+    return { ...EMPTY_CATEGORY_STATS, ...parsed.value };
   } catch {
-    return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
+    return { ...EMPTY_CATEGORY_STATS };
   }
 }
 
 let categoryStatsCache = {
   value: readCategoryStatsSnapshot(),
-  // Do not start the expensive background area refresh during the first
-  // navigation window. The user can click a family immediately after Home
-  // renders; competing area RPCs were able to cause statement_timeout in the
-  // browse request. Counts are refreshed later without blocking navigation.
-  expiresAt: Date.now() + 30 * 1000,
+  expiresAt: 0,
   refreshPromise: null
 };
 
 function publishCategoryStats(value) {
   try {
-    localStorage.setItem('industrialpedia_category_stats_v5', JSON.stringify({ value, savedAt: Date.now() }));
+    localStorage.setItem(CATEGORY_STATS_STORAGE_KEY, JSON.stringify({ value, savedAt: Date.now() }));
   } catch {}
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('industrialpedia:category-stats-updated', { detail: value }));
