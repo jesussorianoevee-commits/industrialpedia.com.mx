@@ -42,11 +42,17 @@ export default function Buscar() {
   const [fichaLoading, setFichaLoading] = useState(false);
   const [fichaError, setFichaError] = useState(null);
 
-  // Historial real del usuario: se conserva localmente para ahorrar tiempo en
-  // búsquedas repetidas. Es una fuente separada y nunca se presenta como resultado
-  // del catálogo ni se mezcla con el autocompletado de productos.
+  // Reinicio único del historial heredado: empezamos limpio desde esta versión.
+  // Después del reset, el historial vuelve a guardar normalmente las búsquedas
+  // nuevas del usuario y no se vuelve a borrar en futuras sesiones.
+  const SEARCH_HISTORY_VERSION = '2';
   const [history, setHistory] = useState(() => {
     try {
+      if (localStorage.getItem('industrialpedia_search_history_version') !== SEARCH_HISTORY_VERSION) {
+        localStorage.removeItem('industrialpedia_search_history');
+        localStorage.setItem('industrialpedia_search_history_version', SEARCH_HISTORY_VERSION);
+        return [];
+      }
       const stored = JSON.parse(localStorage.getItem('industrialpedia_search_history') || '[]');
       return Array.isArray(stored)
         ? stored.filter((item) => typeof item === 'string' && item.trim()).slice(0, 8)
