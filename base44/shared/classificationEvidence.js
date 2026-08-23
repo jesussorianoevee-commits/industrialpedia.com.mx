@@ -45,7 +45,9 @@ const RULES = [
       { term: 'neumaticos', weight: 15 }, { term: 'neumaticas', weight: 15 },
       // Compressed-air generation and treatment are part of the pneumatic system boundary.
       { term: 'compressed air', weight: 20 }, { term: 'air compressor', weight: 40 },
-      { term: 'oil free compressor', weight: 35 }, { term: 'compressor', weight: 30 },
+      { term: 'oil free compressor', weight: 35 }, { term: 'small compressor', weight: 40 },
+      { term: 'industrial compressor', weight: 40 }, { term: 'piston compressor', weight: 40 },
+      { term: 'compressor', weight: 30 },
       { term: 'compresor', weight: 30 }, { term: 'air dryer', weight: 40 },
       { term: 'frozen air dryer', weight: 40 }, { term: 'compressed air dryer', weight: 40 },
       { term: 'refrigerated air dryer', weight: 40 }, { term: 'desiccant air dryer', weight: 40 },
