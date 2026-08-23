@@ -151,3 +151,50 @@
 @media (max-width: 1023px) {
   .ip-auth-shell main { background: hsl(var(--background)); }
 }
+
+/* Comparison contrast system: keep the technical meaning of each state while
+   guaranteeing readable text in both themes. These classes replace palette-
+   dependent literal Tailwind text colors inside the comparator. */
+.ip-compare-accent { color: hsl(207 72% 62%); }
+.ip-compare-match { color: hsl(158 72% 50%); }
+.ip-compare-warning { color: hsl(43 96% 68%); }
+.ip-compare-danger { color: hsl(0 84% 72%); }
+
+.theme-light .ip-compare-accent { color: hsl(207 78% 36%) !important; }
+.theme-light .ip-compare-match { color: hsl(158 68% 28%) !important; }
+.theme-light .ip-compare-warning { color: hsl(36 92% 28%) !important; }
+.theme-light .ip-compare-danger { color: hsl(0 68% 38%) !important; }
+
+/* The old dark design encoded hierarchy through white opacity. On a white
+   surface the same numeric opacity is too faint, so map it to semantic
+   foreground levels only inside the comparator. */
+.theme-light .ip-comparison [class*="text-white/95"],
+.theme-light .ip-comparison [class*="text-white/90"],
+.theme-light .ip-comparison [class*="text-white/85"],
+.theme-light .ip-comparison [class*="text-white/80"],
+.theme-light .ip-comparison [class*="text-white/75"] { color: hsl(var(--foreground)) !important; }
+
+.theme-light .ip-comparison [class*="text-white/70"],
+.theme-light .ip-comparison [class*="text-white/65"],
+.theme-light .ip-comparison [class*="text-white/60"],
+.theme-light .ip-comparison [class*="text-white/55"] { color: hsl(var(--muted-foreground)) !important; opacity: 1 !important; }
+
+.theme-light .ip-comparison [class*="text-white/50"],
+.theme-light .ip-comparison [class*="text-white/45"],
+.theme-light .ip-comparison [class*="text-white/40"],
+.theme-light .ip-comparison [class*="text-white/35"] { color: hsl(var(--muted-foreground) / 0.88) !important; opacity: 1 !important; }
+
+.theme-light .ip-comparison [class*="text-white/30"],
+.theme-light .ip-comparison [class*="text-white/25"],
+.theme-light .ip-comparison [class*="text-white/20"] { color: hsl(var(--muted-foreground) / 0.76) !important; opacity: 1 !important; }
+
+/* Preserve subtle state backgrounds without washing out the text in light mode. */
+.theme-light .ip-comparison [class*="bg-[#16c79a]"] { background-color: hsl(158 68% 32% / 0.08) !important; }
+.theme-light .ip-comparison [class*="bg-amber-400"] { background-color: hsl(36 92% 32% / 0.08) !important; }
+.theme-light .ip-comparison [class*="bg-red-400"] { background-color: hsl(0 68% 40% / 0.07) !important; }
+.theme-light .ip-comparison [class*="bg-[#65a9e6]"] { background-color: hsl(207 78% 40% / 0.055) !important; }
+
+.theme-light .ip-comparison [class*="border-[#16c79a]"],
+.theme-light .ip-comparison [class*="border-amber-400"],
+.theme-light .ip-comparison [class*="border-red-400"] { border-color: hsl(var(--border)) !important; }
+
