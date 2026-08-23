@@ -57,8 +57,7 @@ const RULES = [
     ],
     exclude: [
       'laboratory condenser', 'vacuum pump', 'centrifugal pump', 'peristaltic pump',
-      'liquid pump', 'hydro pneumatic accumulator', 'tire pressure gauge', 'manual tecnico',
-      'technical manual', 'chapter'
+      'liquid pump'
     ],
     manufacturerHints: ['smc', 'nihon pisco', 'festo', 'parker', 'aventics', 'norgren', 'camozzi', 'metal work'],
     minScore: 35
