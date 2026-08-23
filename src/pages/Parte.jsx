@@ -75,6 +75,7 @@ export default function Parte() {
           const acquired = await resolveProductImage({
             partNumber: p.part_number,
             manufacturer: p.manufacturer || p.manufacturer_name || '',
+            sourceUrl: p.source_url || p.product_url || p.url || p.source?.url || p.evidence?.[0]?.source?.url || '',
             existingUrl: ''
           });
           if (acquired.image_url) p = { ...p, image_url: acquired.image_url, image_verification_status: acquired.verified ? 'verified' : null };
