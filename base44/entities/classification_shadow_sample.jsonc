@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "description": "Shadow-mode controlled sample results for classification validation; not consumed by production UI.",
+  "properties": {
+    "part_id": {
+      "type": "string"
+    },
+    "part_number": {
+      "type": "string"
+    },
+    "current_area": {
+      "type": "string"
+    },
+    "shadow_area": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "fingerprint": {
+      "type": "string"
+    },
+    "rule_version": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    },
+    "review_notes": {
+      "type": "string"
+    },
+    "sample_batch": {
+      "type": "string"
+    }
+  },
+  "required": [],
+  "name": "classification_shadow_sample"
+}

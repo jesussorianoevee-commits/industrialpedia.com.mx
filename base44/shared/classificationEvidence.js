@@ -42,8 +42,17 @@ const RULES = [
       { term: 'pneumatic', weight: 15 }, { term: 'pneumatics', weight: 15 },
       { term: 'neumatico', weight: 15 }, { term: 'neumatica', weight: 15 },
       { term: 'neumaticos', weight: 15 }, { term: 'neumaticas', weight: 15 },
+      // Compressed-air generation and treatment are part of the pneumatic system boundary.
       { term: 'compressed air', weight: 20 }, { term: 'air compressor', weight: 40 },
-      { term: 'air preparation', weight: 40 }, { term: 'air cylinder', weight: 40 },
+      { term: 'oil free compressor', weight: 35 }, { term: 'compressor', weight: 30 },
+      { term: 'compresor', weight: 30 }, { term: 'air dryer', weight: 40 },
+      { term: 'frozen air dryer', weight: 40 }, { term: 'compressed air dryer', weight: 40 },
+      { term: 'refrigerated air dryer', weight: 40 }, { term: 'desiccant air dryer', weight: 40 },
+      { term: 'secador de aire', weight: 40 }, { term: 'secador de aire comprimido', weight: 40 },
+      { term: 'air preparation', weight: 40 }, { term: 'air treatment', weight: 35 },
+      { term: 'air receiver', weight: 35 }, { term: 'air tank', weight: 35 },
+      { term: 'tube fitting', weight: 30 }, { term: 'pneumatic air supply', weight: 40 },
+      { term: 'air cylinder', weight: 40 },
       { term: 'pneumatic cylinder', weight: 40 }, { term: 'pneumatic actuator', weight: 40 },
       { term: 'rotary actuator', weight: 30 }, { term: 'air actuator', weight: 40 },
       { term: 'air gripper', weight: 40 }, { term: 'solenoid valve', weight: 25 },
@@ -57,10 +66,15 @@ const RULES = [
     ],
     exclude: [
       'laboratory condenser', 'vacuum pump', 'centrifugal pump', 'peristaltic pump',
-      'liquid pump'
+      'liquid pump', 'hydro pneumatic accumulator', 'pneumatic tire pressure gauge',
+      'tire pressure gauge'
     ],
-    manufacturerHints: ['smc', 'nihon pisco', 'festo', 'parker', 'aventics', 'norgren', 'camozzi', 'metal work'],
-    minScore: 35
+    // Manufacturer is corroborating evidence only. It can help a medium-strength,
+    // domain-specific product signal cross the threshold, but can never classify alone.
+    manufacturerHints: ['smc', 'nihon pisco', 'festo', 'parker', 'aventics', 'norgren', 'camozzi', 'metal work', 'jun air', 'kyowa industry'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
   }
 ];
 
@@ -139,9 +153,11 @@ export function classifyWithEvidence(part = {}) {
 
     // Manufacturer corroborates strong product evidence; it can never create a classification.
     const productScore = validEvidence.reduce((sum, item) => sum + item.weight, 0);
-    const manufacturerScore = productScore >= rule.minScore && manufacturerHits.length > 0 ? 5 : 0;
+    const manufacturerScore = productScore >= (rule.manufacturerCorroborationMinProductScore ?? rule.minScore) && manufacturerHits.length > 0
+      ? (rule.manufacturerCorroborationBonus ?? 0)
+      : 0;
     const score = productScore + manufacturerScore - excludeHits.length * 80;
-    const accepted = productScore >= rule.minScore && excludeHits.length === 0;
+    const accepted = score >= rule.minScore && productScore > 0 && excludeHits.length === 0;
 
     return {
       area: rule.area,
