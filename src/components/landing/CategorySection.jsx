@@ -9,16 +9,17 @@ export default function CategorySection({ counts }) {
   const visibleAreas = showAll ? AREAS : AREAS.slice(0, 6);
 
   return (
-    <section className="px-3 sm:px-5 py-6 sm:py-8 max-w-5xl mx-auto w-full">
-      <div className="flex items-center justify-between gap-4 mb-4">
+    <section className="px-3 sm:px-5 py-8 sm:py-12 max-w-5xl mx-auto w-full">
+      <div className="rounded-[24px] border border-border/70 bg-secondary/[0.18] px-4 sm:px-6 py-5 sm:py-6">
+      <div className="flex items-center justify-between gap-4 mb-5 sm:mb-6">
         <div>
-          <h2 className="ip-text font-bold text-lg sm:text-xl">{t.exploreByArea}</h2>
-          <p className="ip-muted text-[11px] mt-1">Selecciona un área para comenzar a explorar el catálogo.</p>
+          <h2 className="ip-text font-bold text-xl sm:text-2xl tracking-[-0.025em]">{t.exploreByArea}</h2>
+          <p className="ip-muted text-[11px] sm:text-xs mt-1.5">Selecciona un área para comenzar a explorar el catálogo.</p>
         </div>
         <span className="ip-muted text-[10px] text-right shrink-0">{AREAS.length} {t.areas} · {TOTAL_TYPES} {t.types}</span>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {visibleAreas.map((a) => (
           <CategoryCard key={a.id} area={getLocalizedArea(a, language)} count={counts[a.statsKey || a.id] || 0} compact />
         ))}
@@ -28,11 +29,12 @@ export default function CategorySection({ counts }) {
         <button
           type="button"
           onClick={() => setShowAll((value) => !value)}
-          className="mt-3 w-full min-h-11 rounded-xl border border-border bg-secondary/40 ip-muted text-xs font-medium hover:border-primary/40 hover:ip-accent transition-colors"
+          className="mt-4 w-full min-h-11 rounded-xl border border-border bg-background/40 ip-muted text-xs font-medium hover:border-primary/40 hover:ip-accent transition-colors"
         >
           {showAll ? 'Mostrar menos' : 'Ver más áreas'}
         </button>
       )}
+      </div>
     </section>
   );
 }
