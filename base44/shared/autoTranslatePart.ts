@@ -30,7 +30,7 @@ function containsPartIdentifier(name: string, partNumber: string) {
  * evidence are never sent as translatable fields and are never modified here.
  * Translation records start as machine_draft and can later be reviewed/published.
  */
-export async function autoTranslatePart(base44: any, part: any) {
+export async function autoTranslatePart(base44: any, part: any, options: { languages?: string[]; refreshMachineDrafts?: boolean } = {}) {
   if (!part?.id) return { created: 0, skipped: 0, failed: 0 };
 
   const sourceName = cleanText(part.name || part.product_name || part.description || part.part_number);
@@ -48,8 +48,19 @@ export async function autoTranslatePart(base44: any, part: any) {
     { part_id: part.id }, '-updated_date', 20
   ).catch(() => []);
   const existingByLanguage = new Map(existing.map((t: any) => [t.language, t]));
-  const missingLanguages = LANGUAGES.filter((lang) => !existingByLanguage.has(lang));
-  if (!missingLanguages.length) return { created: 0, skipped: existing.length, failed: 0 };
+  const requestedLanguages = (Array.isArray(options.languages) && options.languages.length ? options.languages : LANGUAGES)
+    .map((lang) => String(lang || '').toLowerCase())
+    .filter((lang) => LANGUAGES.includes(lang));
+  const targetLanguages = [...new Set(requestedLanguages)].filter((lang) => {
+    const current = existingByLanguage.get(lang);
+    if (!current) return true;
+    // Never overwrite reviewed/published translations. Machine drafts can be
+    // regenerated because older drafts may contain the original English text or
+    // incomplete fields and are precisely what caused mixed-language screens.
+    if (current.status !== 'machine_draft') return false;
+    return Boolean(options.refreshMachineDrafts) || !cleanText(current.name) || !cleanText(current.description);
+  });
+  if (!targetLanguages.length) return { created: 0, skipped: existing.length, failed: 0 }; 
 
   try {
     const result = await base44.integrations.Core.InvokeLLM({
@@ -71,7 +82,7 @@ export async function autoTranslatePart(base44: any, part: any) {
         `Source category: ${sourceCategory}`,
         `Source subcategory: ${sourceSubcategory}`,
         `Source specifications JSON: ${JSON.stringify(sourceSpecifications)}`,
-        `Requested languages: ${missingLanguages.join(', ')}`
+        `Requested languages: ${targetLanguages.join(', ')}`
       ].join('\n'),
       response_json_schema: {
         type: 'object',
@@ -100,7 +111,8 @@ export async function autoTranslatePart(base44: any, part: any) {
     const sourceLanguage = LANGUAGES.includes(result?.source_language) ? result.source_language : 'en';
     const translations = Array.isArray(result?.translations) ? result.translations : [];
     const records = [];
-    for (const language of missingLanguages) {
+    const updates: any[] = [];
+    for (const language of targetLanguages) {
       const item = translations.find((t: any) => t?.language === language);
       if (!item?.name) continue;
       // Defensive normalization: the LLM is instructed to produce a technical
@@ -120,7 +132,7 @@ export async function autoTranslatePart(base44: any, part: any) {
       // Guard against an accidental empty output. The canonical Part remains
       // untouched; this is presentation-only content.
       if (!name) continue;
-      records.push({
+      const payload = {
         part_id: part.id,
         language,
         name,
@@ -130,12 +142,17 @@ export async function autoTranslatePart(base44: any, part: any) {
         specifications,
         status: 'machine_draft',
         source_language: sourceLanguage,
-        translation_version: 1
-      });
+        translation_version: (existingByLanguage.get(language)?.translation_version || 0) + 1
+      };
+      const current = existingByLanguage.get(language);
+      if (current?.id) updates.push({ id: current.id, ...payload });
+      else records.push(payload);
     }
 
     if (records.length) await base44.asServiceRole.entities.PartTranslation.bulkCreate(records);
-    return { created: records.length, skipped: existing.length, failed: missingLanguages.length - records.length };
+    if (updates.length) await base44.asServiceRole.entities.PartTranslation.bulkUpdate(updates);
+    const completed = records.length + updates.length;
+    return { created: records.length, updated: updates.length, skipped: existing.length - updates.length, failed: targetLanguages.length - completed };
   } catch (error) {
     // Translation must never block or roll back a valid technical Part ingestion.
     console.error('autoTranslatePart failed:', error?.message || error);
