@@ -76,15 +76,14 @@ export default async function (req: Request) {
         continue;
       }
       try {
-        const existing = await base44.asServiceRole.entities.PartTranslation.filter(
-          { part_id: part.id, language }, '-updated_date', 1
-        );
-        if (existing?.length) {
-          results.push({ part_id: part.id, language, status: 'already_exists' });
-          continue;
-        }
-        const result = await autoTranslatePart(base44, part);
-        results.push({ part_id: part.id, language, status: result.created ? 'created' : 'failed', created: result.created || 0 });
+        const result = await autoTranslatePart(base44, part, {
+          languages: [language],
+          // Refresh only machine drafts. Reviewed/published translations remain
+          // immutable here, while stale drafts can be repaired on demand.
+          refreshMachineDrafts: true
+        });
+        const changed = (result.created || 0) + (result.updated || 0);
+        results.push({ part_id: part.id, language, status: changed ? 'created_or_refreshed' : 'already_current', created: result.created || 0, updated: result.updated || 0 });
       } catch (error) {
         results.push({ part_id: part.id, language, status: 'failed', error: error?.message || String(error) });
       }
@@ -92,7 +91,7 @@ export default async function (req: Request) {
 
     return Response.json({
       created: results.filter((r) => r.status === 'created').length,
-      skipped: results.filter((r) => r.status === 'already_exists').length,
+      skipped: results.filter((r) => r.status === 'already_current').length,
       failed: results.filter((r) => r.status === 'failed').length,
       results
     });
