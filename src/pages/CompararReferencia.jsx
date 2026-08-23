@@ -20,7 +20,7 @@ function specValue(v) {
 export default function CompararReferencia() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const ref = location.state?.reference;
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -94,7 +94,7 @@ export default function CompararReferencia() {
             </div>
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]"><div><span className="text-white/30">Coinciden</span><div className="mt-1 font-mono text-white/75">{a.comparison?.equal_specs ?? a.comparison?.equal ?? 0}</div></div><div><span className="text-white/30">Compartidas</span><div className="mt-1 font-mono text-white/75">{a.comparison?.shared_specs ?? a.comparison?.compared ?? 0}</div></div><div><span className="text-white/30">Diferentes</span><div className="mt-1 font-mono text-amber-200">{a.comparison?.different_specs ?? a.comparison?.different ?? 0}</div></div><div><span className="text-white/30">Similitud</span><div className="mt-1 font-mono text-white/80">{a.comparison?.similarity_pct ?? '—'}%</div></div></div>
             <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">{Object.entries(a.specifications || {}).slice(0, 8).map(([k,v]) => <span key={k} className="rounded bg-white/[0.04] border border-white/10 px-2 py-1 text-[10px] text-white/55"><span className="text-white/30">{localizeSpecAttribute(k, language)}:</span> {specValue(v)}</span>)}</div>
-            {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#65a9e6] hover:underline">Ver fuente del modelo →</a>}
+            {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#65a9e6] hover:underline">{t.compareModelSource} →</a>}
             {a.comparison?.state === 'strong_match' && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] text-amber-100/70">Coincidencia técnica fuerte, no autorización automática de sustitución. Valida requisitos críticos y documentación del fabricante antes de instalar.</div>}
           </article>;
         })}
