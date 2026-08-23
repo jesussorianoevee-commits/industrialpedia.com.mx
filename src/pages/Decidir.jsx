@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Loader2, Plus, Trash2, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { consumeTrialAction } from '@/lib/trial';
 import { decideIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage } from '@/lib/i18n';
 
@@ -32,6 +34,9 @@ export default function Decidir() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [trialNotice, setTrialNotice] = useState(null);
 
   const cleanRequirements = useMemo(() => Object.fromEntries(requirements.filter((r) => r.key.trim() && r.value.trim()).map((r) => [r.key.trim(), r.value.trim()])), [requirements]);
 
@@ -45,6 +50,14 @@ export default function Decidir() {
     setData(null);
     if (!family.trim()) return setError('Indica la familia técnica del componente.');
     if (!Object.keys(cleanRequirements).length) return setError('Agrega al menos un requisito técnico.');
+    if (!isAuthenticated) {
+      const trial = consumeTrialAction();
+      if (!trial.allowed) {
+        setTrialNotice('limit');
+        return;
+      }
+      setTrialNotice(trial.remaining === 1 ? 'last' : null);
+    }
     setLoading(true);
     try {
       const result = await decideIndustrialpedia(family.trim(), cleanRequirements, 10);
@@ -98,6 +111,14 @@ export default function Decidir() {
           </div>
 
           {error && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-xs text-amber-100/75">{error}</div>}
+          {trialNotice === 'last' && <div className="mt-4 text-xs text-[#65a9e6]">Te queda 1 prueba gratuita.</div>}
+          {trialNotice === 'limit' && (
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-center">
+              <div className="font-semibold">¿Deseas probar más?</div>
+              <div className="mt-1 text-sm text-white/45">Regístrate :)</div>
+              <button type="button" onClick={() => navigate('/login?returnTo=%2Fdecidir')} className="mt-3 rounded-lg bg-[#65a9e6] px-4 py-2 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
+            </div>
+          )}
           <button type="submit" disabled={loading} className="mt-5 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#65a9e6] px-5 py-2.5 text-xs font-semibold text-[#080d12] hover:bg-[#78b5ea] disabled:opacity-50">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
             {loading ? t.evaluating : t.takeDecision}
