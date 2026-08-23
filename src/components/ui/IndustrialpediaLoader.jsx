@@ -23,7 +23,9 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
             image-rendering: auto;
             backface-visibility: hidden;
             transform: translateZ(0);
-            filter: contrast(1.04) brightness(1.04) saturate(.96);
+            /* El negro del fondo está integrado en el archivo original: screen lo fusiona visualmente con el fondo de Industrialpedia. */
+            mix-blend-mode: screen;
+            filter: contrast(1.06) brightness(1.06) saturate(.96);
             animation: capu-tremble 2.4s ease-in-out infinite;
           }
           @keyframes capu-tremble {
