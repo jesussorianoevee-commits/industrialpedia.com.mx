@@ -341,8 +341,8 @@ export async function getPartTranslation(partId, language) {
     let translation = await read();
     // Una traducción parcial no debe considerarse válida: provocaba fichas
     // mezcladas (título traducido pero descripción/especificaciones en inglés).
-    const incomplete = !translation || !translation.name || !translation.description;
-    if (incomplete) {
+    const needsRefresh = !translation || !translation.name || !translation.description || translation.status === 'machine_draft';
+    if (needsRefresh) {
       try {
         await base44.functions.invoke('EnsurePartTranslations', {
           part_ids: [id],
