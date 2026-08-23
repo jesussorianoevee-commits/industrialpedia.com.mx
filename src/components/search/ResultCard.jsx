@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { normalizeImageUrl, resolveProductImage } from '@/lib/productImage';
+import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
@@ -30,6 +30,7 @@ export default function ResultCard({ result }) {
   const [imageSrc, setImageSrc] = useState(normalizeImageUrl(result.image_url));
   const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
   const [imageLookupPending, setImageLookupPending] = useState(false);
+  const [imageRetry, setImageRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
