@@ -238,6 +238,15 @@ function hasAnyEvidence(evidence, terms) {
   return evidence.some((item) => normalizedTerms.has(normalize(item.term)));
 }
 
+function compareCandidates(a, b) {
+  // Deterministic tie-breaking: evidence score first, then specificity, then rule order.
+  if (b.score !== a.score) return b.score - a.score;
+  if (b.evidence.include_terms.length !== a.evidence.include_terms.length) {
+    return b.evidence.include_terms.length - a.evidence.include_terms.length;
+  }
+  return a.rule_index - b.rule_index;
+}
+
 function isGenericOnlyEvidence(evidence) {
   // Generic nouns frequently occur in manuals and adjacent industries. They need
   // corroboration from a stronger class concept or technical context.
@@ -277,7 +286,7 @@ export function buildClassificationFingerprint(part = {}) {
 export function classifyWithEvidence(part = {}) {
   const text = textOf(part);
   const manufacturer = normalize(part.manufacturer || part.manufacturer_name);
-  const candidates = RULES.map((rule) => {
+  const candidates = RULES.map((rule, ruleIndex) => {
     const includeOccurrences = termOccurrences(text, rule.include);
     const validEvidence = uniqueEvidence(includeOccurrences);
     const negatedHits = includeOccurrences.filter((item) => item.negated);
@@ -303,6 +312,7 @@ export function classifyWithEvidence(part = {}) {
       && !(compressorOnly && manufacturerScore === 0 && productScore < 35);
 
     return {
+      rule_index: ruleIndex,
       area: rule.area,
       score,
       accepted,
@@ -314,12 +324,24 @@ export function classifyWithEvidence(part = {}) {
         generic_only_evidence: genericOnly
       }
     };
-  }).sort((a, b) => b.score - a.score);
+  }).sort(compareCandidates);
 
-  const winner = candidates.find((candidate) => candidate.accepted) || null;
+  const acceptedCandidates = candidates.filter((candidate) => candidate.accepted);
+  const winner = acceptedCandidates[0] || null;
+  const runnerUp = acceptedCandidates[1] || null;
+  const scoreMargin = winner ? winner.score - (runnerUp?.score ?? 0) : 0;
+  const ambiguous = Boolean(winner && runnerUp && scoreMargin < 10);
+  const status = !winner ? 'shadow_review' : ambiguous ? 'shadow_review' : 'auto_accept';
   return {
     area: winner?.area || null,
+    status,
     confidence: winner ? Math.min(1, winner.score / 100) : 0,
+    score_margin: scoreMargin,
+    ambiguous,
+    review_reasons: [
+      ...(winner ? [] : ['insufficient_evidence']),
+      ...(ambiguous ? ['competing_candidates'] : [])
+    ],
     fingerprint: buildClassificationFingerprint(part),
     candidates,
     rule_version: 'shadow-evidence-v3'
