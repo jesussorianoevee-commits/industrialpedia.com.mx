@@ -9,7 +9,7 @@ const pillars = [
   { icon: Scale, label: 'Decidir' },
 ];
 
-export default function AuthLayout({ icon: _icon, title, subtitle, footer, children, backTo, backLabel = 'Volver' }) {
+export default function AuthLayout({ icon: _icon = null, title = '', subtitle = null, footer = null, children = null, backTo = null, backLabel = 'Volver' }) {
   return (
     <div className="ip-auth-shell min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[1.05fr_0.95fr]">
       <section className="ip-auth-brand relative hidden overflow-hidden border-r border-border bg-[radial-gradient(circle_at_20%_15%,rgba(37,99,235,.24),transparent_32%),linear-gradient(145deg,#07111f,#0b1c31_60%,#06101d)] p-10 text-white lg:flex lg:flex-col">
