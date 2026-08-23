@@ -8,6 +8,7 @@ import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
 import { getDisplayPartReference } from '@/lib/partIdentity';
+import { normalizeImageUrl, resolveProductImage } from '@/lib/productImage';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
@@ -66,17 +67,19 @@ export default function Parte() {
           p = null;
         }
         if (!p) throw new Error('part_not_found');
-        // Completa únicamente la imagen desde la API canónica si el resultado de búsqueda no la trae.
-        // No sustituye ni modifica los datos técnicos de la pieza.
-        if (!p.image_url && !p.image?.url && !p.image?.image_url && !p.primary_image_url) {
-          try {
-            const canonicalResponse = await getPartIndustrialpedia(id);
-            const canonicalPart = canonicalResponse?.part;
-            const canonicalImage = canonicalPart?.image_url || canonicalPart?.image?.image_url || canonicalPart?.image?.url || canonicalPart?.primary_image_url || '';
-            if (canonicalImage) p = { ...p, image_url: canonicalImage };
-          } catch {
-            // La ficha sigue funcionando sin imagen si la fuente canónica no la tiene.
-          }
+        // La ficha canónica puede no traer imagen aunque exista una fuente API
+        // exacta para la referencia. Resolvemos únicamente por número de parte
+        // exacto + fabricante, sin IA ni coincidencias aproximadas.
+        const canonicalImage = normalizeImageUrl(p.image_url || p.image?.image_url || p.image?.url || p.primary_image_url || p.product_image_url || '');
+        if (!canonicalImage) {
+          const acquired = await resolveProductImage({
+            partNumber: p.part_number,
+            manufacturer: p.manufacturer || p.manufacturer_name || '',
+            existingUrl: ''
+          });
+          if (acquired.image_url) p = { ...p, image_url: acquired.image_url, image_verification_status: acquired.verified ? 'verified' : null };
+        } else {
+          p = { ...p, image_url: canonicalImage };
         }
         const normalizedPart = {
           id: p.id,
@@ -91,7 +94,7 @@ export default function Parte() {
             name: p.name || p.product_name || p.title || ''
           }),
           original_description: p.description || p.name || '',
-          image_url: p.image_url || p.image || p.product_image_url || ''
+          image_url: normalizeImageUrl(p.image_url || p.image?.image_url || p.image?.url || p.product_image_url || '')
         };
         const translation = await getPartTranslation(p.id, language);
         if (translation) {
