@@ -1,6 +1,11 @@
 const isNode = typeof window === 'undefined';
-const windowObj = isNode ? { localStorage: new Map() } : window;
-const storage = windowObj.localStorage;
+const memoryStorage = {
+	_values: new Map(),
+	getItem(key) { return this._values.has(key) ? this._values.get(key) : null; },
+	setItem(key, value) { this._values.set(key, String(value)); },
+	removeItem(key) { this._values.delete(key); },
+};
+const storage = isNode ? memoryStorage : window.localStorage;
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -35,6 +40,9 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 }
 
 const getAppParams = () => {
+	if (isNode) {
+		return { appId: undefined, token: null, fromUrl: null, functionsVersion: undefined, appBaseUrl: undefined };
+	}
 	if (getAppParamValue("clear_access_token") === 'true') {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
