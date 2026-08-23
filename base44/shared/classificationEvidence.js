@@ -133,7 +133,7 @@ const RULES = [
       { term: 'wind velocity meter', weight: 45 }, { term: 'wind flow meter', weight: 45 },
       { term: 'measurement range', weight: 20 }, { term: 'measuring range', weight: 20 },
       { term: 'straight scale', weight: 40 }, { term: 'automatic scale', weight: 40 },
-      { term: 'thermometer', weight: 40 }, { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 }
+      { term: 'thermometer', weight: 40 }, { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 },
       { term: 'manometro', weight: 45 }, { term: 'medidor de presion', weight: 45 }
     ],
     exclude: [],
@@ -147,7 +147,7 @@ const RULES = [
     include: [
       { term: 'silicone tube', weight: 40 }, { term: 'silicone blade hose', weight: 40 },
       { term: 'sample cup', weight: 40 }, { term: 'laboratory tube', weight: 45 },
-      { term: 'stirring shaft', weight: 45 } { term: 'ptfe stirring shaft', weight: 50 },
+      { term: 'stirring shaft', weight: 45 }, { term: 'ptfe stirring shaft', weight: 50 },
       { term: 'laboratory condenser', weight: 50 }, { term: 'heat resistance range', weight: 20 },
       { term: 'pharmed', weight: 30 }
     ],
