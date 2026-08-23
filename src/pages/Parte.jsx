@@ -181,6 +181,31 @@ export default function Parte() {
   const st = { ...stateBase, label: t[stateLabelKey] || stateBase.label };
   const hasAnyEvidence = partEvidence.length > 0 || Object.values(evidenceBySpec).flat().length > 0;
 
+  const recoverBrokenImage = async () => {
+    const pn = String(part?.part_number || '').trim();
+    const manufacturer = part?.manufacturer_name || '';
+    if (!pn) {
+      setPart((current) => current ? { ...current, image_url: '' } : current);
+      return;
+    }
+    clearProductImageCache(pn, manufacturer);
+    try {
+      const acquired = await resolveProductImage({
+        partNumber: pn,
+        manufacturer,
+        sourceUrl: part?.source_url || '',
+        existingUrl: '',
+        forceLookup: true
+      });
+      const nextUrl = normalizeImageUrl(acquired.image_url);
+      if (nextUrl && nextUrl !== part.image_url) {
+        setPart((current) => current ? { ...current, image_url: nextUrl } : current);
+        return;
+      }
+    } catch {}
+    setPart((current) => current ? { ...current, image_url: '' } : current);
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
@@ -216,7 +241,7 @@ export default function Parte() {
                 aria-label={`${t.enlargeImage}: ${part.part_number || t.partNumber}`}
                 title={t.tapImageToEnlarge}
               >
-                <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" />
+                <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" onError={recoverBrokenImage} />
               </button>}
               <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
             </div>
