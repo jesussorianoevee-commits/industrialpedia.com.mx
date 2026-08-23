@@ -102,6 +102,11 @@ const SPEC_ATTRIBUTE_I18N = {
   'accuracy': { es: 'Precisión', en: 'Accuracy', de: 'Genauigkeit', fr: 'Précision', zh: '精度' },
   'voltage accuracy': { es: 'Precisión de voltaje', en: 'Voltage accuracy', de: 'Spannungsgenauigkeit', fr: 'Précision de tension', zh: '电压精度' },
   'current accuracy': { es: 'Precisión de corriente', en: 'Current accuracy', de: 'Stromgenauigkeit', fr: 'Précision du courant', zh: '电流精度' },
+  'measurement range': { es: 'Rango de medición', en: 'Measurement range', de: 'Messbereich', fr: 'Plage de mesure', zh: '测量范围' },
+  'measurement range (mpa)': { es: 'Rango de medición (MPa)', en: 'Measurement range (MPa)', de: 'Messbereich (MPa)', fr: 'Plage de mesure (MPa)', zh: '测量范围（MPa）' },
+  'outer diameter': { es: 'Diámetro exterior', en: 'Outer diameter', de: 'Außendurchmesser', fr: 'Diamètre extérieur', zh: '外径' },
+  'nozzle diameter': { es: 'Diámetro de boquilla', en: 'Nozzle diameter', de: 'Düsendurchmesser', fr: 'Diamètre de buse', zh: '喷嘴直径' },
+  'metal portion material': { es: 'Material de la parte metálica', en: 'Metal portion material', de: 'Material des Metallteils', fr: 'Matériau de la partie métallique', zh: '金属部分材料' },
   current: { es: 'Corriente', en: 'Current', de: 'Strom', fr: 'Courant', zh: '电流' },
   capacity: { es: 'Capacidad', en: 'Capacity', de: 'Kapazität', fr: 'Capacité', zh: '容量' },
   quantity: { es: 'Cantidad', en: 'Quantity', de: 'Menge', fr: 'Quantité', zh: '数量' },
@@ -200,6 +205,44 @@ export function localizeSpecAttribute(attribute, language = 'es') {
     return entry?.[language] || word;
   });
   return translated;
+}
+
+const TECHNICAL_PHRASE_I18N = {
+  'pressure gauge': { es: 'Manómetro de presión', en: 'Pressure gauge', de: 'Manometer', fr: 'Manomètre', zh: '压力表' },
+  'model number': { es: 'Número de modelo', en: 'Model number', de: 'Modellnummer', fr: 'Numéro de modèle', zh: '型号' },
+  'measurement range': { es: 'Rango de medición', en: 'Measurement range', de: 'Messbereich', fr: 'Plage de mesure', zh: '测量范围' },
+  'outer diameter': { es: 'Diámetro exterior', en: 'Outer diameter', de: 'Außendurchmesser', fr: 'Diamètre extérieur', zh: '外径' },
+  'nozzle diameter': { es: 'Diámetro de boquilla', en: 'Nozzle diameter', de: 'Düsendurchmesser', fr: 'Diamètre de buse', zh: '喷嘴直径' },
+  'metal portion material': { es: 'Material de la parte metálica', en: 'Metal portion material', de: 'Material des Metallteils', fr: 'Matériau de la partie métallique', zh: '金属部分材料' },
+  'input voltage range': { es: 'Rango de voltaje de entrada', en: 'Input voltage range', de: 'Eingangsspannungsbereich', fr: 'Plage de tension d’entrée', zh: '输入电压范围' },
+  'output voltage range': { es: 'Rango de voltaje de salida', en: 'Output voltage range', de: 'Ausgangsspannungsbereich', fr: 'Plage de tension de sortie', zh: '输出电压范围' }
+};
+
+const TECHNICAL_VALUE_I18N = {
+  brass: { es: 'Latón', en: 'Brass', de: 'Messing', fr: 'Laiton', zh: '黄铜' },
+  steel: { es: 'Acero', en: 'Steel', de: 'Stahl', fr: 'Acier', zh: '钢' },
+  stainless_steel: { es: 'Acero inoxidable', en: 'Stainless steel', de: 'Edelstahl', fr: 'Acier inoxydable', zh: '不锈钢' },
+  aluminum: { es: 'Aluminio', en: 'Aluminum', de: 'Aluminium', fr: 'Aluminium', zh: '铝' }
+};
+
+export function localizeTechnicalText(text, language = 'es') {
+  const original = String(text || '');
+  if (!original || language === 'en') return original;
+  const phrases = Object.keys(TECHNICAL_PHRASE_I18N).sort((a, b) => b.length - a.length);
+  return phrases.reduce((out, phrase) => {
+    const replacement = TECHNICAL_PHRASE_I18N[phrase]?.[language];
+    if (!replacement) return out;
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return out.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), replacement);
+  }, original);
+}
+
+export function localizeSpecValue(value, language = 'es') {
+  if (value === null || value === undefined) return value;
+  const raw = String(value).trim();
+  if (!raw || language === 'en') return raw;
+  const key = raw.toLowerCase().replace(/[\s-]+/g, '_');
+  return TECHNICAL_VALUE_I18N[key]?.[language] || raw;
 }
 
 export function localizeTechnicalTerm(term, language = 'es') {
