@@ -253,7 +253,18 @@ const TECHNICAL_PHRASE_I18N = {
   'input current range': { es: 'Rango de corriente de entrada', en: 'Input current range', de: 'Eingangsstrombereich', fr: 'Plage de courant d’entrée', zh: '输入电流范围' },
   'cooling method': { es: 'Método de enfriamiento', en: 'Cooling method', de: 'Kühlmethode', fr: 'Méthode de refroidissement', zh: '冷却方式' },
   'natural air cooling': { es: 'Enfriamiento natural por aire', en: 'Natural air cooling', de: 'Natürliche Luftkühlung', fr: 'Refroidissement naturel par air', zh: '自然风冷' },
-  'package size': { es: 'Tamaño del paquete', en: 'Package size', de: 'Verpackungsgröße', fr: 'Dimensions de l’emballage', zh: '包装尺寸' }
+  'package size': { es: 'Tamaño del paquete', en: 'Package size', de: 'Verpackungsgröße', fr: 'Dimensions de l’emballage', zh: '包装尺寸' },
+  'ethanol impregnated cotton': { es: 'Algodón impregnado con etanol', en: 'Ethanol impregnated cotton', de: 'Ethanolgetränkte Watte', fr: 'Coton imprégné d’éthanol', zh: '乙醇浸渍棉' },
+  'ethanol impregnation cotton': { es: 'Algodón impregnado con etanol', en: 'Ethanol impregnation cotton', de: 'Ethanolgetränkte Watte', fr: 'Coton imprégné d’éthanol', zh: '乙醇浸渍棉' },
+  'japanese pharmacopoeia': { es: 'Farmacopea Japonesa', en: 'Japanese Pharmacopoeia', de: 'Japanisches Arzneibuch', fr: 'Pharmacopée japonaise', zh: '日本药典' },
+  'purified water': { es: 'agua purificada', en: 'purified water', de: 'gereinigtes Wasser', fr: 'eau purifiée', zh: '纯化水' },
+  'ingredients': { es: 'Ingredientes', en: 'Ingredients', de: 'Inhaltsstoffe', fr: 'Ingrédients', zh: '成分' },
+  'piece': { es: 'pieza', en: 'piece', de: 'Stück', fr: 'pièce', zh: '件' },
+  'pieces': { es: 'piezas', en: 'pieces', de: 'Stücke', fr: 'pièces', zh: '件' },
+  'sheet': { es: 'hoja', en: 'sheet', de: 'Blatt', fr: 'feuille', zh: '片' },
+  'sheets': { es: 'hojas', en: 'sheets', de: 'Blätter', fr: 'feuilles', zh: '片' },
+  'cotton box': { es: 'Caja de algodón', en: 'Cotton box', de: 'Wattebox', fr: 'Boîte de coton', zh: '棉盒' },
+  '100% cotton': { es: '100 % algodón', en: '100% cotton', de: '100 % Baumwolle', fr: '100 % coton', zh: '100% 棉' }
 };
 
 const TECHNICAL_VALUE_I18N = {
@@ -365,6 +376,19 @@ export async function getPartTranslation(partId, language) {
 // Batch translation lookup: one request for a result page, with the original
 // Part data remaining the authoritative fallback. Machine drafts are exposed
 // transparently until reviewed/published rather than silently replacing source data.
+function isLikelyUntranslated(text, source, language) {
+  if (!text || !source || language === 'en') return false;
+  const same = cleanComparable(text) === cleanComparable(source);
+  if (!same) return false;
+  // A machine draft identical to an English source is not a valid localized
+  // presentation. This was the cause of mixed Spanish/English result cards.
+  return /\b(the|and|with|from|for|of|in|is|are|cotton|piece|sheets?|ingredients?)\b/i.test(String(source));
+}
+
+function cleanComparable(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
 export async function translateParts(results, language) {
   if (!Array.isArray(results) || results.length === 0 || !language) return results;
   const ids = [...new Set(results.map((r) => r?.id).filter(Boolean))];
@@ -383,7 +407,10 @@ export async function translateParts(results, language) {
     // translation job from being triggered by a normal search.
     const needsRefresh = ids.filter((id) => {
       const current = (translations || []).find((t) => String(t.part_id) === String(id));
-      return !current || !current.name || !current.description || current.status === 'machine_draft';
+      const source = results.find((r) => String(r?.id) === String(id));
+      return !current || !current.name || !current.description || current.status === 'machine_draft' ||
+        isLikelyUntranslated(current?.name, source?.title || source?.product_name || source?.name, language) ||
+        isLikelyUntranslated(current?.description, source?.description, language);
     });
     if (needsRefresh.length) {
       try {
@@ -407,7 +434,7 @@ export async function translateParts(results, language) {
     const byPart = new Map((translations || []).map((t) => [String(t.part_id), t]));
     return results.map((result) => {
       const translation = byPart.get(String(result.id));
-      if (!translation?.name) return result;
+      if (!translation) return result;
       const translatedSpecs = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
       const localizedTopSpecs = Array.isArray(result.top_specs)
         ? result.top_specs.map((spec) => {
