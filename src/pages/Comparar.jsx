@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X } from 'lucide-react';
+import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
+import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 
 const STATE = {
@@ -101,6 +102,7 @@ export default function Comparar() {
   const [expandedSpecs, setExpandedSpecs] = useState({});
   const [expandedMobileSpecs, setExpandedMobileSpecs] = useState({});
   const { language, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     (async () => {
@@ -145,7 +147,18 @@ export default function Comparar() {
         <button type="button" onClick={() => window.history.back()} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></button>
         <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
         <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 text-[#65a9e6]">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
-        <div className="ml-auto flex items-center gap-2"><span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">{language.toUpperCase()}</span><span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">◐</span></div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">{language.toUpperCase()}</span>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#65a9e6]/60"
+            aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+            title={theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" strokeWidth={1.8} /> : <Moon className="h-5 w-5" strokeWidth={1.8} />}
+          </button>
+        </div>
       </div>
     </header>
 
