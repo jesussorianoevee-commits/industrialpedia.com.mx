@@ -3,10 +3,33 @@ import { useNavigate } from 'react-router-dom';
 
 import { useLanguage, localizedCount } from '@/lib/i18n';
 
-export default function CategoryCard({ area, count }) {
+export default function CategoryCard({ area, count, compact = false }) {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const Icon = area.icon;
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(`/buscar?area=${encodeURIComponent(area.statsKey || area.id)}`)}
+        className="min-h-[118px] w-full text-left ip-surface border border-border rounded-xl p-3.5 sm:p-4 hover:border-primary/50 hover:-translate-y-0.5 transition-all group cursor-pointer"
+        aria-label={`${t.viewComponent}: ${count.toLocaleString()} ${t.foundParts} · ${area.name}`}
+      >
+        <div className="flex items-start justify-between gap-2 h-full">
+          <div className="min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/15 flex items-center justify-center mb-3 group-hover:bg-primary/15 transition-colors">
+              <Icon className="w-4.5 h-4.5 ip-accent" />
+            </div>
+            <h3 className="ip-text font-semibold text-xs sm:text-sm leading-tight line-clamp-2">{area.name}</h3>
+            <span className="ip-muted text-[10px] mt-1 block">{localizedCount(count, t.reference, t.references, language)}</span>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 ip-muted shrink-0 group-hover:ip-accent group-hover:translate-x-0.5 transition-all" />
+        </div>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
