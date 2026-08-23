@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
-import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeProductName, getPartTranslation } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeProductName } from '@/lib/i18n';
 
 const SOURCE_TYPE_LABELS = {
   official: { es: 'Fabricante oficial', en: 'Official manufacturer', de: 'Offizieller Hersteller', fr: 'Fabricant officiel', zh: '官方制造商' },
@@ -67,28 +67,11 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
 export default function FichaIndustrialpedia({ ficha, loading, error, onClose }) {
   const { language, t } = useLanguage();
   const [imgError, setImgError] = useState(false);
-  const [translation, setTranslation] = useState(null);
 
   useEffect(() => {
     // Una ficha nueva no debe heredar el error de imagen de la ficha anterior.
     setImgError(false);
   }, [ficha?.image_url]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const partId = ficha?.id || ficha?.part_id || ficha?.product_id;
-    if (!partId || !language) {
-      setTranslation(null);
-      return () => { cancelled = true; };
-    }
-    setTranslation(null);
-    getPartTranslation(partId, language).then((result) => {
-      if (!cancelled) setTranslation(result);
-    }).catch(() => {
-      if (!cancelled) setTranslation(null);
-    });
-    return () => { cancelled = true; };
-  }, [ficha?.id, ficha?.part_id, ficha?.product_id, language]);
 
   const specs = (Array.isArray(ficha?.specs) ? ficha.specs : []).filter(isDisplayableSpec);
   const grouped = (Array.isArray(ficha?.specs_grouped) ? ficha.specs_grouped : []).filter(isDisplayableSpec);
@@ -102,17 +85,11 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const extraBasic = basicSpecs.filter((s) => !specKeys.has(`${String(s.attribute ?? '').toLowerCase()}|${String(s.value ?? '').toLowerCase()}`));
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
   const rawSheetName = ficha?.product_identity?.short_description || ficha?.product_name || ficha?.part_number || t.productNotIdentified;
-  const displaySheetName = translation?.name || localizeProductName(rawSheetName, language);
-  const localizedSpecs = translation?.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
-  const localizeSheetSpec = (spec) => {
-    const key = spec?.attribute_name ?? spec?.attribute ?? spec?.label ?? '';
-    const localized = localizedSpecs[key];
-    if (!localized) return spec;
-    if (typeof localized === 'object' && localized !== null) {
-      return { ...spec, attribute_name: localized.attribute || localized.label || key, attribute: localized.attribute || localized.label || key, normalized_value: localized.value ?? spec.normalized_value, original_value: localized.value ?? spec.original_value, value: localized.value ?? spec.value, normalized_unit: localized.unit ?? spec.normalized_unit, original_unit: localized.unit ?? spec.original_unit, unit: localized.unit ?? spec.unit };
-    }
-    return { ...spec, attribute_name: String(localized), attribute: String(localized) };
-  };
+  // Nombre y especificaciones se localizan por reglas de código deterministas
+  // (localizeProductName aquí; localizeSpecAttribute/localizeSpecValue dentro de
+  // SpecRow). No se consulta ninguna traducción generada por IA.
+  const displaySheetName = localizeProductName(rawSheetName, language);
+  const localizeSheetSpec = (spec) => spec;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 ip-mobile-safe-bottom" onClick={onClose}>
