@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage, localizeSpecAttribute, localizeTechnicalTerm, localizedCount } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
 import { getDisplayPartReference } from '@/lib/partIdentity';
 
 function isUsableImageUrl(value) {
@@ -74,7 +74,8 @@ export default function ResultCard({ result }) {
   const isFestoDiscovery = String(result.manufacturer_name || '').toLowerCase() === 'festo' && result.discovery_state === 'discovered';
   const normalizeIdentity = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const manufacturerIsSameAsPartNumber = Boolean(result.manufacturer_name && result.part_number && normalizeIdentity(result.manufacturer_name) === normalizeIdentity(result.part_number));
-  const displayProductName = result.title || result.product_name || result.product_identity?.short_description || result.name || '';
+  const rawDisplayProductName = result.title || result.product_name || result.product_identity?.short_description || result.name || '';
+  const displayProductName = localizeTechnicalText(rawDisplayProductName, language);
   const displayReference = getDisplayPartReference({
     part_number: result.part_number,
     name: displayProductName,
@@ -129,7 +130,7 @@ export default function ResultCard({ result }) {
             <div className="text-white/25 text-[10px] leading-snug mb-1">{t.sourceTitle}: {result.source_title}</div>
           )}
           {result.description && (
-            <p className="text-white/55 text-xs leading-relaxed line-clamp-3 sm:line-clamp-2">{result.description}</p>
+            <p className="text-white/55 text-xs leading-relaxed line-clamp-3 sm:line-clamp-2">{localizeTechnicalText(result.description, language)}</p>
           )}
         </div>
       </div>
@@ -150,7 +151,7 @@ export default function ResultCard({ result }) {
         <div className="flex flex-wrap gap-1.5 mb-4">
           {result.top_specs.slice(0, 4).map((s, i) => (
             <span key={i} className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white/55 text-[11px]">
-              {localizeSpecAttribute(s.attribute, language)}: {s.value}{s.unit ? ` ${s.unit}` : ''}
+              {localizeSpecAttribute(s.attribute, language)}: {localizeSpecValue(s.value, language)}{s.unit ? ` ${s.unit}` : ''}
             </span>
           ))}
           {result.spec_count > 4 && (
