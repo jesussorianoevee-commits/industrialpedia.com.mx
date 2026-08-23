@@ -42,24 +42,28 @@ export default function Buscar() {
   const [fichaLoading, setFichaLoading] = useState(false);
   const [fichaError, setFichaError] = useState(null);
 
+  // Historial real del usuario: se conserva localmente para ahorrar tiempo en
+  // búsquedas repetidas. Es una fuente separada y nunca se presenta como resultado
+  // del catálogo ni se mezcla con el autocompletado de productos.
   const [history, setHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('industrialpedia_search_history') || '[]'); }
-    catch { return []; }
+    try {
+      const stored = JSON.parse(localStorage.getItem('industrialpedia_search_history') || '[]');
+      return Array.isArray(stored)
+        ? stored.filter((item) => typeof item === 'string' && item.trim()).slice(0, 8)
+        : [];
+    } catch { return []; }
   });
 
   const saveToHistory = (term) => {
     const clean = term.trim();
     if (!clean) return;
     setHistory((prev) => {
-      const next = [clean, ...prev.filter((s) => s !== clean)].slice(0, 8);
+      const normalized = clean.toLocaleLowerCase();
+      const next = [clean, ...prev.filter((s) => s.trim().toLocaleLowerCase() !== normalized)].slice(0, 8);
       try { localStorage.setItem('industrialpedia_search_history', JSON.stringify(next)); } catch {}
       return next;
     });
   };
-
-  // El historial se conserva únicamente como memoria local del usuario; no se
-  // mezcla con resultados ni autocompletado para evitar que consultas heredadas
-  // del antiguo buscador web reaparezcan como si fueran componentes del catálogo.
 
   const runAreaBrowse = useCallback(async (areaKey) => {
     const reqId = ++searchReqId.current;
@@ -226,7 +230,7 @@ export default function Buscar() {
             {t.search}
           </button>
 
-          {showHistory && history.length > 0 && input.trim().length < 3 && !(input.trim() !== q.trim() && suggestions.length > 0) && (
+          {showHistory && history.length > 0 && input.trim().length === 0 && (
             <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/40">
