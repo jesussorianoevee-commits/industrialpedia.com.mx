@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
@@ -93,6 +93,7 @@ function StatusBadge({ component, base = false, t }) {
 
 export default function Comparar() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const partNumberHint = searchParams.get('pn') || '';
   const [data, setData] = useState(null);
@@ -113,12 +114,19 @@ export default function Comparar() {
     })();
   }, [id, partNumberHint, language]);
 
+  const returnToFicha = () => {
+    // Do not rely on browser history: the comparator can be opened directly,
+    // inside a preview, or after a reload where history.back() has no useful route.
+    // The route id is the exact base part id used to open this comparison.
+    navigate(`/parte/${encodeURIComponent(id)}`, { replace: true });
+  };
+
   if (!data && !error) return (
     <div className="min-h-screen bg-[#080d12]">
       <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Buscando alternativas compatibles' : 'Searching compatible alternatives'} />
     </div>
   );
-  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={() => window.history.back()} className="ip-compare-accent">← Volver a ficha</button></div>;
+  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={returnToFicha} className="ip-compare-accent">← Volver a ficha</button></div>;
 
   const base = data.base;
   const alternatives = data.alternatives || [];
@@ -144,7 +152,7 @@ export default function Comparar() {
   return <div className="ip-comparison min-h-screen bg-[#080d12] text-white">
     <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
-        <button type="button" onClick={() => window.history.back()} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></button>
+        <button type="button" onClick={returnToFicha} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver a ficha"><ArrowLeft className="h-4 w-4" /></button>
         <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
         <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 ip-compare-accent">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
         <div className="ml-auto flex items-center gap-2">
@@ -163,7 +171,7 @@ export default function Comparar() {
     </header>
 
     <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-7 w-full min-w-0">
-      <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs ip-compare-accent hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
+      <button type="button" onClick={returnToFicha} className="mb-4 flex items-center gap-2 text-xs ip-compare-accent hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} {t.candidatesConsulted}</div>
