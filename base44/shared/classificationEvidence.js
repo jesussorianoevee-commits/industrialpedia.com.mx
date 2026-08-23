@@ -27,13 +27,17 @@ const RULES = [
     area: 'neumatica',
     include: ['pneumatic', 'neumatic', 'compressed air', 'air preparation', 'air cylinder', 'pneumatic cylinder', 'solenoid valve', 'air valve', 'push in fitting', 'push to connect', 'pneumatic fitting', 'air gripper'],
     exclude: ['laboratory condenser', 'vacuum pump', 'centrifugal pump', 'peristaltic pump', 'liquid pump'],
-    manufacturerHints: ['smc', 'nihon pisco', 'pisco'],
+    manufacturerHints: ['smc', 'nihon pisco'], 
     minScore: 45
   }
 ];
 
 function hits(text, terms) {
-  return terms.filter((term) => text.includes(normalize(term)));
+  const padded = ` ${text} `;
+  return terms.filter((term) => {
+    const normalized = normalize(term);
+    return padded.includes(` ${normalized} `);
+  });
 }
 
 export function buildClassificationFingerprint(part = {}) {
@@ -59,7 +63,10 @@ export function classifyWithEvidence(part = {}) {
   const candidates = RULES.map((rule) => {
     const includeHits = hits(text, rule.include);
     const excludeHits = hits(text, rule.exclude);
-    const manufacturerHits = rule.manufacturerHints.filter((hint) => manufacturer.includes(normalize(hint)));
+    const manufacturerHits = rule.manufacturerHints.filter((hint) => {
+      const normalized = normalize(hint);
+      return ` ${manufacturer} `.includes(` ${normalized} `);
+    });
     const score = includeHits.length * 25 + manufacturerHits.length * 10 - excludeHits.length * 80;
     return {
       area: rule.area,
