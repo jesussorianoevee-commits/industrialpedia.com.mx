@@ -239,7 +239,7 @@ export default function Parte() {
               <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
             </div>
           </div>
-          {part.description && (part.translation_language || !isSpecificationBlob(part.description)) && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
+          {part.description && !isSpecificationBlob(part.description) && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
               <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.evidenceCount}</span>
