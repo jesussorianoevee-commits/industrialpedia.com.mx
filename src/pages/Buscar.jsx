@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft, SlidersHorizontal, Loader2, Globe, Clock } from 'lucide-react';
+import { Search, ArrowLeft, SlidersHorizontal, Loader2, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
@@ -303,7 +303,7 @@ export default function Buscar() {
                         <img src={s.image} alt="" className="h-11 w-11 rounded-lg object-contain bg-white" />
                       ) : (
                         <div className="h-11 w-11 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                          <Globe className="w-4 h-4 text-white/30" />
+                          <Search className="w-4 h-4 text-white/30" />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
