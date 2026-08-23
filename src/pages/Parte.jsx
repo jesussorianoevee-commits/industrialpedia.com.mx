@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { getPartTranslation, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
+import { localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
@@ -98,16 +98,9 @@ export default function Parte() {
           image_url: normalizeImageUrl(p.image_url || p.image?.image_url || p.image?.url || p.product_image_url || ''),
           source_url: p.source_url || p.product_url || p.url || p.source?.url || p.evidence?.[0]?.source?.url || ''
         };
-        const translation = await getPartTranslation(p.id, language);
-        if (translation) {
-          normalizedPart.display_name = translation.name ? localizeProductName(translation.name, language) : normalizedPart.display_name;
-          normalizedPart.description = translation.description ? localizeTechnicalText(translation.description, language) : normalizedPart.description;
-          normalizedPart.category = translation.category ? localizeTechnicalText(translation.category, language) : normalizedPart.category;
-          normalizedPart.subcategory = translation.subcategory || '';
-          normalizedPart.translation_specifications = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
-          normalizedPart.translation_status = translation.status || 'machine_draft';
-          normalizedPart.translation_language = language;
-        }
+        // La localización del nombre/descripción/categoría ya se calculó arriba
+        // de forma determinista (localizeProductName/localizeTechnicalText). No se
+        // consulta ninguna traducción generada por IA.
         setPart(normalizedPart);
 
         // La API canónica devuelve specifications; resultados antiguos de Base44
@@ -247,9 +240,6 @@ export default function Parte() {
             </div>
           </div>
           {part.description && (part.translation_language || !isSpecificationBlob(part.description)) && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
-          {part.translation_status === 'machine_draft' && language !== 'es' && (
-            <div className="mt-2 text-[10px] text-amber-300/60">{t.autoTranslation}</div>
-          )}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
               <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.evidenceCount}</span>
