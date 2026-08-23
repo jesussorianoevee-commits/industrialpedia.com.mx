@@ -168,7 +168,22 @@ export async function autoTranslatePart(base44: any, part: any, options: { langu
     const records = [];
     const updates: any[] = [];
     for (const language of targetLanguages) {
-      const item = translations.find((t: any) => t?.language === language);
+      let item = translations.find((t: any) => t?.language === language);
+      // A first-pass machine draft is not accepted blindly. If it still leaks
+      // English into a non-English target, run a single-language repair pass so
+      // Spanish screens cannot persistently show mixed source text.
+      if (translationNeedsRepair(item, language)) {
+        const repaired = await repairTargetLanguage(base44, language, {
+          manufacturer: sourceManufacturer,
+          partNumber: sourcePartNumber,
+          name: sourceName,
+          description: sourceDescription,
+          category: sourceCategory,
+          subcategory: sourceSubcategory,
+          specifications: sourceSpecifications
+        }).catch(() => null);
+        if (repaired) item = { ...item, ...repaired, language };
+      }
       if (!item?.name) continue;
       // Defensive normalization: the LLM is instructed to produce a technical
       // title, but marketplace boilerplate is removed again deterministically.
