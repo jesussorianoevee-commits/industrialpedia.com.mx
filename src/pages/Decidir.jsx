@@ -157,7 +157,7 @@ export default function Decidir() {
                   </div>
                   {result.reason && <div className="mt-4 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2 text-[11px] leading-relaxed text-white/50">{result.reason}</div>}
                   {details.length > 0 && <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{details.slice(0, 12).map(([key, value]) => <div key={key} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"><div className="text-[9px] uppercase tracking-wider text-white/25">{key}</div><div className="mt-1 text-xs font-mono text-white/75 break-words">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</div></div>)}</div>}
-                  {result.source_url && <a href={result.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[10px] text-[#65a9e6] hover:underline">Ver fuente →</a>}
+                  {result.source_url && <a href={result.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[10px] text-[#65a9e6] hover:underline">{t.viewSource} →</a>}
                 </article>
               );
             })}
