@@ -163,7 +163,7 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s)}</div></div>)}
+            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
           </div>
         </div>
       </section>
@@ -210,13 +210,13 @@ export default function Comparar() {
                     const valueTone = propertyState === 'equal' ? 'text-[#16c79a]' : isIncompatible ? 'text-red-300' : propertyState === 'different' ? 'text-amber-300' : 'text-white/55';
                     const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
                     const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
-                    const baseValueForCard = baseSpec ? val(baseSpec) : '—';
+                    const baseValueForCard = baseSpec ? val(baseSpec, language) : '—';
                     return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2.5 py-2 ${valueBg}`}>
                       <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
                       <div className="mt-2 grid grid-cols-2 gap-2" dir="ltr">
                         <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
                           <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
-                          <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s)}</div>
+                          <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s, language)}</div>
                         </div>
                         <div className="min-w-0 rounded border border-white/[0.06] bg-[#65a9e6]/[0.035] px-2 py-1.5">
                           <div className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Original · {base.part_number}</div>
@@ -253,9 +253,9 @@ export default function Comparar() {
               {specRows.map((s, idx) => {
                 const values = alternatives.map((c) => {
                   const candidate = valueFor(s, c);
-                  return candidate !== null && candidate !== undefined && candidate !== '' ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
+                  return candidate !== null && candidate !== undefined && candidate !== '' ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
                 });
-                const baseValue = val(s);
+                const baseValue = val(s, language);
                 const states = alternatives.map((c) => stateFor(s, c));
                 const hasRelevantDifference = states.some((state) => state === 'different' || state === 'not_comparable' || state === 'candidate_only');
                 const hasMatch = states.some((state) => state === 'equal');
@@ -294,12 +294,12 @@ export default function Comparar() {
           {alternatives.map((c, ci) => {
             const mobileRows = specRows.map((s) => {
               const originalValue = s.original_value !== null && s.original_value !== undefined && s.original_value !== ''
-                ? val(s)
+                ? val(s, language)
                 : '—';
               const candidate = valueFor(s, c);
               const state = stateFor(s, c);
               const candidateValue = candidate !== null && candidate !== undefined && candidate !== ''
-                ? (typeof candidate === 'object' ? val(candidate) : String(candidate))
+                ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language }))
                 : '—';
               return { s, originalValue, candidateValue, state };
             }).filter((row) => row.originalValue !== '—' || row.candidateValue !== '—');
@@ -386,7 +386,7 @@ export default function Comparar() {
                 const normalized = isBaseColumn ? null : normalizedFor(s, c);
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
                 const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
-                const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate) : String(candidate)) : '—';
+                const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
                 const stateClass = st === 'equal' ? 'text-[#16c79a]' : st === 'different' ? 'text-amber-300' : st === 'not_comparable' ? 'text-red-300' : 'text-white/35';
                 const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                 return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
