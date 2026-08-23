@@ -230,7 +230,6 @@ export default function Buscar() {
             onFocus={() => setShowHistory(true)}
             placeholder={t.searchPlaceholder}
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-2.5 min-w-0"
-            autoFocus
           />
           <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2.5 rounded-xl transition-colors shrink-0">
             {t.search}
