@@ -60,6 +60,12 @@ const NEGATIVE_CASES = [
   { title: 'SMC laboratory condenser glass', manufacturer_name: 'SMC', expected: 'laboratorio-cientifico' }
 ];
 
+const QUALITY_STATUS_CASES = [
+  [{ title: 'Inductive proximity sensor M12' }, 'auto_accept'],
+  [{ title: 'Hydro-pneumatic accumulator' }, 'shadow_review'],
+  [{ title: 'Pneumatic cylinder with pressure gauge' }, 'shadow_review']
+];
+
 const CROSS_AREA_CASES = [
   ['Pressure gauge 0-10 bar', 'instrumentacion-medicion'],
   ['Vacuum pump laboratory', null],
@@ -79,6 +85,12 @@ for (const [expected, part] of GOLDEN_CASES) {
 for (const part of NEGATIVE_CASES) {
   const result = classifyWithEvidence(part);
   assert.equal(result.area, part.expected, `negative/cross-family: ${part.title} -> ${part.expected}, got ${result.area}`);
+  checks += 1;
+}
+
+for (const [part, expectedStatus] of QUALITY_STATUS_CASES) {
+  const result = classifyWithEvidence(part);
+  assert.equal(result.status, expectedStatus, `quality status: ${part.title} -> ${expectedStatus}, got ${result.status}`);
   checks += 1;
 }
 
