@@ -27,15 +27,24 @@ const GOLDEN_CASES = [
   ['instrumentacion-medicion', { title: 'Digital pressure gauge' }],
   ['instrumentacion-medicion', { title: 'pH meter measurement range 0-14' }],
   ['instrumentacion-medicion', { title: 'Wind velocity meter' }],
+  ['instrumentacion-medicion', { title: 'Pocket microscope 100X' }],
+  ['instrumentacion-medicion', { title: 'Small vibration meter' }],
+  ['instrumentacion-medicion', { title: 'Temperature data logger' }],
 
   ['laboratorio-cientifico', { title: 'Micropipette Nichipet' }],
   ['laboratorio-cientifico', { title: 'PTFE stirring shaft' }],
   ['laboratorio-cientifico', { title: 'Tip for micro pipette' }],
   ['laboratorio-cientifico', { title: 'Bottle top dispenser' }],
+  ['laboratorio-cientifico', { title: 'Neoprene long plug' }],
 
   ['fluidos-bombeo', { title: 'Peristaltic pump maximum flow rate 2 L/min' }],
   ['fluidos-bombeo', { title: 'Bomba peristáltica industrial' }],
-  ['fluidos-bombeo', { title: 'Centrifugal pump discharge pressure 6 bar' }]
+  ['fluidos-bombeo', { title: 'Centrifugal pump discharge pressure 6 bar' }],
+
+  ['mecanica-transmision', { title: '608-2Z/C3 deep groove ball bearing' }],
+  ['mecanica-transmision', { title: 'ISO 2338 dowel pin D6 x 20' }],
+  ['mecanica-transmision', { title: 'ISO 4762 hexagon socket head cap screw M6 x 20' }],
+  ['mecanica-transmision', { title: '20 x 40 aluminum extrusion profile' }]
 ];
 
 const NEGATIVE_CASES = [
