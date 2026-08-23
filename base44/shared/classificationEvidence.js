@@ -1,7 +1,8 @@
 // Portable deterministic classification evidence helpers.
 // No Base44 SDK dependency: this module can move to GitHub/Vercel unchanged.
-// RULES currently covers ONLY Neumática; do not interpret unclassified results as
-// evidence that other Industrialpedia areas are absent.
+// Classification is deterministic and portable. Rules must distinguish strong product
+// concepts from weak lexical mentions. Unclassified means insufficient evidence, never
+// absence of a product family.
 
 const normalize = (value) => String(value ?? '')
   .normalize('NFD')
@@ -109,6 +110,18 @@ function termOccurrences(text, definitions) {
     position,
     negated: isNegated(tokens, position)
   })));
+}
+
+function hasAnyEvidence(evidence, terms) {
+  const normalizedTerms = new Set(terms.map(normalize));
+  return evidence.some((item) => normalizedTerms.has(normalize(item.term)));
+}
+
+function isGenericOnlyEvidence(evidence) {
+  // Generic nouns frequently occur in manuals and adjacent industries. They need
+  // corroboration from a stronger class concept or technical context.
+  const generic = new Set(['compressor', 'compresor', 'pneumatic', 'pneumatics', 'neumatico', 'neumatica', 'neumaticos', 'neumaticas']);
+  return evidence.length > 0 && evidence.every((item) => generic.has(normalize(item.term)));
 }
 
 function uniqueEvidence(occurrences) {
