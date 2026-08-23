@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
@@ -8,13 +8,15 @@ import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
+import { getDisplayPartReference } from '@/lib/partIdentity';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
   validated: { label: 'Validado', cls: 'text-[#5a9cd9] bg-[#5a9cd9]/10' },
   incomplete: { label: 'Incompleto', cls: 'text-[#e68a00] bg-[#e68a00]/10' },
   rejected: { label: 'Rechazado', cls: 'text-red-400 bg-red-400/10' },
-  processed: { label: 'Procesado', cls: 'text-white/50 bg-white/10' }
+  processed: { label: 'Procesado', cls: 'text-white/50 bg-white/10' },
+  verified: { label: 'Verificado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' }
 };
 
 function isTechnicalDisplaySpec(spec) {
@@ -26,8 +28,6 @@ function isTechnicalDisplaySpec(spec) {
 
 export default function Parte() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const partNumberHint = searchParams.get('pn') || '';
   const [part, setPart] = useState(null);
   const [specs, setSpecs] = useState([]);
   const [evidenceBySpec, setEvidenceBySpec] = useState({});
@@ -43,30 +43,15 @@ export default function Parte() {
     (async () => {
       setLoading(true);
       try {
-        // La ficha debe leer el mismo Knowledge Core que BUSCAR.
-        // No volver a consultar entidades legacy de Base44 para el componente.
+        // El id de la ruta es la identidad canónica. Nunca reconstruimos la ficha
+        // a partir de un número de parte/modelo: valores como "150mm" pueden ser
+        // especificaciones o modelos y no identifican unívocamente el componente.
         let p = null;
-        if (partNumberHint) {
-          try {
-            const searchResponse = await base44.functions.invoke('IndustrialpediaSearch', {
-              q: partNumberHint,
-              filters: { validation_states: ['published', 'validated', 'incomplete', 'candidate'] },
-              limit: 10,
-              offset: 0
-            });
-            const results = searchResponse?.data?.knowledge_core_results || [];
-            p = results.find((r) => r.id === id || r.part_number === partNumberHint) || null;
-          } catch {
-            p = null;
-          }
-        }
-        if (!p) {
-          try {
-            const apiResponse = await getPartIndustrialpedia(id);
-            p = apiResponse?.part || null;
-          } catch {
-            p = null;
-          }
+        try {
+          const apiResponse = await getPartIndustrialpedia(id);
+          p = apiResponse?.part || null;
+        } catch {
+          p = null;
         }
         if (!p) throw new Error('part_not_found');
         // Completa únicamente la imagen desde la API canónica si el resultado de búsqueda no la trae.
@@ -87,8 +72,12 @@ export default function Parte() {
           manufacturer_name: p.manufacturer || '',
           category: p.category || '',
           description: p.description || p.name || '',
-          validation_state: p.status || 'processed',
-          display_name: p.name || p.product_name || p.part_number || '',
+          validation_state: p.status || p.validation_state || 'processed',
+          display_name: p.name || p.product_name || p.title || p.part_number || '',
+          display_reference: getDisplayPartReference({
+            part_number: p.part_number,
+            name: p.name || p.product_name || p.title || ''
+          }),
           original_description: p.description || p.name || '',
           image_url: p.image_url || p.image || p.product_image_url || ''
         };
@@ -159,7 +148,7 @@ export default function Parte() {
         setLoading(false);
       }
     })();
-  }, [id, partNumberHint, language]);
+  }, [id, language]);
 
   if (loading) {
     return <IndustrialpediaLoader fullScreen label={t.loadingParts} />;
@@ -189,7 +178,7 @@ export default function Parte() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
             <div className="min-w-0 flex-1">
               <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
-              <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.part_number}</h1>
+              <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.display_reference || part.part_number}</h1>
               <div className="text-white/50 text-sm">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
             </div>
             <div className="flex items-start gap-2 shrink-0">
