@@ -115,8 +115,8 @@ const RULES = [
     include: [
       { term: 'power supply', weight: 40 }, { term: 'dc power supply', weight: 45 },
       { term: 'stabilized dc power supply', weight: 50 }, { term: 'fieldbus node', weight: 45 },
-      { term: 'io device', weight: 35 }, { term: 'plc', weight: 40 },
-      { term: 'programmable logic controller', weight: 50 }, { term: 'network protocol', weight: 20 },
+      { term: 'plc', weight: 40 },
+      { term: 'programmable logic controller', weight: 50 },
       { term: 'profinet', weight: 30 }, { term: 'simatic et 200', weight: 45 },
       { term: 'fuente de alimentacion', weight: 45 }, { term: 'controlador programable', weight: 50 }
     ],
@@ -133,7 +133,7 @@ const RULES = [
       { term: 'wind velocity meter', weight: 45 }, { term: 'wind flow meter', weight: 45 },
       { term: 'measurement range', weight: 20 }, { term: 'measuring range', weight: 20 },
       { term: 'straight scale', weight: 40 }, { term: 'automatic scale', weight: 40 },
-      { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 },
+      { term: 'thermometer', weight: 40 }, { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 }
       { term: 'manometro', weight: 45 }, { term: 'medidor de presion', weight: 45 }
     ],
     exclude: [],
@@ -145,8 +145,9 @@ const RULES = [
   {
     area: 'laboratorio-cientifico',
     include: [
-      { term: 'silicone tube', weight: 40 }, { term: 'laboratory tube', weight: 45 },
-      { term: 'stirring shaft', weight: 45 }, { term: 'ptfe stirring shaft', weight: 50 },
+      { term: 'silicone tube', weight: 40 }, { term: 'silicone blade hose', weight: 40 },
+      { term: 'sample cup', weight: 40 }, { term: 'laboratory tube', weight: 45 },
+      { term: 'stirring shaft', weight: 45 } { term: 'ptfe stirring shaft', weight: 50 },
       { term: 'laboratory condenser', weight: 50 }, { term: 'heat resistance range', weight: 20 },
       { term: 'pharmed', weight: 30 }
     ],
@@ -160,9 +161,10 @@ const RULES = [
     area: 'fluidos-bombeo',
     include: [
       { term: 'pressure pump', weight: 45 }, { term: 'centrifugal pump', weight: 45 },
-      { term: 'peristaltic pump', weight: 45 }, { term: 'tubing pump', weight: 45 },
-      { term: 'tube pump', weight: 40 }, { term: 'pump tube', weight: 35 },
-      { term: 'maximum flow rate', weight: 20 }, { term: 'discharge pressure', weight: 20 },
+      { term: 'peristaltic pump', weight: 45 }, { term: 'perista pump', weight: 45 },
+      { term: 'acid proof pump', weight: 45 }, { term: 'siphon pump', weight: 40 },
+      { term: 'tubing pump', weight: 45 }, { term: 'tube pump', weight: 40 }, { term: 'pump tube', weight: 35 },
+      { term: 'pump', weight: 15 }, { term: 'maximum flow rate', weight: 20 }, { term: 'discharge pressure', weight: 20 },
       { term: 'bomba de presion', weight: 45 }, { term: 'bomba peristaltica', weight: 45 }
     ],
     exclude: ['vacuum pump'],
