@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { getPartTranslation, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
+import { getPartTranslation, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
@@ -85,7 +85,7 @@ export default function Parte() {
           category: localizeTechnicalText(p.category || '', language),
           description: localizeTechnicalText(p.description || p.name || '', language),
           validation_state: p.status || p.validation_state || 'processed',
-          display_name: localizeTechnicalText(p.name || p.product_name || p.title || p.part_number || '', language),
+          display_name: localizeProductName(p.name || p.product_name || p.title || p.part_number || '', language),
           display_reference: getDisplayPartReference({
             part_number: p.part_number,
             name: p.name || p.product_name || p.title || ''
@@ -95,7 +95,7 @@ export default function Parte() {
         };
         const translation = await getPartTranslation(p.id, language);
         if (translation) {
-          normalizedPart.display_name = translation.name ? localizeTechnicalText(translation.name, language) : normalizedPart.display_name;
+          normalizedPart.display_name = translation.name ? localizeProductName(translation.name, language) : normalizedPart.display_name;
           normalizedPart.description = translation.description ? localizeTechnicalText(translation.description, language) : normalizedPart.description;
           normalizedPart.category = translation.category ? localizeTechnicalText(translation.category, language) : normalizedPart.category;
           normalizedPart.subcategory = translation.subcategory || '';
