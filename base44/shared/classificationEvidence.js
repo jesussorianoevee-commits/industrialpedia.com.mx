@@ -44,7 +44,7 @@ const RULES = [
       'solenoid valve', 'air valve', 'quick exhaust valve',
       'push in fitting', 'push to connect', 'pneumatic fitting',
       'cilindro neumatico', 'valvula neumatica', 'valvula solenoide',
-      'actuador neumatico', 'actuador rotativo', 'unidad frl', 'filtro regulador lubricador'
+      'actuador neumatico', 'actuador rotativo', 'unidad frl', 'frl unit', 'filtro regulador lubricador'
     ],
     exclude: ['laboratory condenser', 'vacuum pump', 'centrifugal pump', 'peristaltic pump', 'liquid pump'],
     manufacturerHints: ['smc', 'nihon pisco', 'festo', 'parker', 'aventics', 'norgren', 'camozzi', 'metal work'],
