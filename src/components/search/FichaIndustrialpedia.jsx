@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, FileText, ShieldCheck, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
-import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeProductName, localizeTechnicalText, getPartTranslation } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeProductName, getPartTranslation } from '@/lib/i18n';
 
 const SOURCE_TYPE_LABELS = {
   official: { es: 'Fabricante oficial', en: 'Official manufacturer', de: 'Offizieller Hersteller', fr: 'Fabricant officiel', zh: '官方制造商' },
@@ -103,7 +103,6 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   const sourceLabel = SOURCE_TYPE_LABELS[ficha?.source?.source_type]?.[language] || SOURCE_TYPE_LABELS.cse_configured[language];
   const rawSheetName = ficha?.product_identity?.short_description || ficha?.product_name || ficha?.part_number || t.productNotIdentified;
   const displaySheetName = translation?.name || localizeProductName(rawSheetName, language);
-  const translatedDescription = translation?.description || '';
   const localizedSpecs = translation?.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
   const localizeSheetSpec = (spec) => {
     const key = spec?.attribute_name ?? spec?.attribute ?? spec?.label ?? '';
@@ -161,7 +160,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                 )}
                 <div className="min-w-0 flex-1">
                   {ficha.product_identity?.manufacturer && <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-[0.14em] truncate">{ficha.product_identity.manufacturer}</div>}
-                  <h1 className={`mt-1 text-base sm:text-lg font-semibold leading-snug ${ficha.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>{ficha.product_identity?.short_description || ficha.product_name || ficha.part_number || 'Producto'}</h1>
+                  <h1 className={`mt-1 text-base sm:text-lg font-semibold leading-snug ${ficha.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>{displaySheetName}</h1>
                   {ficha.product_identity?.variants?.length > 1 && (
                     <div className="mt-1 text-[11px] text-amber-400/80">{ficha.product_identity.variants.length} variantes: {ficha.product_identity.variants.join(', ')}</div>
                   )}
@@ -190,17 +189,18 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   <div className="py-10 text-center text-xs text-white/35">{t.noTechnicalSpecsSource}</div>
                 ) : (
                   <>
-                    {specs.map((s, i) => (
-                      <SpecRow
-                        key={`${s.attribute_name || s.attribute}-${i}`}
-                        label={s.attribute_name ?? s.attribute}
-                        value={s.normalized_value ?? s.original_value}
-                        unit={s.normalized_unit ?? s.original_unit}
+                    {specs.map((s, i) => {
+                      const localized = localizeSheetSpec(s);
+                      return <SpecRow
+                        key={`${localized.attribute_name || localized.attribute}-${i}`}
+                        label={localized.attribute_name ?? localized.attribute}
+                        value={localized.normalized_value ?? localized.original_value}
+                        unit={localized.normalized_unit ?? localized.original_unit}
                         page={s.page}
                         verified={Boolean(s.verified)}
                         sourceUrl={s.evidence?.source_url || ficha.source?.url}
-                      />
-                    ))}
+                      />;
+                    })}
                     {specs.length === 0 && grouped.map((g, i) => g.available ? (
                       <SpecRow
                         key={`group-${i}`}
@@ -217,17 +217,18 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                         <span className="text-[10px] uppercase tracking-wider text-white/30">{t.extractedUnverified}</span>
                       </div>
                     )}
-                    {unverifiedSpecs.map((s, i) => (
-                      <SpecRow
+                    {unverifiedSpecs.map((s, i) => {
+                      const localized = localizeSheetSpec(s);
+                      return <SpecRow
                         key={`unverified-${i}`}
-                        label={s.attribute_name ?? s.attribute}
-                        value={s.normalized_value ?? s.original_value}
-                        unit={s.normalized_unit ?? s.original_unit}
+                        label={localized.attribute_name ?? localized.attribute}
+                        value={localized.normalized_value ?? localized.original_value}
+                        unit={localized.normalized_unit ?? localized.original_unit}
                         page={s.page}
                         verified={false}
                         sourceUrl={s.evidence?.source_url || ficha.source?.url}
-                      />
-                    ))}
+                      />;
+                    })}
                     {extraBasic.map((s, i) => (
                       <SpecRow key={`extra-${i}`} label={s.attribute} value={s.value} unit={undefined} page={undefined} verified={false} sourceUrl={ficha.source?.url} />
                     ))}
@@ -243,17 +244,18 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   <h2 className="text-[11px] uppercase tracking-[0.16em] text-[#47bcb6]/80 font-semibold">Knowledge Core · {t.verified}</h2>
                 </div>
                 <div className="px-4 sm:px-5">
-                  {verifiedSpecs.map((s, i) => (
-                    <SpecRow
+                  {verifiedSpecs.map((s, i) => {
+                    const localized = localizeSheetSpec(s);
+                    return <SpecRow
                       key={`verified-${i}`}
-                      label={s.attribute_name ?? s.attribute}
-                      value={s.normalized_value ?? s.original_value}
-                      unit={s.normalized_unit ?? s.original_unit}
+                      label={localized.attribute_name ?? localized.attribute}
+                      value={localized.normalized_value ?? localized.original_value}
+                      unit={localized.normalized_unit ?? localized.original_unit}
                       page={s.page}
                       verified
                       sourceUrl={ficha.source?.url}
-                    />
-                  ))}
+                    />;
+                  })}
                 </div>
               </section>
             )}
