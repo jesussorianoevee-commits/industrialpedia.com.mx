@@ -269,7 +269,7 @@ export default function ResultCard({ result }) {
             {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compareAlternatives}</>}
           </button>
         ) : (
-          <button disabled title="Se habilita cuando la referencia externa tiene suficientes especificaciones técnicas." className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.compare}</button>
+          <button disabled title={t.enableCompareWhenSpecs} className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.compare}</button>
         )}
       </div>
     </div>
