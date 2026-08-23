@@ -132,3 +132,22 @@
 .theme-light textarea[class*="text-white"],
 .theme-light select[class*="text-white"] { color: hsl(var(--foreground)) !important; }
 .theme-light input[class*="placeholder:text-white"]::placeholder { color: hsl(var(--muted-foreground) / 0.70) !important; }
+
+/* Auth pages: use semantic theme tokens instead of inheriting the legacy dark palette.
+   This keeps the same layout readable in both dark and light mode. */
+.ip-auth-shell .text-slate-200 { color: hsl(var(--foreground)) !important; }
+.ip-auth-shell .text-slate-500 { color: hsl(var(--muted-foreground)) !important; }
+.ip-auth-shell .text-slate-600 { color: hsl(var(--muted-foreground) / 0.72) !important; }
+.ip-auth-shell .text-slate-400 { color: hsl(var(--muted-foreground)) !important; }
+.ip-auth-shell input[class*="bg-black/20"] { background-color: hsl(var(--background)) !important; border-color: hsl(var(--border)) !important; color: hsl(var(--foreground)) !important; }
+.ip-auth-shell input[class*="text-white"] { color: hsl(var(--foreground)) !important; }
+.ip-auth-shell input::placeholder { color: hsl(var(--muted-foreground) / 0.72) !important; }
+.ip-auth-shell .bg-blue-600 { background-color: hsl(var(--primary)) !important; color: hsl(var(--primary-foreground)) !important; }
+.ip-auth-shell .hover\:bg-blue-500:hover { filter: brightness(1.06); }
+.ip-auth-shell a.text-blue-400 { color: hsl(var(--primary)) !important; }
+.ip-auth-shell .border-white\/10 { border-color: hsl(var(--border)) !important; }
+
+/* On phones the auth page should feel like part of the selected theme, not a dark modal. */
+@media (max-width: 1023px) {
+  .ip-auth-shell main { background: hsl(var(--background)); }
+}
