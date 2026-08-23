@@ -14,17 +14,21 @@ export default async function (req: Request) {
     const body = await req.json().catch(() => ({}));
     const partId = String(body.part_id || '').trim();
     const partNumberInput = String(body.part_number || '').trim();
+    const manufacturerHint = String(body.manufacturer_hint || '').trim();
     const sourceKey = String(body.source_key || 'digikey_product_information_v4').trim();
 
     if (!partId && !partNumberInput) return Response.json({ error: 'part_id or part_number required' }, { status: 400 });
 
     let partNumber = partNumberInput;
-    let manufacturer = '';
+    // When the caller is using a canonical Knowledge Core id, that id is not a
+    // Base44 Part id. A verified manufacturer hint lets the exact lookup still
+    // enforce manufacturer + part-number identity without guessing.
+    let manufacturer = manufacturerHint;
     if (partId) {
       const parts = await base44.asServiceRole.entities.Part.filter({ id: partId }, '-updated_date', 1);
       if (!parts.length) return Response.json({ error: 'part_not_found' }, { status: 404 });
       partNumber = String(parts[0].part_number || '').trim();
-      manufacturer = String(parts[0].manufacturer_name || '').trim();
+      manufacturer = String(parts[0].manufacturer_name || manufacturerHint || '').trim();
     }
     if (!partNumber) return Response.json({ error: 'part_number_missing' }, { status: 400 });
 
