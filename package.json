@@ -10,6 +10,8 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "regression:gate": "node base44/tests/regressionGate.mjs",
+    "classification:quality": "node base44/tests/classificationQualityGate.mjs",
+    "quality:gate": "npm run regression:gate && npm run classification:quality && npm run typecheck && npm run build","replace_all":false}],"dry_run":false}
     "preview": "vite preview"
   },
   "dependencies": {
