@@ -10,6 +10,8 @@ import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { translateParts, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
+import { consumeTrialAction, getTrialRemaining } from '@/lib/trial';
+import { useAuth } from '@/lib/AuthContext';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
 
@@ -24,6 +26,8 @@ export default function Buscar() {
   const [showFilters, setShowFilters] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const { language, t } = useLanguage();
+  const { isAuthenticated } = useAuth();
+  const [trialNotice, setTrialNotice] = useState(null);
 
   const [kcData, setKcData] = useState(null);
   const [kcLoading, setKcLoading] = useState(false);
@@ -167,11 +171,18 @@ export default function Buscar() {
   const submit = (e) => {
     e.preventDefault();
     const next = input.trim();
-    if (next) {
-      saveToHistory(next);
-      setSuggestions([]);
-      setParams({ q: next });
+    if (!next) return;
+    if (!isAuthenticated) {
+      const trial = consumeTrialAction();
+      if (!trial.allowed) {
+        setTrialNotice('limit');
+        return;
+      }
+      setTrialNotice(trial.remaining === 1 ? 'last' : null);
     }
+    saveToHistory(next);
+    setSuggestions([]);
+    setParams({ q: next });
   };
 
   const onReset = () => {
