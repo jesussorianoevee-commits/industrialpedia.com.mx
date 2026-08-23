@@ -249,8 +249,8 @@ export default function Comparar() {
             <div><h2 className="text-lg font-semibold text-white/95">Comparación completa</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí puedes revisar todos los datos frente a la pieza original.</p></div>
           </div>
           <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
-            <div className="min-w-[640px]">
-              <div className="grid border-b border-white/[0.08] bg-white/[0.025]" style={{gridTemplateColumns:`180px 150px repeat(${alternatives.length}, minmax(140px, 1fr))`}}>
+            <div className="min-w-[820px]">
+              <div className="grid border-b border-white/[0.08] bg-white/[0.025]" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
                 <div className="p-3 text-sm font-bold text-white/75">Dato</div>
                 {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-sm font-bold text-white/85">Comparativa · {c.part_number}</div>)}
                 <div className="border-l border-white/[0.06] p-3 text-sm font-bold text-[#65a9e6]">Original · {base.part_number}</div>
@@ -265,14 +265,14 @@ export default function Comparar() {
                 const hasRelevantDifference = states.some((state) => state === 'different' || state === 'not_comparable' || state === 'candidate_only');
                 const hasMatch = states.some((state) => state === 'equal');
                 if (!hasRelevantDifference && !hasMatch) return null;
-                return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(140px, 1fr)) 150px`}}>
+                return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
                   <div className="p-3 text-base font-semibold text-white/80">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
                   {alternatives.map((c, i) => {
                     const state = states[i];
                     const tone = state === 'equal' ? 'text-[#16c79a]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300') : state === 'not_comparable' ? 'text-red-300' : 'text-white/40';
                     const bg = state === 'equal' ? 'bg-[#16c79a]/[0.07]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                     const icon = state === 'equal' ? '✓' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? '✕' : '⚠') : state === 'not_comparable' ? '✕' : '○';
-                    return <div key={c.id || i} className={`border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span aria-hidden="true">{icon}</span><span className="break-words">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
+                    return <div key={c.id || i} className={`min-w-0 overflow-hidden border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex min-w-0 items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span className="shrink-0" aria-hidden="true">{icon}</span><span className="min-w-0 whitespace-normal break-words [overflow-wrap:anywhere]">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
                   })}
                   <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-base font-semibold text-white/95">{baseValue}</div>
                 </div>;
@@ -394,8 +394,8 @@ export default function Comparar() {
                 const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
                 const stateClass = st === 'equal' ? 'text-[#16c79a]' : st === 'different' ? 'text-amber-300' : st === 'not_comparable' ? 'text-red-300' : 'text-white/35';
                 const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
-                return <div key={ci} className={`flex items-center justify-between gap-2 border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
-                  <div className="min-w-0"><div className="font-mono text-sm leading-relaxed">{display}</div>{normalizedDisplay && <div className="mt-1 text-xs font-mono text-white/50">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
+                return <div key={ci} className={`flex min-w-0 items-center justify-between gap-2 overflow-hidden border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
+                  <div className="min-w-0"><div className="font-mono text-sm leading-relaxed whitespace-normal break-words [overflow-wrap:anywhere]">{display}</div>{normalizedDisplay && <div className="mt-1 text-xs font-mono text-white/50 whitespace-normal break-words [overflow-wrap:anywhere]">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
                   {!isBaseColumn && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 text-red-300" /> : <span className="text-white/20">—</span>)}
                 </div>;
               })}
