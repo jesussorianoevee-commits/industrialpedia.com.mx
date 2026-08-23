@@ -28,7 +28,7 @@ const RULES = [
     include: ['pneumatic', 'neumatic', 'compressed air', 'air preparation', 'air cylinder', 'pneumatic cylinder', 'solenoid valve', 'air valve', 'push in fitting', 'push to connect', 'pneumatic fitting', 'air gripper'],
     exclude: ['laboratory condenser', 'vacuum pump', 'centrifugal pump', 'peristaltic pump', 'liquid pump'],
     manufacturerHints: ['smc', 'nihon pisco'], 
-    minScore: 45
+    minScore: 35
   }
 ];
 
