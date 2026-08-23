@@ -138,7 +138,8 @@ const RULES = [
       { term: 'wind velocity meter', weight: 45 }, { term: 'wind flow meter', weight: 45 },
       { term: 'measurement range', weight: 20 }, { term: 'measuring range', weight: 20 },
       { term: 'straight scale', weight: 40 }, { term: 'automatic scale', weight: 40 },
-      { term: 'thermometer', weight: 40 }, { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 },
+      { term: 'thermometer', weight: 40 }, { term: 'data logger', weight: 40 }, { term: 'vibration meter', weight: 45 },
+      { term: 'anemometer', weight: 45 }, { term: 'microscope', weight: 45 }, { term: 'loupe', weight: 35 }, { term: 'magnification', weight: 20 },
       { term: 'manometro', weight: 45 }, { term: 'medidor de presion', weight: 45 }
     ],
     exclude: [],
@@ -158,7 +159,7 @@ const RULES = [
       { term: 'micro pipette', weight: 50 }, { term: 'pipette tip', weight: 45 },
       { term: 'tip for micro pipette', weight: 50 }, { term: 'tube holder', weight: 40 },
       { term: 'bottle top dispenser', weight: 50 }, { term: 'neoprene plug', weight: 40 },
-      { term: 'long plug', weight: 30 }
+      { term: 'neoprene long plug', weight: 45 }, { term: 'long plug', weight: 30 }
     ],
     exclude: [],
     manufacturerHints: ['as one'],
@@ -178,6 +179,21 @@ const RULES = [
     ],
     exclude: ['vacuum pump'],
     manufacturerHints: ['jabsco', 'grundfos', 'ebara'],
+    minScore: 35,
+    manufacturerCorroborationMinProductScore: 30,
+    manufacturerCorroborationBonus: 5
+  },
+  {
+    area: 'mecanica-transmision',
+    include: [
+      { term: 'ball bearing', weight: 50 }, { term: 'deep groove ball bearing', weight: 55 },
+      { term: 'dowel pin', weight: 45 }, { term: 'hexagon socket head cap screw', weight: 50 },
+      { term: 'aluminum extrusion profile', weight: 50 }, { term: 'bearing', weight: 25 },
+      { term: 'rodamiento', weight: 45 }, { term: 'pasador cilindrico', weight: 45 },
+      { term: 'tornillo de cabeza cilindrica', weight: 45 }, { term: 'perfil de aluminio', weight: 45 }
+    ],
+    exclude: [],
+    manufacturerHints: ['skf', 'fag', 'ina', 'nsk', 'timken'],
     minScore: 35,
     manufacturerCorroborationMinProductScore: 30,
     manufacturerCorroborationBonus: 5
