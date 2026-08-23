@@ -27,11 +27,10 @@ const previous = new Map(unique.map((part) => [part.id, {
   fingerprint: buildClassificationFingerprint(part),
   rule_version: 'shadow-evidence-v3'
 }]));
-const next = [
-  ...unique,
-  { id: 's1', title: 'Inductive proximity sensor M18' },
-  { id: 'new1', title: 'K thermocouple probe' }
-];
+const next = unique.map((part) => part.id === 's1'
+  ? { ...part, title: 'Inductive proximity sensor M18' }
+  : part
+).concat([{ id: 'new1', title: 'K thermocouple probe' }]);
 const delta = selectChangedParts(next, previous);
 assert.equal(delta.changed.length, 2);
 assert.equal(delta.unchanged.length, unique.length - 1);
