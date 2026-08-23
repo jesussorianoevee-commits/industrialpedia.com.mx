@@ -14,7 +14,8 @@ export default async function (req: Request) {
     const qn = normalizePartNumber(q);
     const out = new Map<string, any>();
 
-    // 1) Knowledge Core: mayor confianza.
+    // Fuente única de sugerencias de producto: Knowledge Core interno.
+    // No mezclamos DiscoveryIndex ni resultados heredados de búsqueda web.
     const parts = await base44.asServiceRole.entities.Part.list('-updated_date', 2000).catch(() => []);
     for (const p of parts) {
       const fields = [p.part_number, p.manufacturer_name, p.title, p.description, p.category].filter(Boolean).join(' ');
@@ -29,25 +30,11 @@ export default async function (req: Request) {
       out.set(`pn:${norm(label)}`, { text: label, part_number: p.part_number || '', manufacturer: p.manufacturer_name || '', type: 'knowledge_core', score: exact ? 300 : prefix ? 250 : 200 });
     }
 
-    // 2) DiscoveryIndex: resultados descubiertos previamente.
-    const discoveries = await base44.asServiceRole.entities.DiscoveryIndex.filter(
-      { discovery_state: { $in: ['discovered', 'pending_verification', 'verified'] } }, '-last_seen', 3000
-    ).catch(() => []);
-    for (const d of discoveries) {
-      const fields = [d.candidate_part_number, d.manufacturer_name, d.title, d.description].filter(Boolean).join(' ');
-      const text = norm(fields);
-      const pn = norm(d.candidate_part_number);
-      const exact = qn && normalizePartNumber(d.candidate_part_number || '') === qn;
-      const prefix = pn.startsWith(norm(q));
-      const all = qt.length && qt.every((t) => text.includes(t));
-      if (!exact && !prefix && !all) continue;
-      const label = d.candidate_part_number || d.title || d.manufacturer_name;
-      if (!label) continue;
-      const key = `pn:${norm(label)}`;
-      if (!out.has(key)) out.set(key, { text: label, part_number: d.candidate_part_number || '', manufacturer: d.manufacturer_name || '', type: 'discovery', score: exact ? 200 : prefix ? 150 : 100, image: d.image_url || '' });
-    }
+    // Los descubrimientos históricos se conservan para trazabilidad e ingestión,
+    // pero no se usan en el autocompletado: pueden contener títulos provenientes
+    // del antiguo buscador web y contaminar la experiencia del catálogo interno.
 
-    // 3) Manufacturers: útil para completar nombres de fabricante.
+    // 2) Manufacturers: útil para completar nombres de fabricante.
     const manufacturers = await base44.asServiceRole.entities.Manufacturer.list('name', 1000).catch(() => []);
     for (const m of manufacturers) {
       const name = String(m.name || '').trim();
