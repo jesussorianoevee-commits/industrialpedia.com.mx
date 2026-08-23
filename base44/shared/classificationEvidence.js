@@ -330,7 +330,8 @@ export function classifyWithEvidence(part = {}) {
   const winner = acceptedCandidates[0] || null;
   const runnerUp = acceptedCandidates[1] || null;
   const scoreMargin = winner ? winner.score - (runnerUp?.score ?? 0) : 0;
-  const ambiguous = Boolean(winner && runnerUp && scoreMargin < 10);
+  const competingAccepted = acceptedCandidates.length > 1;
+  const ambiguous = Boolean(winner && competingAccepted);
   const status = !winner ? 'shadow_review' : ambiguous ? 'shadow_review' : 'auto_accept';
   return {
     area: winner?.area || null,
