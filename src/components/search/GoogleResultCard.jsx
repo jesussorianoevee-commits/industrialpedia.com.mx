@@ -3,6 +3,7 @@ import { FileText, Globe, ExternalLink, ArrowRight, Loader2, GitCompareArrows } 
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
+import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -44,6 +45,7 @@ function buildReferenceSpecs(result) {
 
 export default function GoogleResultCard({ result, query, onFicha }) {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
@@ -130,7 +132,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
             <div className="mt-2 flex flex-wrap gap-1.5">
               {result.basic_specs.map((s, i) => (
                 <span key={i} className="inline-flex items-center text-[10px] font-mono text-white/70 bg-white/[0.04] border border-white/10 rounded px-1.5 py-0.5">
-                  <span className="text-white/40 mr-1">{s.attribute}:</span>{s.value}
+                  <span className="text-white/40 mr-1">{localizeSpecAttribute(s.attribute || s.attribute_name || '', language)}:</span>{s.value}
                 </span>
               ))}
             </div>
