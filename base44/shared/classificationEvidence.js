@@ -83,9 +83,9 @@ const RULES = [
     area: 'sensores',
     include: [
       { term: 'proximity sensor', weight: 45 }, { term: 'inductive sensor', weight: 45 },
-      { term: 'photoelectric sensor', weight: 45 }, { term: 'optical sensor', weight: 45 }, { term: 'temperature sensor', weight: 40 }
+      { term: 'photoelectric sensor', weight: 45 }, { term: 'optical sensor', weight: 45 }, { term: 'temperature sensor', weight: 40 },
       { term: 'probe sensor', weight: 40 }, { term: 'sensor de proximidad', weight: 45 },
-      { term: 'sensor inductivo', weight: 45 }, { term: 'sensor fotoelectrico', weight: 45 }, { term: 'sensor optico', weight: 45 }
+      { term: 'sensor inductivo', weight: 45 }, { term: 'sensor fotoelectrico', weight: 45 }, { term: 'sensor optico', weight: 45 },
       { term: 'sensor de temperatura', weight: 40 }, { term: 'ph sensor', weight: 40 },
       { term: 'thermocouple', weight: 45 }, { term: 'termopar', weight: 45 },
       { term: 'k thermocouple', weight: 50 }, { term: 'thermocouple element', weight: 45 },
