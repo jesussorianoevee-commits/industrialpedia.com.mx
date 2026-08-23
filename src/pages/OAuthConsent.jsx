@@ -34,8 +34,8 @@ export default function OAuthConsent() {
         // bearer token) so the server can list the granted tools for a
         // signed-in user — the same auth the approve/deny call sends; without
         // it the display request is anonymous and shows no tools.
-        const infoHeaders = {};
-        if (appParams.token) infoHeaders.Authorization = "Bearer " + appParams.token;
+        const infoHeaders = new Headers();
+        if (appParams.token) infoHeaders.set("Authorization", "Bearer " + appParams.token);
         const res = await fetch(
           `/api/apps/${appParams.appId}/mcp/consent-info?handle=${encodeURIComponent(ctx)}`,
           { credentials: "include", headers: infoHeaders },
@@ -83,10 +83,10 @@ export default function OAuthConsent() {
     setSubmitting(true);
     setError("");
     try {
-      const headers = { "Content-Type": "application/json" };
+      const headers = new Headers({ "Content-Type": "application/json" });
       // Cookie-backed sessions carry no token; sending "Bearer null" would
       // shadow the valid cookie, so add the header only when a token exists.
-      if (appParams.token) headers.Authorization = "Bearer " + appParams.token;
+      if (appParams.token) headers.set("Authorization", "Bearer " + appParams.token);
       const res = await fetch(`/api/apps/${appParams.appId}/mcp/authorize-grant`, {
         method: "POST",
         credentials: "include",
