@@ -3,7 +3,7 @@ import { FileText, Globe, ExternalLink, ArrowRight, Loader2, GitCompareArrows } 
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText } from '@/lib/i18n';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -96,7 +96,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
             <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-wide truncate">{result.product_identity.manufacturer}</div>
           )}
           <div className={`text-sm font-semibold leading-snug truncate ${result.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>
-            {result.product_identity?.short_description || result.product_name || result.title || 'Producto encontrado'}
+            {localizeTechnicalText(result.product_identity?.short_description || result.product_name || result.title || 'Producto encontrado', language)}
           </div>
           {result.product_identity?.variants?.length > 1 && (
             <div className="mt-0.5 text-[10px] text-amber-400/80">{result.product_identity.variants.length} variantes detectadas</div>
@@ -127,12 +127,12 @@ export default function GoogleResultCard({ result, query, onFicha }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          {result.description && <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{result.description}</p>}
+          {result.description && <p className="text-white/55 text-xs leading-relaxed line-clamp-3">{localizeTechnicalText(result.description, language)}</p>}
           {Array.isArray(result.basic_specs) && result.basic_specs.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {result.basic_specs.map((s, i) => (
                 <span key={i} className="inline-flex items-center text-[10px] font-mono text-white/70 bg-white/[0.04] border border-white/10 rounded px-1.5 py-0.5">
-                  <span className="text-white/40 mr-1">{localizeSpecAttribute(s.attribute || s.attribute_name || '', language)}:</span>{s.value}
+                  <span className="text-white/40 mr-1">{localizeSpecAttribute(s.attribute || s.attribute_name || '', language)}:</span>{localizeSpecValue(s.value, language)}
                 </span>
               ))}
             </div>
