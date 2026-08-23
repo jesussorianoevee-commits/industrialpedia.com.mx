@@ -18,7 +18,7 @@ function cacheKey(partNumber, manufacturer) {
   return `industrialpedia:image:v2:${mf}:${pn}`;
 }
 
-export async function resolveProductImage({ partNumber, manufacturer = '', existingUrl = '' } = {}) {
+export async function resolveProductImage({ partNumber, manufacturer = '', sourceUrl = '', existingUrl = '' } = {}) {
   const existing = normalizeImageUrl(existingUrl);
   if (existing) return { image_url: existing, status: 'existing', verified: false };
 
@@ -39,7 +39,8 @@ export async function resolveProductImage({ partNumber, manufacturer = '', exist
   try {
     const response = await base44.functions.invoke('AdquirirImagenAPI', {
       part_number: exactPartNumber,
-      manufacturer_hint: expectedManufacturer
+      manufacturer_hint: expectedManufacturer,
+      source_url: normalizeImageUrl(sourceUrl) ? sourceUrl : ''
     });
     const result = response?.data?.result || {};
     const image_url = normalizeImageUrl(result.image_url);
