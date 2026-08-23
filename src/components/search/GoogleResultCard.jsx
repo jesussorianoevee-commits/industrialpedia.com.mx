@@ -173,7 +173,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
                 });
                 navigate('/comparar-referencia', { state: { reference: response.reference, result: response.result } });
               } catch (e) {
-                setCompareError(e?.message || 'No se pudo comparar esta referencia.');
+                setCompareError(e?.message || t.unableToCompareReference);
               } finally {
                 setCompareLoading(false);
               }
@@ -181,7 +181,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
             disabled={compareLoading}
             className="flex items-center gap-1 bg-[#168fd5]/15 hover:bg-[#168fd5]/25 disabled:opacity-60 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#168fd5]/30 transition-colors"
           >
-            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Comparando…</> : <><GitCompareArrows className="w-3 h-3" /> Comparar alternativas</>}
+            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compareAlternatives}</>} 
           </button>
         )}
         <a
@@ -190,7 +190,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
           rel="noreferrer"
           className="flex items-center gap-1 text-white/60 hover:text-white text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 transition-colors"
         >
-          Ver fuente <ExternalLink className="w-3 h-3" />
+          {t.viewSource} <ExternalLink className="w-3 h-3" />
         </a>
       </div>
     </div>
