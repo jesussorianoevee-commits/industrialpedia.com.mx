@@ -231,7 +231,10 @@ export async function getPartTranslation(partId, language) {
 
   try {
     let translation = await read();
-    if (!translation?.name) {
+    // Una traducción parcial no debe considerarse válida: provocaba fichas
+    // mezcladas (título traducido pero descripción/especificaciones en inglés).
+    const incomplete = !translation || !translation.name || !translation.description;
+    if (incomplete) {
       try {
         await base44.functions.invoke('EnsurePartTranslations', {
           part_ids: [id],
@@ -242,7 +245,10 @@ export async function getPartTranslation(partId, language) {
         // El contenido canónico sigue siendo el fallback autoritativo.
       }
     }
-    return translation?.name ? translation : null;
+    // Devolvemos cualquier contenido localizado útil. Cada campo se aplica de
+    // forma independiente en la ficha; así nunca se descarta una traducción
+    // válida solo porque otro campo todavía esté pendiente.
+    return translation || null;
   } catch {
     return null;
   }
