@@ -87,6 +87,10 @@ const RULES = [
       { term: 'probe sensor', weight: 40 }, { term: 'sensor de proximidad', weight: 45 },
       { term: 'sensor inductivo', weight: 45 }, { term: 'sensor fotoelectrico', weight: 45 },
       { term: 'sensor de temperatura', weight: 40 }, { term: 'ph sensor', weight: 40 },
+      { term: 'thermocouple', weight: 45 }, { term: 'termopar', weight: 45 },
+      { term: 'k thermocouple', weight: 50 }, { term: 'thermocouple element', weight: 45 },
+      { term: 'coated thermocouple', weight: 45 }, { term: 'sheath thermocouple', weight: 45 },
+      { term: 'temperature probe', weight: 40 }, { term: 'sonda de temperatura', weight: 40 },
       { term: 'handle probe sensor', weight: 45 }, { term: 'sensing range', weight: 20 },
       { term: 'switching frequency', weight: 20 }, { term: 'sensor', weight: 15 }
     ],
@@ -115,6 +119,7 @@ const RULES = [
     include: [
       { term: 'power supply', weight: 40 }, { term: 'dc power supply', weight: 45 },
       { term: 'stabilized dc power supply', weight: 50 }, { term: 'fieldbus node', weight: 45 },
+      { term: 'ac adapter', weight: 35 }, { term: 'ac adapters', weight: 35 }, { term: 'dc inverter welder', weight: 45 },
       { term: 'plc', weight: 40 },
       { term: 'programmable logic controller', weight: 50 },
       { term: 'profinet', weight: 30 }, { term: 'simatic et 200', weight: 45 },
@@ -149,7 +154,11 @@ const RULES = [
       { term: 'sample cup', weight: 40 }, { term: 'laboratory tube', weight: 45 },
       { term: 'stirring shaft', weight: 45 }, { term: 'ptfe stirring shaft', weight: 50 },
       { term: 'laboratory condenser', weight: 50 }, { term: 'heat resistance range', weight: 20 },
-      { term: 'pharmed', weight: 30 }
+      { term: 'pharmed', weight: 30 }, { term: 'micropipette', weight: 50 },
+      { term: 'micro pipette', weight: 50 }, { term: 'pipette tip', weight: 45 },
+      { term: 'tip for micro pipette', weight: 50 }, { term: 'tube holder', weight: 40 },
+      { term: 'bottle top dispenser', weight: 50 }, { term: 'neoprene plug', weight: 40 },
+      { term: 'long plug', weight: 30 }
     ],
     exclude: [],
     manufacturerHints: ['as one'],
