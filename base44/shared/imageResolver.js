@@ -93,20 +93,34 @@ function extractJsonLdProductImages(html, baseUrl) {
   return images;
 }
 
-// Imágenes HTML <img>: extrae src, data-src, alt, title.
+// Imágenes HTML <img>: soporta atributos normales, lazy-loading y srcset.
+// Muchos catálogos industriales modernos no colocan la imagen real en `src`
+// hasta que se ejecuta JavaScript; aquí aprovechamos los atributos estáticos
+// disponibles sin inventar ni cruzar imágenes entre productos.
 function extractHtmlImages(html, baseUrl) {
   const images = [];
   const tagRe = /<img\s[^>]*>/gi;
   let tagMatch;
   while ((tagMatch = tagRe.exec(String(html || '')))) {
     const tag = tagMatch[0];
-    const srcMatch = tag.match(/(?:data-src|data-lazy-src|src)=["']([^"']+)["']/i);
-    if (!srcMatch) continue;
-    const url = resolveRelativeUrl(srcMatch[1], baseUrl);
+    const attrMatch = tag.match(/(?:data-original|data-zoom-image|data-image|data-src|data-lazy-src|data-lazy|src)=["']([^"']+)["']/i);
+    const srcsetMatch = tag.match(/(?:data-srcset|srcset)=["']([^"']+)["']/i);
     const altMatch = tag.match(/alt=["']([^"']*)["']/i);
     const titleMatch = tag.match(/title=["']([^"']*)["']/i);
     const alt = (altMatch?.[1] || titleMatch?.[1] || '').trim();
-    images.push({ url, alt, method: 'html_generic', context: alt });
+
+    if (attrMatch?.[1]) {
+      images.push({ url: resolveRelativeUrl(attrMatch[1], baseUrl), alt, method: 'html_generic', context: alt });
+    }
+
+    // srcset puede contener varias resoluciones. Conservamos todas y el scoring
+    // posterior selecciona una URL válida; no dependemos del placeholder de `src`.
+    if (srcsetMatch?.[1]) {
+      for (const entry of srcsetMatch[1].split(',')) {
+        const candidate = entry.trim().split(/\s+/)[0];
+        if (candidate) images.push({ url: resolveRelativeUrl(candidate, baseUrl), alt, method: 'html_generic', context: alt });
+      }
+    }
   }
   return images;
 }
