@@ -18,14 +18,29 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
 
         <style>{`
           .capu-loader { filter: drop-shadow(0 16px 24px rgba(0,0,0,.32)); }
-          .capu-base { display: block; }
+          .capu-base {
+            display: block;
+            image-rendering: auto;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+            filter: contrast(1.04) brightness(1.04) saturate(.96);
+            animation: capu-tremble 2.4s ease-in-out infinite;
+          }
+          @keyframes capu-tremble {
+            0%, 100% { transform: translate3d(0,0,0) rotate(0deg); }
+            18% { transform: translate3d(-0.7px,0.4px,0) rotate(-0.25deg); }
+            32% { transform: translate3d(0.6px,-0.5px,0) rotate(0.22deg); }
+            46% { transform: translate3d(-0.45px,0.25px,0) rotate(-0.16deg); }
+            60% { transform: translate3d(0.5px,0.35px,0) rotate(0.18deg); }
+            76% { transform: translate3d(-0.35px,-0.3px,0) rotate(-0.12deg); }
+          }
           .capu-dot { animation: capu-dot 1.1s ease-in-out infinite; }
           .capu-dot.d1 { animation-delay: -0.22s; }
           .capu-dot.d2 { animation-delay: -0.11s; }
           .capu-progress { animation: capu-progress 1.5s ease-in-out infinite; }
           @keyframes capu-dot { 0%,80%,100% { opacity:.25; transform:translateY(0); } 40% { opacity:1; transform:translateY(-2px); } }
           @keyframes capu-progress { 0% { transform:translateX(-140%); } 50% { transform:translateX(120%); } 100% { transform:translateX(320%); } }
-          @media (prefers-reduced-motion: reduce) { .capu-dot,.capu-progress { animation:none !important; } }
+          @media (prefers-reduced-motion: reduce) { .capu-base,.capu-dot,.capu-progress { animation:none !important; } }
         `}</style>
       </div>
     </div>
