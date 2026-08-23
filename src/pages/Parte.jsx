@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { getPartTranslation, useLanguage } from '@/lib/i18n';
+import { getPartTranslation, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
@@ -82,10 +82,10 @@ export default function Parte() {
           id: p.id,
           part_number: p.part_number,
           manufacturer_name: p.manufacturer || '',
-          category: p.category || '',
-          description: p.description || p.name || '',
+          category: localizeTechnicalText(p.category || '', language),
+          description: localizeTechnicalText(p.description || p.name || '', language),
           validation_state: p.status || p.validation_state || 'processed',
-          display_name: p.name || p.product_name || p.title || p.part_number || '',
+          display_name: localizeTechnicalText(p.name || p.product_name || p.title || p.part_number || '', language),
           display_reference: getDisplayPartReference({
             part_number: p.part_number,
             name: p.name || p.product_name || p.title || ''
@@ -95,9 +95,9 @@ export default function Parte() {
         };
         const translation = await getPartTranslation(p.id, language);
         if (translation) {
-          normalizedPart.display_name = translation.name || normalizedPart.display_name;
-          normalizedPart.description = translation.description || normalizedPart.description;
-          normalizedPart.category = translation.category || normalizedPart.category;
+          normalizedPart.display_name = translation.name ? localizeTechnicalText(translation.name, language) : normalizedPart.display_name;
+          normalizedPart.description = translation.description ? localizeTechnicalText(translation.description, language) : normalizedPart.description;
+          normalizedPart.category = translation.category ? localizeTechnicalText(translation.category, language) : normalizedPart.category;
           normalizedPart.subcategory = translation.subcategory || '';
           normalizedPart.translation_specifications = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
           normalizedPart.translation_status = translation.status || 'machine_draft';
@@ -121,8 +121,12 @@ export default function Parte() {
             const value = isObject ? (raw.value ?? null) : raw;
             const unit = isObject ? (raw.unit ?? null) : null;
             const localized = translatedSpecifications[attribute];
-            const localizedAttribute = localized && typeof localized === 'object' ? (localized.attribute || localized.label || attribute) : (typeof localized === 'string' ? localized : attribute);
-            const localizedValue = localized && typeof localized === 'object' ? (localized.value ?? value) : value;
+            const localizedAttribute = localized && typeof localized === 'object'
+              ? (localized.attribute || localized.label || localizeSpecAttribute(attribute, language))
+              : (typeof localized === 'string' ? localized : localizeSpecAttribute(attribute, language));
+            const localizedValue = localized && typeof localized === 'object'
+              ? (localized.value ?? localizeSpecValue(value, language))
+              : localizeSpecValue(value, language);
             return {
               id: `${p.id}:${attribute}`,
               attribute_name: localizedAttribute,
