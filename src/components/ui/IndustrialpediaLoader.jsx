@@ -7,8 +7,6 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
         <div className="capu-loader relative h-56 w-56 sm:h-72 sm:w-72" aria-label="Industrialpedia cargando">
           <img src={CAPU_IMAGE} alt="Capuchina, mascota de Industrialpedia" className="capu-base absolute inset-0 h-full w-full object-contain select-none" draggable="false" />
           <img src={CAPU_IMAGE} alt="" aria-hidden="true" className="capu-gear absolute inset-0 h-full w-full object-contain select-none" draggable="false" />
-          <img src={CAPU_IMAGE} alt="" aria-hidden="true" className="capu-paw capu-paw-left absolute inset-0 h-full w-full object-contain select-none" draggable="false" />
-          <img src={CAPU_IMAGE} alt="" aria-hidden="true" className="capu-paw capu-paw-right absolute inset-0 h-full w-full object-contain select-none" draggable="false" />
         </div>
 
         <div className="mt-4 flex flex-col items-center gap-2">
@@ -21,43 +19,18 @@ export default function IndustrialpediaLoader({ fullScreen = false, label = 'Car
 
         <style>{`
           .capu-loader { filter: drop-shadow(0 16px 24px rgba(0,0,0,.32)); }
-          .capu-base { animation: capu-body 1.9s ease-in-out infinite; }
+          .capu-base { animation: capu-body 1.7s ease-in-out infinite; }
           .capu-gear {
             clip-path: circle(25% at 27% 67%);
             transform-origin: 27% 67%;
             animation: capu-gear 1.45s linear infinite;
           }
-          .capu-paw {
-            pointer-events: none;
-            transform-box: fill-box;
-            will-change: transform;
-          }
-          .capu-paw-left {
-            clip-path: polygon(32% 76%, 54% 76%, 55% 100%, 27% 100%);
-            transform-origin: 43% 88%;
-            animation: capu-paw-left 1.9s ease-in-out infinite;
-          }
-          .capu-paw-right {
-            clip-path: polygon(54% 76%, 80% 76%, 82% 100%, 51% 100%);
-            transform-origin: 66% 88%;
-            animation: capu-paw-right 1.9s ease-in-out infinite;
-          }
           .capu-dot { animation: capu-dot 1.1s ease-in-out infinite; }
           .capu-dot.d1 { animation-delay: -0.22s; }
           .capu-dot.d2 { animation-delay: -0.11s; }
           .capu-progress { animation: capu-progress 1.5s ease-in-out infinite; }
-          @keyframes capu-body { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+          @keyframes capu-body { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-6px) rotate(-1deg); } }
           @keyframes capu-gear { to { transform: rotate(360deg); } }
-          @keyframes capu-paw-left {
-            0%,100% { transform: translate(0,0) rotate(0deg); }
-            35% { transform: translate(-3px,2px) rotate(-3deg); }
-            65% { transform: translate(1px,-1px) rotate(2deg); }
-          }
-          @keyframes capu-paw-right {
-            0%,100% { transform: translate(0,0) rotate(0deg); }
-            35% { transform: translate(2px,-1px) rotate(2deg); }
-            65% { transform: translate(-2px,2px) rotate(-3deg); }
-          }
           @keyframes capu-dot { 0%,80%,100% { opacity:.25; transform:translateY(0); } 40% { opacity:1; transform:translateY(-2px); } }
           @keyframes capu-progress { 0% { transform:translateX(-140%); } 50% { transform:translateX(120%); } 100% { transform:translateX(320%); } }
           @media (prefers-reduced-motion: reduce) { .capu-base,.capu-gear,.capu-dot,.capu-progress { animation:none !important; } }
