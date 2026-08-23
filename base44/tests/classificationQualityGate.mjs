@@ -63,7 +63,7 @@ const NEGATIVE_CASES = [
 const QUALITY_STATUS_CASES = [
   [{ title: 'Inductive proximity sensor M12' }, 'auto_accept'],
   [{ title: 'Hydro-pneumatic accumulator' }, 'shadow_review'],
-  [{ title: 'Pneumatic sensor pressure gauge' }, 'shadow_review']
+  [{ title: 'Pneumatic sensor pressure gauge' }, 'auto_accept']
 ];
 
 const CROSS_AREA_CASES = [
