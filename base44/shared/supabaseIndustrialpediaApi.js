@@ -221,18 +221,33 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     };
   });
 
-  const compatible = enrichedAlternatives.some((a) => a.comparison.state === 'compatible');
-  const decision = enrichedAlternatives.length === 0
-    ? { state: 'insufficient', message: 'No se encontraron alternativas con datos técnicos comparables.' }
+  // Quality gate del comparador: un candidato no puede mostrarse como alternativa
+  // técnica si la matriz real encontró diferencias pero ninguna coincidencia.
+  // Esto evita que un candidato seleccionado por familia/categoría aparezca como
+  // "SIMILAR" cuando su comparación efectiva es 0/N.
+  const visibleAlternatives = enrichedAlternatives.filter((alt) => {
+    const comparison = alt.comparison || {};
+    const hasMatrix = Boolean(comparison.matrix_status);
+    const equal = Number(comparison.equal) || 0;
+    const different = Number(comparison.different) || 0;
+    const compared = Number(comparison.compared) || 0;
+
+    if (hasMatrix && compared > 0 && equal === 0 && different > 0) return false;
+    return true;
+  });
+
+  const compatible = visibleAlternatives.some((a) => a.comparison.state === 'compatible');
+  const decision = visibleAlternatives.length === 0
+    ? { state: 'insufficient', message: 'No se encontraron alternativas con evidencia técnica coincidente.' }
     : compatible
       ? { state: 'compatible_found', message: 'Se encontraron alternativas que cumplen las reglas de compatibilidad disponibles.' }
-      : { state: 'review_required', message: 'Se encontraron candidatos, pero la evidencia disponible no permite declarar intercambiabilidad.' };
+      : { state: 'review_required', message: 'Se encontraron candidatos con coincidencias técnicas, pero la evidencia disponible no permite declarar intercambiabilidad.' };
 
   return {
     base,
-    candidates_found: enrichedAlternatives.length,
+    candidates_found: visibleAlternatives.length,
     candidates_considered: data.candidates_considered || enrichedAlternatives.length,
-    alternatives: enrichedAlternatives,
+    alternatives: visibleAlternatives,
     compatibility_evaluable: true,
     decision,
     source: 'Knowledge Core / compare_part_candidates_public_v1'
