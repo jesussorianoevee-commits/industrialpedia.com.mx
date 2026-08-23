@@ -25,6 +25,18 @@ function isTechnicalDisplaySpec(spec) {
   return !/^(?:stock|inventory|availability|available|in stock|out of stock|quantity|qty|price|cost|msrp|list price|sale price|lead time|delivery|shipping|order status|cart|sku)$/i.test(attribute);
 }
 
+// Muchas fuentes externas entregan la descripción como un bloque de
+// "Etiqueta: valor" concatenado. Ese contenido ya se muestra abajo como
+// especificaciones estructuradas; repetirlo arriba deja la ficha mezclada entre
+// idiomas. Si no existe una traducción localizada, preferimos la estructura
+// técnica antes que mostrar un párrafo crudo en otro idioma.
+function isSpecificationBlob(text) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  const colonPairs = (value.match(/[^:]{2,80}:\s*[^:]{1,120}/g) || []).length;
+  return colonPairs >= 2 || (value.length > 120 && colonPairs >= 1);
+}
+
 export default function Parte() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -83,7 +95,7 @@ export default function Parte() {
         };
         const translation = await getPartTranslation(p.id, language);
         if (translation) {
-          normalizedPart.display_name = translation.name;
+          normalizedPart.display_name = translation.name || normalizedPart.display_name;
           normalizedPart.description = translation.description || normalizedPart.description;
           normalizedPart.category = translation.category || normalizedPart.category;
           normalizedPart.subcategory = translation.subcategory || '';
@@ -189,7 +201,7 @@ export default function Parte() {
               <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
             </div>
           </div>
-          {part.description && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
+          {part.description && (part.translation_language || !isSpecificationBlob(part.description)) && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
           {part.translation_status === 'machine_draft' && language !== 'es' && (
             <div className="mt-2 text-[10px] text-amber-300/60">{t.autoTranslation}</div>
           )}
