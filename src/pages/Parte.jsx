@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage } from '@/lib/i18n';
+import { getPartTranslation, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
@@ -82,25 +82,15 @@ export default function Parte() {
           original_description: p.description || p.name || '',
           image_url: p.image_url || p.image || p.product_image_url || ''
         };
-        try {
-          const translations = await base44.entities.PartTranslation.filter(
-            { part_id: p.id, language },
-            null,
-            5,
-            0,
-            ['name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
-          );
-          const translation = translations?.[0];
-          if (translation?.name) {
-            normalizedPart.display_name = translation.name;
-            normalizedPart.description = translation.description || normalizedPart.description;
-            normalizedPart.category = translation.category || normalizedPart.category;
-            normalizedPart.subcategory = translation.subcategory || '';
-            normalizedPart.translation_specifications = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
-            normalizedPart.translation_status = translation.status || 'machine_draft';
-          }
-        } catch {
-          // Original Knowledge Core content remains the fallback.
+        const translation = await getPartTranslation(p.id, language);
+        if (translation) {
+          normalizedPart.display_name = translation.name;
+          normalizedPart.description = translation.description || normalizedPart.description;
+          normalizedPart.category = translation.category || normalizedPart.category;
+          normalizedPart.subcategory = translation.subcategory || '';
+          normalizedPart.translation_specifications = translation.specifications && typeof translation.specifications === 'object' ? translation.specifications : {};
+          normalizedPart.translation_status = translation.status || 'machine_draft';
+          normalizedPart.translation_language = language;
         }
         setPart(normalizedPart);
 
@@ -163,7 +153,12 @@ export default function Parte() {
     );
   }
 
-  const st = STATE_LABELS[part.validation_state] || STATE_LABELS.processed;
+  const stateBase = STATE_LABELS[part.validation_state] || STATE_LABELS.processed;
+  const stateLabelKey = {
+    published: 'published', validated: 'validated', incomplete: 'incomplete',
+    rejected: 'rejected', processed: 'processed', verified: 'verified'
+  }[part.validation_state] || 'processed';
+  const st = { ...stateBase, label: t[stateLabelKey] || stateBase.label };
   const hasAnyEvidence = partEvidence.length > 0 || Object.values(evidenceBySpec).flat().length > 0;
 
   return (
@@ -201,7 +196,7 @@ export default function Parte() {
           )}
           <div className="flex items-center gap-2 mt-3 text-[11px]">
             {hasAnyEvidence ? (
-              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} evidencia(s) del componente</span>
+              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.componentEvidence}</span>
             ) : (
               <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}</span>
             )}
@@ -260,7 +255,7 @@ export default function Parte() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
-          <button disabled title="Pilar ENCONTRAR — próxima iteración" className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">Encontrar alternativas</button>
+          <button disabled title={t.findAlternatives} className="flex-1 text-white/60 text-xs font-medium px-3 py-2 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.findAlternatives}</button>
           <Link to={`/comparar/${part.id}?pn=${encodeURIComponent(part.part_number)}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
         </div>
       </main>
