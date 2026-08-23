@@ -199,6 +199,7 @@ export default function Buscar() {
 
   const kcResults = kcData?.knowledge_core_results || [];
   const discoveryResults = kcData?.discovery_results || [];
+  const translationAttemptsRef = useRef(new Set());
 
   // Localize the current result page in one batch. The original Part record
   // remains the fallback and technical identifiers are never translated.
@@ -206,7 +207,12 @@ export default function Buscar() {
     let cancelled = false;
     const localize = async () => {
       if (!kcData || kcResults.length === 0) return;
-      if (kcResults.every((result) => result?.translation_language === language)) return;
+      const signature = `${language}:${kcResults.map((result) => result?.id || result?.part_number || '').join('|')}`;
+      const hasOnlySettledTranslations = kcResults.every((result) =>
+        result?.translation_language === language && result?.translation_status !== 'machine_draft'
+      );
+      if (hasOnlySettledTranslations || translationAttemptsRef.current.has(signature)) return;
+      translationAttemptsRef.current.add(signature);
       const localized = await translateParts(kcResults, language);
       if (cancelled) return;
       if (localized !== kcResults) setKcData((prev) => prev ? { ...prev, knowledge_core_results: localized } : prev);
