@@ -434,7 +434,9 @@ export default async function (req) {
             const partRec = await base44.asServiceRole.entities.Part.create({
               manufacturer_id: manufacturerId, manufacturer_name: rec.manufacturer_name,
               part_number: partRecData.part_number, part_number_normalized: partRecData.part_number_normalized,
-              category: (source && source.name) || '', description: partRecData.description, validation_state: 'published'
+              // category is intentionally preserved from demonstrated source metadata only.
+              // Never write the CrawlSource display name as a product category.
+              category: '', description: partRecData.description, validation_state: 'published'
             });
             await autoTranslatePart(base44, partRec);
             const partEv = await base44.asServiceRole.entities.Evidence.create({
@@ -547,7 +549,9 @@ export default async function (req) {
         const partRec = await base44.asServiceRole.entities.Part.create({
           manufacturer_id: manufacturerId, manufacturer_name: rec.manufacturer_name,
           part_number: rec.part_number, part_number_normalized: rec.part_number_normalized,
-          category: (source && source.name) || '', description: rec.description, validation_state: 'published'
+          // category is intentionally blank here: CrawlSource.name is a source identity,
+          // not demonstrated product taxonomy. Canonical classification remains downstream/shadow.
+          category: '', description: rec.description, validation_state: 'published'
         });
         await autoTranslatePart(base44, partRec);
         const partEv = await base44.asServiceRole.entities.Evidence.create({
