@@ -206,7 +206,7 @@ export default function Comparar() {
               <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider ip-compare-match">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
-            <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
+            <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-2 2xl:grid-cols-3">
               {alternatives.map((c, i) => {
             const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
             const evidence = evidenceSummary(c, language);
@@ -228,7 +228,7 @@ export default function Comparar() {
               {c.product_name && <div className="mt-3 text-[10px] leading-relaxed text-white/45">{c.product_name}</div>}
               {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
                 <div className="flex items-center justify-between gap-2"><div className="text-sm font-bold uppercase tracking-wider text-white/55">Ficha técnica</div><div className="text-[9px] font-mono text-white/25">{c.specs.length} datos</div></div>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="mt-2 grid grid-cols-1 gap-2 2xl:grid-cols-2">
                   {(expandedSpecs[c.id] ? c.specs : c.specs.slice(0, 6)).map((s, j) => {
                     const baseSpec = (base.specs || []).find((b) => canonical(b) === canonical(s));
                     const propertyState = baseSpec ? stateFor(baseSpec, c) : 'candidate_only';
@@ -241,11 +241,11 @@ export default function Comparar() {
                       <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
                       <div className="mt-2 grid grid-cols-2 gap-2" dir="ltr">
                         <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
-                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
+                          <div className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/45" title={`Comparativa · ${c.part_number}`}>Comparativa · {c.part_number}</div>
                           <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s, language)}</div>
                         </div>
                         <div className="min-w-0 rounded border border-white/[0.06] bg-[#65a9e6]/[0.035] px-2 py-1.5">
-                          <div className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Original · {base.part_number}</div>
+                          <div className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/40" title={`Original · ${base.part_number}`}>Original · {base.part_number}</div>
                           <div className="mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed text-white/85">{baseValueForCard}</div>
                         </div>
                       </div>
