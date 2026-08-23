@@ -39,7 +39,7 @@ const RULES = [
     area: 'neumatica',
     include: [
       'pneumatic', 'pneumatics', 'neumatico', 'neumatica', 'neumaticos', 'neumaticas',
-      'compressed air', 'air preparation', 'air cylinder', 'pneumatic cylinder',
+      'compressed air', 'air compressor', 'air preparation', 'air cylinder', 'pneumatic cylinder',
       'pneumatic actuator', 'rotary actuator', 'air actuator', 'air gripper',
       'solenoid valve', 'air valve', 'quick exhaust valve',
       'push in fitting', 'push to connect', 'pneumatic fitting',
