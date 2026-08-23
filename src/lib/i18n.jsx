@@ -244,6 +244,20 @@ export function localizeTechnicalText(text, language = 'es') {
   }, original);
 }
 
+// Presentación limpia para títulos externos: elimina solo etiquetas comerciales
+// inequívocas y conserva fabricante, referencia, códigos, números y unidades.
+export function localizeProductName(name, language = 'es') {
+  let value = String(name || '').trim();
+  if (!value) return '';
+  const noise = ['CUSTOM', 'NEW', 'SALE', 'BEST SELLER', 'FREE SHIPPING', 'HOT SALE', 'WHOLESALE', 'PROMOTION'];
+  for (const token of noise) {
+    value = value.replaceAll(token, '');
+    value = value.replaceAll(token.toLowerCase(), '');
+  }
+  value = value.replace(/\s{2,}/g, ' ').trim();
+  return localizeTechnicalText(value, language);
+}
+
 export function localizeSpecValue(value, language = 'es') {
   if (value === null || value === undefined) return value;
   const raw = String(value).trim();
