@@ -3,7 +3,7 @@ import { FileText, Globe, ExternalLink, ArrowRight, Loader2, GitCompareArrows } 
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText } from '@/lib/i18n';
+import { useLanguage, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText } from '@/lib/i18n';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -45,7 +45,7 @@ function buildReferenceSpecs(result) {
 
 export default function GoogleResultCard({ result, query, onFicha }) {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
@@ -73,16 +73,18 @@ export default function GoogleResultCard({ result, query, onFicha }) {
         image_url: result.image_url || ''
       });
       const ficha = res?.data;
-      if (!ficha || ficha.found === false) throw new Error(ficha?.error || 'No se pudo extraer la ficha de esta fuente.');
+      if (!ficha || ficha.found === false) throw new Error(ficha?.error || t.unableToExtractSheet);
       onFicha(ficha);
     } catch (e) {
-      setErr(e?.message || 'No se pudo construir la ficha.');
+      setErr(e?.message || t.unableToBuildSheet);
     } finally {
       setLoading(false);
     }
   };
 
-  const st = SOURCE_TYPE_LABELS[result.source_type] || SOURCE_TYPE_LABELS.cse_configured;
+  const sourceKey = result.source_type === 'official' ? 'officialManufacturer' : result.source_type === 'distributor' ? 'distributor' : 'webSource';
+  const stBase = SOURCE_TYPE_LABELS[result.source_type] || SOURCE_TYPE_LABELS.cse_configured;
+  const st = { ...stBase, label: t[sourceKey] || stBase.label };
   const isFestoOfficial = String(result.manufacturer_name || result.product_identity?.manufacturer || '').toLowerCase() === 'festo';
   const referenceCategory = inferCategory(result);
   const referenceSpecs = buildReferenceSpecs(result);
@@ -96,16 +98,16 @@ export default function GoogleResultCard({ result, query, onFicha }) {
             <div className="text-[11px] text-[#5a9cd9] font-medium uppercase tracking-wide truncate">{result.product_identity.manufacturer}</div>
           )}
           <div className={`text-sm font-semibold leading-snug truncate ${result.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>
-            {localizeTechnicalText(result.product_identity?.short_description || result.product_name || result.title || 'Producto encontrado', language)}
+            {localizeProductName(result.product_identity?.short_description || result.product_name || result.title || t.productFound, language)}
           </div>
           {result.product_identity?.variants?.length > 1 && (
-            <div className="mt-0.5 text-[10px] text-amber-400/80">{result.product_identity.variants.length} variantes detectadas</div>
+            <div className="mt-0.5 text-[10px] text-amber-400/80">{result.product_identity.variants.length} {t.variantsDetected}</div>
           )}
           {result.product_identity?.part_number && (
             <div className="mt-0.5 text-xs font-mono text-white/60 truncate">{result.product_identity.part_number}</div>
           )}
           {result.product_identity?.source_title && result.product_identity.source_title !== result.product_identity?.short_description && (
-            <div className="mt-1 text-[10px] text-white/25 truncate">Título de la fuente: {result.product_identity.source_title}</div>
+            <div className="mt-1 text-[10px] text-white/25 truncate">{t.sourceTitle}: {result.product_identity.source_title}</div>
           )}
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
@@ -123,7 +125,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
               onError={() => setImageSrc('')}
             />
           ) : (
-            <div className="text-[10px] uppercase tracking-wider text-white/20 text-center px-2">Sin imagen verificada</div>
+            <div className="text-[10px] uppercase tracking-wider text-white/20 text-center px-2">{t.noVerifiedImage}</div>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -154,7 +156,7 @@ export default function GoogleResultCard({ result, query, onFicha }) {
           disabled={loading}
           className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] disabled:opacity-60 text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
         >
-          {loading ? <><Loader2 className="w-3 h-3 animate-spin" /> Extrayendo ficha…</> : <>Ver ficha <ArrowRight className="w-3 h-3" /></>}
+          {loading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.extractingSheet}</> : <>{t.viewSheet} <ArrowRight className="w-3 h-3" /></>}
         </button>
         {canCompareReference && (
           <button
