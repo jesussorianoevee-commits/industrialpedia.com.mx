@@ -10,7 +10,7 @@ import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { translateParts, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
-import { consumeTrialAction, getTrialRemaining } from '@/lib/trial';
+import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
 
 const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
@@ -321,6 +321,16 @@ export default function Buscar() {
             </div>
           )}
         </form>
+        {trialNotice === 'last' && (
+          <div className="mx-auto mt-2 max-w-2xl px-2 text-center text-xs text-[#65a9e6]">Te queda 1 prueba gratuita.</div>
+        )}
+        {trialNotice === 'limit' && (
+          <div className="mx-auto mt-3 max-w-md rounded-xl border border-white/10 bg-[#11161c] p-4 text-center shadow-xl">
+            <div className="font-semibold text-white">¿Deseas probar más?</div>
+            <div className="mt-1 text-sm text-white/50">Regístrate :)</div>
+            <button type="button" onClick={() => navigate(`/login?returnTo=${encodeURIComponent('/buscar')}`)} className="mt-4 w-full rounded-lg bg-[#65a9e6] px-4 py-2.5 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
+          </div>
+        )}
       </header>
 
       <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto w-full">
