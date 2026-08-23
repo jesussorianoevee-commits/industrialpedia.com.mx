@@ -21,6 +21,7 @@ import OAuthConsent from '@/pages/OAuthConsent';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
+import { ThemeProvider } from '@/lib/theme';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -65,7 +66,8 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
-    <LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -75,7 +77,8 @@ function App() {
           <Toaster />
         </QueryClientProvider>
       </AuthProvider>
-    </LanguageProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   )
 }
 
