@@ -90,7 +90,7 @@ export default async function (req: Request) {
     }
 
     return Response.json({
-      created: results.filter((r) => r.status === 'created').length,
+      created: results.reduce((sum, r) => sum + (r.created || 0) + (r.updated || 0), 0),
       skipped: results.filter((r) => r.status === 'already_current').length,
       failed: results.filter((r) => r.status === 'failed').length,
       results
