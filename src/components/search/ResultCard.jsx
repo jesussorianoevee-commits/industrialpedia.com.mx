@@ -28,32 +28,77 @@ export default function ResultCard({ result }) {
   const [materializing, setMaterializing] = useState(false);
   const [imageSrc, setImageSrc] = useState(result.image_url || '');
   const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
+  const [imageLookupPending, setImageLookupPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const initialUrl = typeof result.image_url === 'string' ? result.image_url.trim() : '';
+    const exactPartNumber = String(result.part_number || '').trim();
     setImageSrc(initialUrl);
     setImageVerified(result.image_verification_status === 'verified');
+    setImageLookupPending(false);
 
-    if (initialUrl || !result.id) return () => { cancelled = true; };
+    const useImage = (url, verified = false) => {
+      const cleanUrl = typeof url === 'string' ? url.trim() : '';
+      if (!cancelled && cleanUrl) {
+        setImageSrc(cleanUrl);
+        setImageVerified(Boolean(verified));
+        return true;
+      }
+      return false;
+    };
 
-    // Canonical fallback: if the Base44 search function is serving an older
-    // deployed payload, read the same part from the canonical Supabase API.
-    // This does not discover or guess images; it only retrieves a verified
-    // image already associated with this exact canonical part_id.
-    getPartIndustrialpedia(result.id)
-      .then((data) => {
-        const part = data?.part;
-        const url = typeof part?.image_url === 'string' ? part.image_url.trim() : '';
-        if (!cancelled && url) {
-          setImageSrc(url);
-          setImageVerified(part?.image_verification_status === 'verified');
+    const resolveImage = async () => {
+      // 1) La búsqueda canónica de Industrialpedia es la fuente principal.
+      // Volvemos a leer la ficha exacta para evitar que un payload resumido
+      // de resultados oculte una imagen que sí existe en el Knowledge Core.
+      if (!initialUrl && result.id) {
+        try {
+          const data = await getPartIndustrialpedia(result.id);
+          const part = data?.part;
+          if (useImage(part?.image_url, part?.image_verification_status === 'verified')) return;
+        } catch { /* continuar con adquisición exacta */ }
+      }
+
+      // 2) Si el Knowledge Core realmente no tiene imagen, usamos únicamente
+      // adquisición determinística por número de parte exacto. No hay IA, no hay
+      // coincidencias aproximadas y nunca se reutiliza la imagen de otra pieza.
+      if (!initialUrl && exactPartNumber) {
+        const cacheKey = `industrialpedia:image:${exactPartNumber.toLowerCase()}`;
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed?.image_url && useImage(parsed.image_url, parsed.verified === true)) return;
+            if (parsed?.status === 'not_found') return;
+          }
+        } catch {}
+
+        if (!cancelled) setImageLookupPending(true);
+        try {
+          const response = await base44.functions.invoke('AdquirirImagenAPI', {
+            part_number: exactPartNumber
+          });
+          const acquired = response?.data?.result || {};
+          const acquiredUrl = typeof acquired.image_url === 'string' ? acquired.image_url.trim() : '';
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(acquiredUrl
+              ? { image_url: acquiredUrl, verified: acquired.status === 'verified_candidate' }
+              : { status: 'not_found' }
+            ));
+          } catch {}
+          if (acquiredUrl) useImage(acquiredUrl, acquired.status === 'verified_candidate');
+        } catch {
+          // La ausencia o fallo de una API externa no debe inventar una imagen.
+        } finally {
+          if (!cancelled) setImageLookupPending(false);
         }
-      })
-      .catch(() => {});
+      }
+    };
 
+    if (!initialUrl) resolveImage();
     return () => { cancelled = true; };
-  }, [result.id, result.image_url, result.image_verification_status]);
+  }, [result.id, result.part_number, result.image_url, result.image_verification_status]);
   const [materializeError, setMaterializeError] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [alternativesLoading, setAlternativesLoading] = useState(false);
