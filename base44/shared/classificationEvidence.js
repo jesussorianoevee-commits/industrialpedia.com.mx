@@ -170,7 +170,16 @@ export function classifyWithEvidence(part = {}) {
       ? (rule.manufacturerCorroborationBonus ?? 0)
       : 0;
     const score = productScore + manufacturerScore - excludeHits.length * 80;
-    const accepted = score >= rule.minScore && productScore > 0 && excludeHits.length === 0;
+    const genericOnly = isGenericOnlyEvidence(validEvidence);
+    const compressorOnly = validEvidence.length === 1 && hasAnyEvidence(validEvidence, ['compressor', 'compresor']);
+    // Strong class concepts can pass directly. Generic compressor evidence is allowed
+    // only with corroboration; this recovers real compact compressors without opening
+    // weak textual mentions such as manuals or hybrid hydro-pneumatic products.
+    const accepted = score >= rule.minScore
+      && productScore > 0
+      && excludeHits.length === 0
+      && !(genericOnly && score < rule.minScore)
+      && !(compressorOnly && manufacturerScore === 0 && productScore < 35);
 
     return {
       area: rule.area,
@@ -180,7 +189,8 @@ export function classifyWithEvidence(part = {}) {
         include_terms: validEvidence.map((item) => item.term),
         negated_terms: negatedHits.map((item) => item.term),
         exclude_terms: excludeHits.map((item) => item.term),
-        manufacturer_hints: manufacturerHits
+        manufacturer_hints: manufacturerHits,
+        generic_only_evidence: genericOnly
       }
     };
   }).sort((a, b) => b.score - a.score);
