@@ -56,6 +56,7 @@ export default function ResultCard({ result }) {
   }, [result.id, result.image_url, result.image_verification_status]);
   const [materializeError, setMaterializeError] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
+  const [alternativesLoading, setAlternativesLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
   const { language, t } = useLanguage();
   const isVerified = imageVerified || result.discovery_state === 'verified' ||
@@ -85,6 +86,31 @@ export default function ResultCard({ result }) {
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
   const displayCategory = result.category && !/^category$/i.test(String(result.category).trim()) ? localizeTechnicalTerm(result.category, language) : '';
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
+  const canOpenComparator = Boolean(result.id || (result.discovery_id && result.part_number));
+
+  const openComparator = async () => {
+    setCompareError('');
+    if (result.id) {
+      navigate(`/comparar/${encodeURIComponent(result.id)}?pn=${encodeURIComponent(result.part_number || '')}`);
+      return;
+    }
+    if (result.discovery_id && result.part_number) {
+      setAlternativesLoading(true);
+      try {
+        const res = await base44.functions.invoke('MaterializeDiscovery', {
+          discovery_id: result.discovery_id,
+          query: result.part_number || result.title || ''
+        });
+        const partId = res?.data?.part_id;
+        if (!partId) throw new Error('No se pudo preparar la ficha para buscar alternativas.');
+        navigate(`/comparar/${encodeURIComponent(partId)}?pn=${encodeURIComponent(result.part_number || '')}`);
+      } catch (e) {
+        setCompareError(e?.message || 'No se pudieron buscar alternativas para esta referencia.');
+      } finally {
+        setAlternativesLoading(false);
+      }
+    }
+  };
 
   const stateLabel = { published: t.published, validated: t.validated, incomplete: t.incomplete, rejected: t.rejected, processed: t.processed }[STATE_LABELS[result.validation_state]] || t.processed;
   const st = isVerified
@@ -236,40 +262,80 @@ export default function ResultCard({ result }) {
             {t.viewSource} <ArrowRight className="w-3 h-3" />
           </a>
         ) : null}
-        <button
-          disabled
-          title={t.findAlternatives}
-          className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60"
-        >
-          {t.findAlternatives}
-        </button>
-        {canCompareReference ? (
-          <button
-            disabled={compareLoading}
-            onClick={async () => {
-              setCompareLoading(true);
-              setCompareError('');
-              try {
-                const response = await compareReferenceIndustrialpedia({
-                  manufacturer: 'Festo',
-                  partNumber: result.part_number || result.product_identity?.part_number || '',
-                  category: inferReferenceCategory(),
-                  specifications: referenceSpecs,
-                  limit: 5
-                });
-                navigate('/comparar-referencia', { state: { reference: response.reference, result: response.result } });
-              } catch (e) {
-                setCompareError(e?.message || 'No se pudo comparar esta referencia.');
-              } finally {
-                setCompareLoading(false);
-              }
-            }}
-            className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
-          >
-            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compareAlternatives}</>}
-          </button>
+        {canOpenComparator ? (
+          <>
+            <button
+              type="button"
+              disabled={alternativesLoading}
+              onClick={openComparator}
+              className="flex items-center gap-1 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60"
+            >
+              {alternativesLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.creatingSheet}</> : t.findAlternatives}
+            </button>
+            <button
+              type="button"
+              disabled={alternativesLoading}
+              onClick={openComparator}
+              className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
+            >
+              <GitCompareArrows className="w-3 h-3" /> {t.compare}
+            </button>
+          </>
+        ) : canCompareReference ? (
+          <>
+            <button
+              type="button"
+              disabled={compareLoading}
+              onClick={async () => {
+                setCompareLoading(true);
+                setCompareError('');
+                try {
+                  const response = await compareReferenceIndustrialpedia({
+                    manufacturer: 'Festo',
+                    partNumber: result.part_number || result.product_identity?.part_number || '',
+                    category: inferReferenceCategory(),
+                    specifications: referenceSpecs,
+                    limit: 5
+                  });
+                  navigate('/comparar-referencia', { state: { reference: response.reference, result: response.result } });
+                } catch (e) {
+                  setCompareError(e?.message || 'No se pudo comparar esta referencia.');
+                } finally {
+                  setCompareLoading(false);
+                }
+              }}
+              className="flex items-center gap-1 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60"
+            >
+              {t.findAlternatives}
+            </button>
+            <button
+              type="button"
+              disabled={compareLoading}
+              onClick={async () => {
+                setCompareLoading(true);
+                setCompareError('');
+                try {
+                  const response = await compareReferenceIndustrialpedia({
+                    manufacturer: 'Festo',
+                    partNumber: result.part_number || result.product_identity?.part_number || '',
+                    category: inferReferenceCategory(),
+                    specifications: referenceSpecs,
+                    limit: 5
+                  });
+                  navigate('/comparar-referencia', { state: { reference: response.reference, result: response.result } });
+                } catch (e) {
+                  setCompareError(e?.message || 'No se pudo comparar esta referencia.');
+                } finally {
+                  setCompareLoading(false);
+                }
+              }}
+              className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
+            >
+              {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compare}</>}
+            </button>
+          </>
         ) : (
-          <button disabled title={t.enableCompareWhenSpecs} className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.compare}</button>
+          <button type="button" onClick={() => setCompareError('Esta referencia todavía no tiene una identidad técnica suficiente para buscar alternativas.')} className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 hover:bg-white/[0.05]">{t.findAlternatives}</button>
         )}
       </div>
     </div>
