@@ -156,6 +156,6 @@ export async function autoTranslatePart(base44: any, part: any, options: { langu
   } catch (error) {
     // Translation must never block or roll back a valid technical Part ingestion.
     console.error('autoTranslatePart failed:', error?.message || error);
-    return { created: 0, skipped: existing.length, failed: missingLanguages.length };
+    return { created: 0, skipped: existing.length, failed: targetLanguages.length };
   }
 }
