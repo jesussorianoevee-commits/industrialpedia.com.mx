@@ -19,6 +19,8 @@ export async function autoTranslatePart(base44: any, part: any) {
 
   const sourceName = cleanText(part.name || part.product_name || part.description || part.part_number);
   const sourceDescription = cleanText(part.description || part.name || '');
+  const sourceManufacturer = cleanText(part.manufacturer_name || part.manufacturer || '');
+  const sourcePartNumber = cleanText(part.part_number || '');
   const sourceCategory = cleanText(part.category || '');
   const sourceSubcategory = cleanText(part.subcategory || '');
   const sourceSpecifications = part.specifications && typeof part.specifications === 'object' && !Array.isArray(part.specifications)
@@ -38,11 +40,17 @@ export async function autoTranslatePart(base44: any, part: any) {
       prompt: [
         'You are Industrialpedia technical terminology translator.',
         'Translate the product name, product description, category, subcategory and specification attribute labels into the requested languages.',
-        'Preserve exact technical identifiers, manufacturer names, model numbers, part numbers, standards, material grades, dimensions, units, voltages, currents, pressures, ratings and alphanumeric codes exactly as written.',
+        'The product name is a presentation title, not a raw marketplace listing. Normalize it into a concise technical product name in each target language.',
+        'Do not copy generic marketplace adjectives such as CUSTOM, NEW, HOT, SALE, BEST, FREE SHIPPING or seller boilerplate into the technical product name unless they are part of a verified manufacturer or model identifier.',
+        'Do not invent or guess a manufacturer. If the manufacturer is unknown, omit it from the presentation name.',
+        'Avoid repeating the same model/part number in the name when it is already available as a separate identifier, but preserve the exact identifier in the identifier fields.',
+        'Preserve exact technical identifiers, verified manufacturer names, model numbers, part numbers, standards, material grades, dimensions, units, voltages, currents, pressures, ratings and alphanumeric codes exactly as written.',
         'For specification values, translate only human-language text when necessary; never translate numbers, units, codes, dimensions or alphanumeric identifiers.',
         'Do not invent specifications. Do not add information that is absent from the source.',
         'Use concise terminology appropriate for industrial maintenance, automation and MRO catalogs.',
-        `Source name: ${sourceName}`,
+        `Verified manufacturer: ${sourceManufacturer || '[unknown]'}`,
+        `Part/model identifier: ${sourcePartNumber || '[unknown]'}`,
+        `Raw source name: ${sourceName}`,
         `Source description: ${sourceDescription}`,
         `Source category: ${sourceCategory}`,
         `Source subcategory: ${sourceSubcategory}`,
@@ -86,7 +94,8 @@ export async function autoTranslatePart(base44: any, part: any) {
       const specifications = item.specifications && typeof item.specifications === 'object' && !Array.isArray(item.specifications)
         ? item.specifications
         : {};
-      // Guard against an accidental empty/unchanged machine output for a language.
+      // Guard against an accidental empty output. The canonical Part remains
+      // untouched; this is presentation-only content.
       if (!name) continue;
       records.push({
         part_id: part.id,
