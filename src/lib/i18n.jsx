@@ -28,9 +28,25 @@ const EXTRA_TRANSLATIONS = {
 const LanguageContext = createContext(null);
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(() => localStorage.getItem('industrialpedia-language') || 'es');
-  useEffect(() => localStorage.setItem('industrialpedia-language', language), [language]);
-  const value = useMemo(() => ({ language, setLanguage, languages: LANGUAGES, t: { ...(translations[language] || translations.es), ...(EXTRA_TRANSLATIONS[language] || EXTRA_TRANSLATIONS.es) } }), [language]);
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem('industrialpedia-language');
+    return LANGUAGES.some((item) => item.code === saved) ? saved : 'es';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('industrialpedia-language', language);
+    // El selector debe cambiar también el idioma semántico del documento,
+    // no solo el texto visible de los componentes.
+    document.documentElement.lang = language === 'zh' ? 'zh-CN' : language;
+    document.documentElement.dir = 'ltr';
+  }, [language]);
+
+  const value = useMemo(() => ({
+    language,
+    setLanguage,
+    languages: LANGUAGES,
+    t: { ...(translations[language] || translations.es), ...(EXTRA_TRANSLATIONS[language] || EXTRA_TRANSLATIONS.es) }
+  }), [language]);
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
