@@ -215,7 +215,14 @@ const TECHNICAL_PHRASE_I18N = {
   'nozzle diameter': { es: 'Diámetro de boquilla', en: 'Nozzle diameter', de: 'Düsendurchmesser', fr: 'Diamètre de buse', zh: '喷嘴直径' },
   'metal portion material': { es: 'Material de la parte metálica', en: 'Metal portion material', de: 'Material des Metallteils', fr: 'Matériau de la partie métallique', zh: '金属部分材料' },
   'input voltage range': { es: 'Rango de voltaje de entrada', en: 'Input voltage range', de: 'Eingangsspannungsbereich', fr: 'Plage de tension d’entrée', zh: '输入电压范围' },
-  'output voltage range': { es: 'Rango de voltaje de salida', en: 'Output voltage range', de: 'Ausgangsspannungsbereich', fr: 'Plage de tension de sortie', zh: '输出电压范围' }
+  'output voltage range': { es: 'Rango de voltaje de salida', en: 'Output voltage range', de: 'Ausgangsspannungsbereich', fr: 'Plage de tension de sortie', zh: '输出电压范围' },
+  'stabilized dc power supply': { es: 'Fuente de alimentación de CC estabilizada', en: 'Stabilized DC power supply', de: 'Stabilisierte Gleichstromversorgung', fr: 'Alimentation CC stabilisée', zh: '稳压直流电源' },
+  'dc power supply': { es: 'Fuente de alimentación de CC', en: 'DC power supply', de: 'Gleichstromversorgung', fr: 'Alimentation CC', zh: '直流电源' },
+  'power supply': { es: 'Fuente de alimentación', en: 'Power supply', de: 'Stromversorgung', fr: 'Alimentation électrique', zh: '电源' },
+  'input current range': { es: 'Rango de corriente de entrada', en: 'Input current range', de: 'Eingangsstrombereich', fr: 'Plage de courant d’entrée', zh: '输入电流范围' },
+  'cooling method': { es: 'Método de enfriamiento', en: 'Cooling method', de: 'Kühlmethode', fr: 'Méthode de refroidissement', zh: '冷却方式' },
+  'natural air cooling': { es: 'Enfriamiento natural por aire', en: 'Natural air cooling', de: 'Natürliche Luftkühlung', fr: 'Refroidissement naturel par air', zh: '自然风冷' },
+  'package size': { es: 'Tamaño del paquete', en: 'Package size', de: 'Verpackungsgröße', fr: 'Dimensions de l’emballage', zh: '包装尺寸' }
 };
 
 const TECHNICAL_VALUE_I18N = {
