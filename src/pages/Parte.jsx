@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
@@ -28,6 +28,7 @@ function isTechnicalDisplaySpec(spec) {
 
 export default function Parte() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [part, setPart] = useState(null);
   const [specs, setSpecs] = useState([]);
   const [evidenceBySpec, setEvidenceBySpec] = useState({});
@@ -168,7 +169,7 @@ export default function Parte() {
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
       <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
-        <button type="button" onClick={() => window.history.back()} className="flex items-center gap-2 text-white/60 hover:text-white text-sm">
+        <button type="button" onClick={() => navigate('/buscar')} className="flex items-center gap-2 text-white/60 hover:text-white text-sm" aria-label="Volver al buscador">
           <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
         </button>
       </header>
