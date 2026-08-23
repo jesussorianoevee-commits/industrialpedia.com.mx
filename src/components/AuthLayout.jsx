@@ -1,5 +1,6 @@
 import React from 'react';
-import { Search, Crosshair, GitCompareArrows, Scale, Factory } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Crosshair, GitCompareArrows, Scale, Factory, ArrowLeft } from 'lucide-react';
 
 const pillars = [
   { icon: Search, label: 'Buscar' },
@@ -8,7 +9,7 @@ const pillars = [
   { icon: Scale, label: 'Decidir' },
 ];
 
-export default function AuthLayout({ icon: _icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: _icon, title, subtitle, footer, children, backTo, backLabel = 'Volver' }) {
   return (
     <div className="ip-auth-shell min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[1.05fr_0.95fr]">
       <section className="ip-auth-brand relative hidden overflow-hidden border-r border-border bg-[radial-gradient(circle_at_20%_15%,rgba(37,99,235,.24),transparent_32%),linear-gradient(145deg,#07111f,#0b1c31_60%,#06101d)] p-10 text-white lg:flex lg:flex-col">
@@ -30,6 +31,15 @@ export default function AuthLayout({ icon: _icon, title, subtitle, footer, child
 
       <main className="flex min-h-screen items-center justify-center px-4 py-8 sm:px-8">
         <div className="w-full max-w-md">
+          {backTo && (
+            <Link
+              to={backTo}
+              className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {backLabel}
+            </Link>
+          )}
           <div className="mb-7 text-center lg:hidden">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg"><Factory className="h-6 w-6" /></div>
             <div className="font-bold tracking-tight text-foreground">INDUSTRIALPEDIA</div>
