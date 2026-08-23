@@ -261,7 +261,8 @@ const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
   'laboratorio-cientifico': 3863,
   'limpieza-epp': 527,
   'mecanica-transmision': 68,
-  neumatica: 13,
+  // Verificado contra la clasificación canónica v4 (incluye señal de fabricante y exclusiones de falsos positivos).
+  neumatica: 52,
   'otros-mro': 335,
   'proceso-maquinaria': 6,
   robotica: 2,
@@ -276,7 +277,7 @@ function readCategoryStatsSnapshot() {
     // v4 invalida snapshots calculados con reglas anteriores de clasificación.
     // Nunca debemos mostrar primero un conteo de una taxonomía vieja y después
     // reemplazarlo por otro al terminar la revalidación.
-    const raw = localStorage.getItem('industrialpedia_category_stats_v4');
+    const raw = localStorage.getItem('industrialpedia_category_stats_v5');
     if (!raw) return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
     const parsed = JSON.parse(raw);
     if (!parsed?.value || typeof parsed.value !== 'object') return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
@@ -298,7 +299,7 @@ let categoryStatsCache = {
 
 function publishCategoryStats(value) {
   try {
-    localStorage.setItem('industrialpedia_category_stats_v4', JSON.stringify({ value, savedAt: Date.now() }));
+    localStorage.setItem('industrialpedia_category_stats_v5', JSON.stringify({ value, savedAt: Date.now() }));
   } catch {}
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('industrialpedia:category-stats-updated', { detail: value }));
