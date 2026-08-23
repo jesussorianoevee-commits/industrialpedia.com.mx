@@ -34,7 +34,7 @@ export default function ResultCard({ result }) {
 
   useEffect(() => {
     let cancelled = false;
-    const initialUrl = normalizeImageUrl(result.image_url);
+    const initialUrl = imageRetry > 0 ? '' : normalizeImageUrl(result.image_url);
     const exactPartNumber = String(result.part_number || '').trim();
     setImageSrc(initialUrl);
     setImageVerified(result.image_verification_status === 'verified');
@@ -82,7 +82,8 @@ export default function ResultCard({ result }) {
             partNumber: exactPartNumber,
             manufacturer: result.manufacturer_name || '',
             sourceUrl: result.source_url || result.document_url || result.image_source || '',
-            existingUrl: ''
+            existingUrl: '',
+            forceLookup: imageRetry > 0
           });
           const acquiredUrl = acquired.image_url || '';
           try {
@@ -102,7 +103,7 @@ export default function ResultCard({ result }) {
 
     if (!initialUrl) resolveImage();
     return () => { cancelled = true; };
-  }, [result.id, result.part_number, result.image_url, result.image_verification_status]);
+  }, [result.id, result.part_number, result.image_url, result.image_verification_status, result.manufacturer_name, result.source_url, result.document_url, imageRetry]);
   const [materializeError, setMaterializeError] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [alternativesLoading, setAlternativesLoading] = useState(false);
