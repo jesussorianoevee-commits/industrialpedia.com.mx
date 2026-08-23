@@ -8,7 +8,7 @@ import SpecList from '@/components/part/SpecList';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
 import { getDisplayPartReference } from '@/lib/partIdentity';
-import { normalizeImageUrl, resolveProductImage } from '@/lib/productImage';
+import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
@@ -95,7 +95,8 @@ export default function Parte() {
             name: p.name || p.product_name || p.title || ''
           }),
           original_description: p.description || p.name || '',
-          image_url: normalizeImageUrl(p.image_url || p.image?.image_url || p.image?.url || p.product_image_url || '')
+          image_url: normalizeImageUrl(p.image_url || p.image?.image_url || p.image?.url || p.product_image_url || ''),
+          source_url: p.source_url || p.product_url || p.url || p.source?.url || p.evidence?.[0]?.source?.url || ''
         };
         const translation = await getPartTranslation(p.id, language);
         if (translation) {
