@@ -63,8 +63,8 @@ function mapSupabaseResult(r: any) {
     spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
     source_ids: [],
     discovery_state: r.discovery_state || null,
-    source_url: null,
-    document_url: null,
+    source_url: r.source_url || r.product_url || r.url || r.source?.url || null,
+    document_url: r.document_url || r.datasheet_url || null,
     top_specs: r.specifications
       ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]: any) => ({
           attribute,
