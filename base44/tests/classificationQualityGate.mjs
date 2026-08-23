@@ -19,13 +19,14 @@ const GOLDEN_CASES = [
 ];
 
 const NEGATIVE_CASES = [
-  { title: 'This product is not pneumatic' },
-  { title: 'Este producto no es neumático' },
-  { title: 'Equipo sin sistema neumático integrado' },
-  { title: 'Hydro-pneumatic accumulator' },
-  { title: 'Pneumatic tire pressure gauge' },
-  { title: 'Vacuum pump' },
-  { title: 'Chapter 4 covers pneumatic systems overview' }
+  { title: 'This product is not pneumatic', expected: null },
+  { title: 'Este producto no es neumático', expected: null },
+  { title: 'Equipo sin sistema neumático integrado', expected: null },
+  { title: 'Hydro-pneumatic accumulator', expected: null },
+  // It must not contaminate Neumática; technically it is an instrument, not an unclassifiable string.
+  { title: 'Pneumatic tire pressure gauge', expected: 'instrumentacion-medicion' },
+  { title: 'Vacuum pump', expected: null },
+  { title: 'Chapter 4 covers pneumatic systems overview', expected: null }
 ];
 
 const CROSS_AREA_CASES = [
@@ -44,7 +45,7 @@ for (const [expected, part] of GOLDEN_CASES) {
 
 for (const part of NEGATIVE_CASES) {
   const result = classifyWithEvidence(part);
-  assert.equal(result.area, null, `negative: ${part.title} should remain unclassified, got ${result.area}`);
+  assert.equal(result.area, part.expected, `negative/cross-family: ${part.title} -> ${part.expected}, got ${result.area}`);
   checks += 1;
 }
 
