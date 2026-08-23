@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
-import { useLanguage, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
+import { useLanguage, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
 import { getDisplayPartReference } from '@/lib/partIdentity';
 
 function isUsableImageUrl(value) {
@@ -75,7 +75,7 @@ export default function ResultCard({ result }) {
   const normalizeIdentity = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const manufacturerIsSameAsPartNumber = Boolean(result.manufacturer_name && result.part_number && normalizeIdentity(result.manufacturer_name) === normalizeIdentity(result.part_number));
   const rawDisplayProductName = result.title || result.product_name || result.product_identity?.short_description || result.name || '';
-  const displayProductName = localizeTechnicalText(rawDisplayProductName, language);
+  const displayProductName = localizeProductName(rawDisplayProductName, language);
   const displayReference = getDisplayPartReference({
     part_number: result.part_number,
     name: displayProductName,
@@ -224,7 +224,7 @@ export default function ResultCard({ result }) {
             }}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] disabled:opacity-60 text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
-            {materializing ? (language === 'zh' ? '正在创建资料…' : language === 'de' ? 'Datenblatt wird erstellt…' : language === 'fr' ? 'Création de la fiche…' : language === 'en' ? 'Creating sheet…' : 'Creando ficha…') : (language === 'zh' ? '查看技术资料' : language === 'de' ? 'Technisches Datenblatt' : language === 'fr' ? 'Voir la fiche technique' : language === 'en' ? 'View technical sheet' : 'Ver ficha técnica')} <ArrowRight className="w-3 h-3" />
+            {materializing ? t.creatingSheet : t.viewTechnicalSheet} <ArrowRight className="w-3 h-3" />
           </button>
         ) : result.source_url ? (
           <a
@@ -266,7 +266,7 @@ export default function ResultCard({ result }) {
             }}
             className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
           >
-            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {language === 'zh' ? '比较中…' : language === 'de' ? 'Vergleich…' : language === 'fr' ? 'Comparaison…' : language === 'en' ? 'Comparing…' : 'Comparando…'}</> : <><GitCompareArrows className="w-3 h-3" /> {language === 'zh' ? '比较替代品' : language === 'de' ? 'Alternativen vergleichen' : language === 'fr' ? 'Comparer les alternatives' : language === 'en' ? 'Compare alternatives' : 'Comparar alternativas'}</>}
+            {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compareAlternatives}</>}
           </button>
         ) : (
           <button disabled title="Se habilita cuando la referencia externa tiene suficientes especificaciones técnicas." className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 cursor-not-allowed opacity-60">{t.compare}</button>
