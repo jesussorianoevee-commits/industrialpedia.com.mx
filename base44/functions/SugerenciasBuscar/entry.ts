@@ -18,14 +18,16 @@ export default async function (req: Request) {
     // No mezclamos DiscoveryIndex ni resultados heredados de búsqueda web.
     const parts = await base44.asServiceRole.entities.Part.list('-updated_date', 2000).catch(() => []);
     for (const p of parts) {
-      const fields = [p.part_number, p.manufacturer_name, p.title, p.description, p.category].filter(Boolean).join(' ');
-      const text = norm(fields);
+      // El autocompletado no busca texto libre en descripciones heredadas: esas
+      // descripciones pueden contener títulos del antiguo buscador web. Solo
+      // aceptamos coincidencias trazables de referencia o fabricante.
       const pn = norm(p.part_number);
+      const manufacturer = norm(p.manufacturer_name);
       const exact = qn && normalizePartNumber(p.part_number || '') === qn;
       const prefix = pn.startsWith(norm(q));
-      const all = qt.length && qt.every((t) => text.includes(t));
-      if (!exact && !prefix && !all) continue;
-      const label = p.part_number || p.title || p.manufacturer_name;
+      const manufacturerPrefix = manufacturer.startsWith(norm(q));
+      if (!exact && !prefix && !manufacturerPrefix) continue;
+      const label = p.part_number || p.manufacturer_name;
       if (!label) continue;
       out.set(`pn:${norm(label)}`, { text: label, part_number: p.part_number || '', manufacturer: p.manufacturer_name || '', type: 'knowledge_core', score: exact ? 300 : prefix ? 250 : 200 });
     }
