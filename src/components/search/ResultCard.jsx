@@ -5,6 +5,7 @@ import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustria
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage, localizeSpecAttribute, localizeTechnicalTerm, localizedCount } from '@/lib/i18n';
+import { getDisplayPartReference } from '@/lib/partIdentity';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -73,7 +74,13 @@ export default function ResultCard({ result }) {
   const isFestoDiscovery = String(result.manufacturer_name || '').toLowerCase() === 'festo' && result.discovery_state === 'discovered';
   const normalizeIdentity = (value) => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const manufacturerIsSameAsPartNumber = Boolean(result.manufacturer_name && result.part_number && normalizeIdentity(result.manufacturer_name) === normalizeIdentity(result.part_number));
-  const displayProductName = result.title || result.product_name || result.product_identity?.short_description || '';
+  const displayProductName = result.title || result.product_name || result.product_identity?.short_description || result.name || '';
+  const displayReference = getDisplayPartReference({
+    part_number: result.part_number,
+    name: displayProductName,
+    title: result.title,
+    product_name: result.product_name
+  });
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
   const displayCategory = result.category && !/^category$/i.test(String(result.category).trim()) ? localizeTechnicalTerm(result.category, language) : '';
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
@@ -95,8 +102,8 @@ export default function ResultCard({ result }) {
           </div>
           <div className="mt-1 text-white/50 text-xs">
             {displayManufacturer || (result.discovery_state === 'discovered' ? t.externalSource : '')}
-            {displayManufacturer && result.part_number ? ' · ' : ''}
-            {result.part_number ? `${t.partNumber}: ${result.part_number}` : ''}
+            {displayManufacturer && displayReference ? ' · ' : ''}
+            {displayReference ? `${t.partNumber}: ${displayReference}` : ''}
             {displayCategory ? ` · ${displayCategory}` : ''}
           </div>
         </div>
@@ -180,7 +187,7 @@ export default function ResultCard({ result }) {
       <div className="flex flex-wrap gap-2">
         {result.id ? (
           <Link
-            to={`/parte/${result.id}${result.part_number ? `?pn=${encodeURIComponent(result.part_number)}` : ''}`}
+            to={`/parte/${result.id}`}
             className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
           >
             {t.viewComponent} <ArrowRight className="w-3 h-3" />
