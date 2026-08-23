@@ -28,7 +28,7 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Bienvenido de nuevo" subtitle="Inicia sesión para continuar en Industrialpedia" footer={<><span>¿Aún no tienes una cuenta? </span><Link to="/register" className="font-medium text-blue-400 hover:underline">Crear cuenta</Link></>}>
+    <AuthLayout backTo={returnTo || '/'} backLabel="Volver a Industrialpedia" title="Bienvenido de nuevo" subtitle="Inicia sesión para continuar en Industrialpedia" footer={<><span>¿Aún no tienes una cuenta? </span><Link to="/register" className="font-medium text-blue-400 hover:underline">Crear cuenta</Link></>}>
       {error && <div className="mb-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2"><Label htmlFor="email" className="text-slate-200">Correo electrónico</Label><div className="relative"><Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"/><Input id="email" type="email" autoComplete="email" placeholder="tu@correo.com" value={email} onChange={(e)=>setEmail(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-slate-600" required /></div></div>
