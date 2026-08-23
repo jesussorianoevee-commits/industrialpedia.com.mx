@@ -8,7 +8,7 @@ import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
 import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
-import { translateParts, useLanguage } from '@/lib/i18n';
+import { useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
@@ -197,29 +197,12 @@ export default function Buscar() {
     navigate('/buscar');
   };
 
+  // La localización de cada resultado ya ocurre de forma determinista por
+  // reglas de código dentro de ResultCard (localizeProductName/localizeTechnicalText),
+  // aplicada directamente sobre el registro canónico. Aquí no se hace ninguna
+  // llamada a IA ni se sobreescribe el contenido original.
   const kcResults = kcData?.knowledge_core_results || [];
   const discoveryResults = kcData?.discovery_results || [];
-  const translationAttemptsRef = useRef(new Set());
-
-  // Localize the current result page in one batch. The original Part record
-  // remains the fallback and technical identifiers are never translated.
-  useEffect(() => {
-    let cancelled = false;
-    const localize = async () => {
-      if (!kcData || kcResults.length === 0) return;
-      const signature = `${language}:${kcResults.map((result) => result?.id || result?.part_number || '').join('|')}`;
-      const hasOnlySettledTranslations = kcResults.every((result) =>
-        result?.translation_language === language && result?.translation_status !== 'machine_draft'
-      );
-      if (hasOnlySettledTranslations || translationAttemptsRef.current.has(signature)) return;
-      translationAttemptsRef.current.add(signature);
-      const localized = await translateParts(kcResults, language);
-      if (cancelled) return;
-      if (localized !== kcResults) setKcData((prev) => prev ? { ...prev, knowledge_core_results: localized } : prev);
-    };
-    localize();
-    return () => { cancelled = true; };
-  }, [language, kcResults, kcData]);
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
 
   return (
