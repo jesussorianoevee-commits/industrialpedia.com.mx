@@ -3,6 +3,40 @@ import { autoTranslatePart } from '../../shared/autoTranslatePart.ts';
 
 const LANGUAGES = ['es', 'en', 'de', 'fr', 'zh'];
 const MAX_PARTS = 10;
+const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
+const CANONICAL_PART_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17`;
+
+async function loadCanonicalPart(id: string) {
+  const url = new URL(CANONICAL_PART_URL);
+  url.searchParams.set('mode', 'part');
+  url.searchParams.set('id', id);
+  const response = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      Accept: 'application/json'
+    }
+  });
+  const data = await response.json().catch(() => null);
+  const part = data?.part;
+  if (!response.ok || !data?.found || !part?.id) return null;
+
+  return {
+    id: String(part.id),
+    part_number: part.part_number || '',
+    manufacturer_name: part.manufacturer_name || part.manufacturer || '',
+    manufacturer: part.manufacturer_name || part.manufacturer || '',
+    name: part.name || part.product_name || part.title || part.part_number || '',
+    product_name: part.product_name || part.name || part.title || '',
+    description: part.description || part.name || part.product_name || '',
+    category: part.category || '',
+    subcategory: part.subcategory || '',
+    specifications: part.specifications && typeof part.specifications === 'object' && !Array.isArray(part.specifications)
+      ? part.specifications
+      : {}
+  };
+}
 
 /**
  * On-demand multilingual backfill for legacy Knowledge Core records.
@@ -23,9 +57,24 @@ export default async function (req: Request) {
     }
     if (!partIds.length) return Response.json({ created: 0, skipped: 0, failed: 0, part_ids: [] });
 
-    const parts = await base44.asServiceRole.entities.Part.filter({ id: { $in: partIds } }, '-updated_date', MAX_PARTS);
+    // Prefer the legacy Base44 Part when it exists, but the public catalog is
+    // now canonical in Supabase. A translation request must therefore also work
+    // for canonical IDs that were never duplicated into Base44.
+    const localParts = await base44.asServiceRole.entities.Part.filter({ id: { $in: partIds } }, '-updated_date', MAX_PARTS);
+    const partsById = new Map(localParts.map((part: any) => [String(part.id), part]));
+    const missingIds = partIds.filter((id) => !partsById.has(id));
+    const canonicalParts = await Promise.all(missingIds.map((id) => loadCanonicalPart(id).catch(() => null)));
+    for (const part of canonicalParts) {
+      if (part?.id) partsById.set(String(part.id), part);
+    }
+
     const results = [];
-    for (const part of parts) {
+    for (const requestedId of partIds) {
+      const part = partsById.get(requestedId);
+      if (!part) {
+        results.push({ part_id: requestedId, language, status: 'failed', error: 'canonical_part_not_found' });
+        continue;
+      }
       try {
         const existing = await base44.asServiceRole.entities.PartTranslation.filter(
           { part_id: part.id, language }, '-updated_date', 1
