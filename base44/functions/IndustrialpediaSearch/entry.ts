@@ -223,9 +223,9 @@ export default async function (req: Request) {
       },
       meta: {
         api_version: INDUSTRIALPEDIA_API_VERSION,
-        providers: ['supabase_knowledge_core', 'web_discovery'],
-        source_policy: null,
-        web_discovery: 'frozen_legacy'
+        providers: ['supabase_knowledge_core'],
+        source_policy: 'internal_knowledge_core_only',
+        web_discovery: 'disabled'
       }
     });
   } catch (error) {
