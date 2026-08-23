@@ -65,7 +65,9 @@ export function classifyWithEvidence(part = {}) {
     const excludeHits = hits(text, rule.exclude);
     const manufacturerHits = rule.manufacturerHints.filter((hint) => {
       const normalized = normalize(hint);
-      return ` ${manufacturer} `.includes(` ${normalized} `);
+      const paddedManufacturer = ` ${manufacturer} `;
+      if (normalized.includes(' ')) return paddedManufacturer.includes(` ${normalized} `);
+      return manufacturer.split(' ').includes(normalized);
     });
     const score = includeHits.length * 25 + manufacturerHits.length * 10 - excludeHits.length * 80;
     return {
