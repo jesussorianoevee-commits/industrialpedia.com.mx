@@ -8,9 +8,9 @@ import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 
 const STATE = {
-  compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] text-[#16c79a]', icon: ShieldCheck },
-  not_compatible: { label: 'NO COMPATIBLE', short: 'No compatible', cls: 'border-red-400/60 bg-red-400/[0.08] text-red-300', icon: XCircle },
-  review: { label: 'SIMILAR', short: 'Revisión técnica', cls: 'border-amber-400/60 bg-amber-400/[0.08] text-amber-300', icon: AlertTriangle },
+  compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] ip-compare-match', icon: ShieldCheck },
+  not_compatible: { label: 'NO COMPATIBLE', short: 'No compatible', cls: 'border-red-400/60 bg-red-400/[0.08] ip-compare-danger', icon: XCircle },
+  review: { label: 'SIMILAR', short: 'Revisión técnica', cls: 'border-amber-400/60 bg-amber-400/[0.08] ip-compare-warning', icon: AlertTriangle },
   insufficient: { label: 'DATOS INSUFICIENTES', short: 'Datos insuficientes', cls: 'border-white/20 bg-white/[0.03] text-white/45', icon: XCircle }
 };
 
@@ -63,9 +63,9 @@ function decisionVisualState(component) {
 }
 
 const DECISION_VISUAL = {
-  compatible: { label: 'COMPATIBLE', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.10] text-[#16c79a]', dot: 'bg-[#16c79a]' },
-  similar: { label: 'SIMILAR', cls: 'border-amber-400/60 bg-amber-400/[0.08] text-amber-300', dot: 'bg-amber-300' },
-  not_compatible: { label: 'NO COMPATIBLE', cls: 'border-red-400/60 bg-red-400/[0.08] text-red-300', dot: 'bg-red-400' }
+  compatible: { label: 'COMPATIBLE', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.10] ip-compare-match', dot: 'bg-[#16c79a]' },
+  similar: { label: 'SIMILAR', cls: 'border-amber-400/60 bg-amber-400/[0.08] ip-compare-warning', dot: 'bg-amber-300' },
+  not_compatible: { label: 'NO COMPATIBLE', cls: 'border-red-400/60 bg-red-400/[0.08] ip-compare-danger', dot: 'bg-red-400' }
 };
 
 function compactComparisonValue(value, language = 'es') {
@@ -80,7 +80,7 @@ function compactComparisonValue(value, language = 'es') {
 }
 
 function StatusBadge({ component, base = false, t }) {
-  if (base) return <span className="inline-flex items-center gap-1.5 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#16c79a]"><CheckCircle2 className="h-3.5 w-3.5" /> {t.baseComponent}</span>;
+  if (base) return <span className="inline-flex items-center gap-1.5 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3.5 w-3.5" /> {t.baseComponent}</span>;
   const meta = statusMeta(component, t);
   const Icon = meta.icon;
   const compared = component?.comparison?.compared || 0;
@@ -118,7 +118,7 @@ export default function Comparar() {
       <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Buscando alternativas compatibles' : 'Searching compatible alternatives'} />
     </div>
   );
-  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={() => window.history.back()} className="text-[#65a9e6]">← Volver a ficha</button></div>;
+  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={() => window.history.back()} className="ip-compare-accent">← Volver a ficha</button></div>;
 
   const base = data.base;
   const alternatives = data.alternatives || [];
@@ -141,12 +141,12 @@ export default function Comparar() {
     }
   }
 
-  return <div className="min-h-screen bg-[#080d12] text-white">
+  return <div className="ip-comparison min-h-screen bg-[#080d12] text-white">
     <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
         <button type="button" onClick={() => window.history.back()} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver"><ArrowLeft className="h-4 w-4" /></button>
         <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
-        <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 text-[#65a9e6]">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
+        <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 ip-compare-accent">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
         <div className="ml-auto flex items-center gap-2">
           <span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">{language.toUpperCase()}</span>
           <button
@@ -163,7 +163,7 @@ export default function Comparar() {
     </header>
 
     <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-7 w-full min-w-0">
-      <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs text-[#65a9e6] hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
+      <button type="button" onClick={() => window.history.back()} className="mb-4 flex items-center gap-2 text-xs ip-compare-accent hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} {t.candidatesConsulted}</div>
@@ -177,7 +177,7 @@ export default function Comparar() {
           <div>
             <StatusBadge component={base} base t={t} />
             <div className="mt-3 font-mono text-xl font-semibold text-white">{base.part_number}</div>
-            <div className="mt-1 text-sm text-[#65a9e6]">{base.manufacturer_name || t.manufacturerNotIndicated}</div>
+            <div className="mt-1 text-sm ip-compare-accent">{base.manufacturer_name || t.manufacturerNotIndicated}</div>
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
@@ -195,7 +195,7 @@ export default function Comparar() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
               {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
-              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider text-[#16c79a]">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
+              <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider ip-compare-match">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-3">
@@ -225,7 +225,7 @@ export default function Comparar() {
                     const baseSpec = (base.specs || []).find((b) => canonical(b) === canonical(s));
                     const propertyState = baseSpec ? stateFor(baseSpec, c) : 'candidate_only';
                     const isIncompatible = propertyState === 'different' && c.comparison?.state === 'not_compatible';
-                    const valueTone = propertyState === 'equal' ? 'text-[#16c79a]' : isIncompatible ? 'text-red-300' : propertyState === 'different' ? 'text-amber-300' : 'text-white/55';
+                    const valueTone = propertyState === 'equal' ? 'ip-compare-match' : isIncompatible ? 'ip-compare-danger' : propertyState === 'different' ? 'ip-compare-warning' : 'text-white/55';
                     const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
                     const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
                     const baseValueForCard = baseSpec ? val(baseSpec, language) : '—';
@@ -244,7 +244,7 @@ export default function Comparar() {
                     </div>;
                   })}
                 </div>
-                {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
+                {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider ip-compare-accent hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
               </div>}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
                 <span className="text-sm text-white/55">Resultado</span>
@@ -266,7 +266,7 @@ export default function Comparar() {
               <div className="grid border-b border-white/[0.08] bg-white/[0.025]" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
                 <div className="p-3 text-sm font-bold text-white/75">Dato</div>
                 {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-sm font-bold text-white/85">Comparativa · {c.part_number}</div>)}
-                <div className="border-l border-white/[0.06] p-3 text-sm font-bold text-[#65a9e6]">Original · {base.part_number}</div>
+                <div className="border-l border-white/[0.06] p-3 text-sm font-bold ip-compare-accent">Original · {base.part_number}</div>
               </div>
               {specRows.map((s, idx) => {
                 const values = alternatives.map((c) => {
@@ -282,7 +282,7 @@ export default function Comparar() {
                   <div className="p-3 text-base font-semibold text-white/80">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
                   {alternatives.map((c, i) => {
                     const state = states[i];
-                    const tone = state === 'equal' ? 'text-[#16c79a]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300') : state === 'not_comparable' ? 'text-red-300' : 'text-white/40';
+                    const tone = state === 'equal' ? 'ip-compare-match' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'ip-compare-danger' : 'ip-compare-warning') : state === 'not_comparable' ? 'ip-compare-danger' : 'text-white/40';
                     const bg = state === 'equal' ? 'bg-[#16c79a]/[0.07]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                     const icon = state === 'equal' ? '✓' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? '✕' : '⚠') : state === 'not_comparable' ? '✕' : '○';
                     return <div key={c.id || i} className={`min-w-0 overflow-hidden border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex min-w-0 items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span className="shrink-0" aria-hidden="true">{icon}</span><span className="min-w-0 whitespace-normal break-words [overflow-wrap:anywhere]">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
@@ -293,9 +293,9 @@ export default function Comparar() {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/55">
-            <span className="flex items-center gap-1.5"><span className="text-[#16c79a]">✓</span> Igual al original</span>
-            <span className="flex items-center gap-1.5"><span className="text-amber-300">⚠</span> Diferente / similar</span>
-            <span className="flex items-center gap-1.5"><span className="text-red-300">✕</span> Diferencia crítica</span>
+            <span className="flex items-center gap-1.5"><span className="ip-compare-match">✓</span> Igual al original</span>
+            <span className="flex items-center gap-1.5"><span className="ip-compare-warning">⚠</span> Diferente / similar</span>
+            <span className="flex items-center gap-1.5"><span className="ip-compare-danger">✕</span> Diferencia crítica</span>
           </div>
         </section>
 
@@ -327,7 +327,7 @@ export default function Comparar() {
                 <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
                   <div className="min-w-0">
                     <div className="text-[9px] uppercase tracking-wider text-white/30">{t.alternatives || 'Alternativa'}</div>
-                    <div className="mt-1 font-mono text-sm font-semibold text-[#65a9e6] break-all">{c.part_number}</div>
+                    <div className="mt-1 font-mono text-sm font-semibold ip-compare-accent break-all">{c.part_number}</div>
                     <div className="mt-0.5 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
                   </div>
                   <div className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${statusMeta(c, t).cls}`}>
@@ -340,11 +340,11 @@ export default function Comparar() {
                 <div className="divide-y divide-white/[0.06]">
                   {visible.map(({ s, originalValue, candidateValue, state }, j) => {
                     const valueClass = state === 'equal'
-                      ? 'text-[#16c79a]'
+                      ? 'ip-compare-match'
                       : state === 'different'
-                        ? (c.comparison?.state === 'not_compatible' ? 'text-red-300' : 'text-amber-300')
+                        ? (c.comparison?.state === 'not_compatible' ? 'ip-compare-danger' : 'ip-compare-warning')
                         : state === 'not_comparable'
-                          ? 'text-red-300'
+                          ? 'ip-compare-danger'
                           : 'text-white/35';
                     const stateIcon = state === 'equal' ? '✓' : state === 'different' ? '⚠' : state === 'not_comparable' ? '✕' : '○';
                     return (
@@ -371,7 +371,7 @@ export default function Comparar() {
                   <button
                     type="button"
                     onClick={() => setExpandedMobileSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))}
-                    className="w-full border-t border-white/[0.07] bg-[#65a9e6]/[0.04] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-wider text-[#65a9e6]"
+                    className="w-full border-t border-white/[0.07] bg-[#65a9e6]/[0.04] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-wider ip-compare-accent"
                   >
                     {expandedMobileSpecs[c.id] ? 'Ver menos' : `Ver más · ${mobileRows.length - 8} datos`}
                   </button>
@@ -390,7 +390,7 @@ export default function Comparar() {
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
                     {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}
                   </div>
-                  <div className="min-w-0"><div className="font-mono text-base font-semibold text-[#65a9e6] break-all">{c.part_number}</div><div className="mt-1 text-sm text-white/60">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/65">{c.product_name || c.description || ''}</div></div>
+                  <div className="min-w-0"><div className="font-mono text-base font-semibold ip-compare-accent break-all">{c.part_number}</div><div className="mt-1 text-sm text-white/60">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/65">{c.product_name || c.description || ''}</div></div>
                 </div>
               </div>)}
             </div>
@@ -405,11 +405,11 @@ export default function Comparar() {
                 const normalizedDisplay = normalizedDisplayFor(normalized, language);
                 const hasCandidateValue = candidate !== null && candidate !== undefined && candidate !== '';
                 const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
-                const stateClass = st === 'equal' ? 'text-[#16c79a]' : st === 'different' ? 'text-amber-300' : st === 'not_comparable' ? 'text-red-300' : 'text-white/35';
+                const stateClass = st === 'equal' ? 'ip-compare-match' : st === 'different' ? 'ip-compare-warning' : st === 'not_comparable' ? 'ip-compare-danger' : 'text-white/35';
                 const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
                 return <div key={ci} className={`flex min-w-0 items-center justify-between gap-2 overflow-hidden border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
                   <div className="min-w-0"><div className="font-mono text-sm leading-relaxed whitespace-normal break-words [overflow-wrap:anywhere]">{display}</div>{normalizedDisplay && <div className="mt-1 text-xs font-mono text-white/50 whitespace-normal break-words [overflow-wrap:anywhere]">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
-                  {!isBaseColumn && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 text-[#16c79a]" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 text-amber-300" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 text-red-300" /> : <span className="text-white/20">—</span>)}
+                  {!isBaseColumn && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 ip-compare-match" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 ip-compare-warning" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 ip-compare-danger" /> : <span className="text-white/20">—</span>)}
                 </div>;
               })}
             </div>)}
@@ -435,15 +435,15 @@ export default function Comparar() {
                   setLoadingMore(false);
                 }
               }}
-              className="mt-1 rounded-lg border border-[#65a9e6]/35 bg-[#65a9e6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-[#65a9e6] hover:bg-[#65a9e6]/[0.14] disabled:opacity-50"
+              className="mt-1 rounded-lg border border-[#65a9e6]/35 bg-[#65a9e6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider ip-compare-accent hover:bg-[#65a9e6]/[0.14] disabled:opacity-50"
             >{t.moreAlternatives}</button>
           </div>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] text-white/45">
-          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-[#16c79a]" /> {STATUS_LABELS_ES.equal}</span>
-          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-300" /> {STATUS_LABELS_ES.different} (revisar)</span>
-          <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 text-red-400" /> No coincide</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 ip-compare-match" /> {STATUS_LABELS_ES.equal}</span>
+          <span className="flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 ip-compare-warning" /> {STATUS_LABELS_ES.different} (revisar)</span>
+          <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 ip-compare-danger" /> No coincide</span>
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
         <p className="mt-3 text-[10px] text-white/30">La comparación inicial muestra un máximo de 5 alternativas para mantener una lectura clara. Si necesitas ampliar la búsqueda, puedes solicitar más alternativas. La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
