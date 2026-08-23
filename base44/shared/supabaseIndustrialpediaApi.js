@@ -273,7 +273,10 @@ const VERIFIED_CATEGORY_STATS_BOOTSTRAP = {
 
 function readCategoryStatsSnapshot() {
   try {
-    const raw = localStorage.getItem('industrialpedia_category_stats_v3');
+    // v4 invalida snapshots calculados con reglas anteriores de clasificación.
+    // Nunca debemos mostrar primero un conteo de una taxonomía vieja y después
+    // reemplazarlo por otro al terminar la revalidación.
+    const raw = localStorage.getItem('industrialpedia_category_stats_v4');
     if (!raw) return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
     const parsed = JSON.parse(raw);
     if (!parsed?.value || typeof parsed.value !== 'object') return VERIFIED_CATEGORY_STATS_BOOTSTRAP;
@@ -295,7 +298,7 @@ let categoryStatsCache = {
 
 function publishCategoryStats(value) {
   try {
-    localStorage.setItem('industrialpedia_category_stats_v3', JSON.stringify({ value, savedAt: Date.now() }));
+    localStorage.setItem('industrialpedia_category_stats_v4', JSON.stringify({ value, savedAt: Date.now() }));
   } catch {}
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('industrialpedia:category-stats-updated', { detail: value }));
