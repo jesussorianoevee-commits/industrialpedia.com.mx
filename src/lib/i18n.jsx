@@ -194,6 +194,44 @@ export function localizedCount(count, singular, plural, language = 'es') {
   return `${n.toLocaleString(language === 'zh' ? 'zh-CN' : language)} ${forms[language] || plural}`;
 }
 
+// Resolución única para contenido dinámico de una ficha. La identidad canónica
+// (part_id) nunca se traduce: se usa únicamente para recuperar la variante de
+// presentación del idioma activo. Si falta, se solicita el backfill acotado y
+// se vuelve a leer antes de usar el contenido original como fallback.
+export async function getPartTranslation(partId, language) {
+  const id = String(partId || '').trim();
+  if (!id || !language) return null;
+
+  const read = async () => {
+    const rows = await base44.entities.PartTranslation.filter(
+      { part_id: id, language },
+      null,
+      5,
+      0,
+      ['id', 'part_id', 'language', 'name', 'description', 'category', 'subcategory', 'specifications', 'status', 'translation_version']
+    );
+    return rows?.[0] || null;
+  };
+
+  try {
+    let translation = await read();
+    if (!translation?.name) {
+      try {
+        await base44.functions.invoke('EnsurePartTranslations', {
+          part_ids: [id],
+          language
+        });
+        translation = await read();
+      } catch {
+        // El contenido canónico sigue siendo el fallback autoritativo.
+      }
+    }
+    return translation?.name ? translation : null;
+  } catch {
+    return null;
+  }
+}
+
 // Batch translation lookup: one request for a result page, with the original
 // Part data remaining the authoritative fallback. Machine drafts are exposed
 // transparently until reviewed/published rather than silently replacing source data.
