@@ -218,21 +218,21 @@ export default function Buscar() {
 
   return (
     <div className="min-h-screen bg-[#0a0e12] grid-bg">
-      <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-3 sm:px-4 py-2.5 sm:py-3 ip-mobile-safe-top">
-        <form onSubmit={submit} className="relative mx-auto max-w-2xl flex items-center gap-1.5 sm:gap-2 bg-[#161a20] border border-white/10 rounded-full pl-2.5 sm:pl-3 pr-1.5 py-1">
+      <header className="sticky top-0 z-30 bg-[#0a0e12]/92 backdrop-blur-xl border-b border-white/[0.07] shadow-[0_12px_35px_-28px_rgba(0,0,0,.8)] px-3 sm:px-5 py-3 ip-mobile-safe-top">
+        <form onSubmit={submit} className="relative mx-auto max-w-3xl flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-2xl pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <Search className="w-4 h-4 text-white/40" />
+          <span className="w-8 h-8 rounded-xl bg-[#5a9cd9]/10 border border-[#5a9cd9]/10 flex items-center justify-center shrink-0"><Search className="w-4 h-4 text-[#5a9cd9]" /></span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onFocus={() => setShowHistory(true)}
             placeholder={t.searchPlaceholder}
-            className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-1.5"
+            className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-2.5 min-w-0"
             autoFocus
           />
-          <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 sm:py-1.5 rounded-full transition-colors shrink-0">
+          <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2.5 rounded-xl transition-colors shrink-0">
             {t.search}
           </button>
 
@@ -322,8 +322,8 @@ export default function Buscar() {
         )}
       </header>
 
-      <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto w-full">
-        <div className="flex items-center justify-between gap-2 mb-4">
+      <main className="px-3 sm:px-5 py-6 sm:py-8 max-w-3xl mx-auto w-full">
+        <div className="flex items-center justify-between gap-2 mb-5 sm:mb-6 pb-4 border-b border-white/[0.06]">
           <div className="text-white/40 text-xs">
             {!q && !area ? t.searchParts : (
               <span className="flex items-center gap-2">
@@ -334,7 +334,7 @@ export default function Buscar() {
           </div>
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white text-xs border border-white/10 rounded-lg px-2.5 py-1.5"
+            className="flex items-center gap-1.5 text-white/60 hover:text-white hover:border-[#5a9cd9]/35 hover:bg-white/[0.025] text-xs border border-white/10 rounded-xl px-3 py-2 transition-colors"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" /> {t.filters}
           </button>
@@ -351,7 +351,7 @@ export default function Buscar() {
             <EmptyState q={q} onReset={onReset} />
           </div>
         ) : kcError ? (
-          <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-5 text-center">
+          <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-5 sm:p-6 text-center">
             <p className="text-sm text-amber-200/80">{kcError}</p>
             <button onClick={onReset} className="mt-3 text-xs text-[#5a9cd9] hover:underline">{t.retry}</button>
           </div>
@@ -363,7 +363,7 @@ export default function Buscar() {
 
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `${t.foundPartsLabel} · ${areaLabel}` : t.foundPartsLabel}</div>
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
               </section>
@@ -372,7 +372,7 @@ export default function Buscar() {
             {discoveryResults.length > 0 && (
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{t.structuredSources}</div>
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
                 </div>
               </section>
