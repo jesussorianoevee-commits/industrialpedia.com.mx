@@ -3,9 +3,11 @@ import { CheckCircle2, XCircle, Users, LogIn, Loader2, ShieldCheck } from 'lucid
 import { Link } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
+import { useLanguage } from '@/lib/i18n';
 
 export default function CompatibilityCommunity({ part }) {
   const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [targetPartNumber, setTargetPartNumber] = useState('');
   const [outcome, setOutcome] = useState('confirmed');
   const [experienceType, setExperienceType] = useState('field_use');
@@ -64,12 +66,12 @@ export default function CompatibilityCommunity({ part }) {
           updated_at: new Date().toISOString()
         }, { onConflict: 'source_part_id,target_part_number,contributor_user_id' });
       if (error) throw error;
-      setMessage('Tu experiencia quedó registrada como evidencia comunitaria. Si cambias el resultado posteriormente, se actualizará tu registro en lugar de crear un voto duplicado.');
+      setMessage(t.communitySaved);
       setTargetPartNumber('');
       setNote('');
       await loadSummary();
     } catch {
-      setMessage('No se pudo registrar la confirmación en este momento.');
+      setMessage(t.communitySaveError);
     } finally {
       setLoading(false);
     }
@@ -80,21 +82,21 @@ export default function CompatibilityCommunity({ part }) {
       <div className="flex items-start gap-3">
         <div className="rounded-lg bg-[#47bcb6]/10 p-2 text-[#47bcb6]"><Users className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-white">Compatibilidad confirmada por la comunidad</h2>
-          <p className="mt-1 text-xs leading-relaxed text-white/45">Las experiencias de usuarios se registran como evidencia comunitaria y permanecen separadas de la información oficial y de la evidencia técnica canónica.</p>
+          <h2 className="text-sm font-semibold text-white">{t.communityCompatibility}</h2>
+          <p className="mt-1 text-xs leading-relaxed text-white/45">{t.communityDescription}</p>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-[#47bcb6]">{loadingSummary ? '—' : summary.positive}</div><div className="text-[9px] uppercase tracking-wider text-white/30">Confirmaciones</div></div>
-        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-red-300">{loadingSummary ? '—' : summary.negative}</div><div className="text-[9px] uppercase tracking-wider text-white/30">Reportes negativos</div></div>
-        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-white/80">{loadingSummary ? '—' : summary.contributors}</div><div className="text-[9px] uppercase tracking-wider text-white/30">Usuarios únicos</div></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-[#47bcb6]">{loadingSummary ? '—' : summary.positive}</div><div className="text-[9px] uppercase tracking-wider text-white/30">{t.confirmations}</div></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-red-300">{loadingSummary ? '—' : summary.negative}</div><div className="text-[9px] uppercase tracking-wider text-white/30">{t.negativeReports}</div></div>
+        <div className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-3"><div className="text-lg font-semibold text-white/80">{loadingSummary ? '—' : summary.contributors}</div><div className="text-[9px] uppercase tracking-wider text-white/30">{t.uniqueUsers}</div></div>
       </div>
 
       {!isAuthenticated ? (
         <div className="mt-4 rounded-lg border border-[#5a9cd9]/20 bg-[#5a9cd9]/[0.05] p-3">
-          <div className="text-xs text-white/70">Solo los usuarios con una cuenta pueden confirmar o reportar compatibilidad.</div>
-          <Link to={`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#5a9cd9] px-3 py-2 text-xs font-semibold text-[#080d12] hover:bg-[#78b5ea]"><LogIn className="h-3.5 w-3.5" /> Iniciar sesión para participar</Link>
+          <div className="text-xs text-white/70">{t.accountRequiredCompatibility}</div>
+          <Link to={`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#5a9cd9] px-3 py-2 text-xs font-semibold text-[#080d12] hover:bg-[#78b5ea]"><LogIn className="h-3.5 w-3.5" /> {t.signInToParticipate}</Link>
         </div>
       ) : (
         <form onSubmit={submit} className="mt-4 space-y-3">
