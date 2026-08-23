@@ -15,12 +15,16 @@ export function normalizeImageUrl(value) {
 function cacheKey(partNumber, manufacturer) {
   const pn = String(partNumber || '').trim().toLowerCase();
   const mf = String(manufacturer || '').trim().toLowerCase();
-  return `industrialpedia:image:v2:${mf}:${pn}`;
+  return `industrialpedia:image:v3:${mf}:${pn}`;
 }
 
-export async function resolveProductImage({ partNumber, manufacturer = '', sourceUrl = '', existingUrl = '' } = {}) {
+export function clearProductImageCache(partNumber, manufacturer = '') {
+  try { sessionStorage.removeItem(cacheKey(partNumber, manufacturer)); } catch {}
+}
+
+export async function resolveProductImage({ partNumber, manufacturer = '', sourceUrl = '', existingUrl = '', forceLookup = false } = {}) {
   const existing = normalizeImageUrl(existingUrl);
-  if (existing) return { image_url: existing, status: 'existing', verified: false };
+  if (existing && !forceLookup) return { image_url: existing, status: 'existing', verified: false };
 
   const exactPartNumber = String(partNumber || '').trim();
   const expectedManufacturer = String(manufacturer || '').trim();
@@ -31,8 +35,11 @@ export async function resolveProductImage({ partNumber, manufacturer = '', sourc
     const cached = sessionStorage.getItem(key);
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (parsed?.image_url) return { ...parsed, image_url: normalizeImageUrl(parsed.image_url) };
-      if (parsed?.status) return parsed;
+      const age = Date.now() - Number(parsed?.cached_at || 0);
+      const normalizedCachedUrl = normalizeImageUrl(parsed?.image_url);
+      if (normalizedCachedUrl && age < 24 * 60 * 60 * 1000) return { ...parsed, image_url: normalizedCachedUrl };
+      // Un fallo temporal no debe dejar una referencia sin imagen durante toda la sesión.
+      if (parsed?.status && age < 5 * 60 * 1000) return parsed;
     }
   } catch {}
 
@@ -47,11 +54,11 @@ export async function resolveProductImage({ partNumber, manufacturer = '', sourc
     const resolved = image_url
       ? { image_url, status: result.status || 'candidate', verified: result.status === 'verified_candidate', source: result.source_key || '' }
       : { image_url: '', status: result.status || 'not_found', verified: false, source: result.source_key || '' };
-    try { sessionStorage.setItem(key, JSON.stringify(resolved)); } catch {}
+    try { sessionStorage.setItem(key, JSON.stringify({ ...resolved, cached_at: Date.now() })); } catch {}
     return resolved;
   } catch {
     const failed = { image_url: '', status: 'lookup_failed', verified: false };
-    try { sessionStorage.setItem(key, JSON.stringify(failed)); } catch {}
+    try { sessionStorage.setItem(key, JSON.stringify({ ...failed, cached_at: Date.now() })); } catch {}
     return failed;
   }
 }
