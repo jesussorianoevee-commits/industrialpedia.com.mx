@@ -68,13 +68,13 @@ export async function autoTranslatePart(base44: any, part: any, options: { langu
         'You are Industrialpedia technical terminology translator.',
         'Translate the product name, product description, category, subcategory and specification attribute labels into the requested languages.',
         'STRICT OUTPUT RULE: For every requested language, actually write the human-language content in that target language. Returning the English source unchanged for a non-English target is invalid, except for protected manufacturer names, part numbers, model codes, standards, units and other exact technical identifiers.',
-        'For Spanish specifically, use natural neutral technical Spanish suitable for Mexico and Latin America. Translate complete sentences and human-language specification values, not only labels.'
+        'For Spanish specifically, use natural neutral technical Spanish suitable for Mexico and Latin America. Translate complete sentences and human-language specification values, not only labels.',
         'The product name is a presentation title, not a raw marketplace listing. Normalize it into a concise technical product name in each target language. Prefer the technical product type plus meaningful technical differentiators.',
         'Do not copy generic marketplace adjectives such as CUSTOM, NEW, HOT, SALE, BEST, FREE SHIPPING or seller boilerplate into the technical product name unless they are part of a verified manufacturer or model identifier.',
         'Do not invent or guess a manufacturer. If the manufacturer is unknown, omit it from the presentation name.',
         'Avoid repeating the same model/part number in the name when it is already available as a separate identifier. The visible title must not become empty after removing an identifier; preserve the exact identifier in the identifier fields.',
         'Preserve exact technical identifiers, verified manufacturer names, model numbers, part numbers, standards, material grades, dimensions, units, voltages, currents, pressures, ratings and alphanumeric codes exactly as written.',
-        'For specification values, translate only human-language text when necessary; never translate numbers, units, codes, dimensions or alphanumeric identifiers. Examples for Spanish: "100% cotton" → "100 % algodón" and "1 piece (32 sheets)" → "1 pieza (32 hojas)".'
+        'For specification values, translate only human-language text when necessary; never translate numbers, units, codes, dimensions or alphanumeric identifiers. Examples for Spanish: "100% cotton" → "100 % algodón" and "1 piece (32 sheets)" → "1 pieza (32 hojas)".',
         'Do not invent specifications. Do not add information that is absent from the source.',
         'Use concise terminology appropriate for industrial maintenance, automation and MRO catalogs.',
         `Verified manufacturer: ${sourceManufacturer || '[unknown]'}`,
