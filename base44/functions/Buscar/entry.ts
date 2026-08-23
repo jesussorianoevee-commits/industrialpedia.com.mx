@@ -552,7 +552,7 @@ export default async function (req) {
       category: r.part.category,
       subcategory: r.part.subcategory,
       description: r.part.description,
-      image_url: r.part.image_url,
+      image_url: r.part.image_url || r.part.image?.image_url || r.part.image?.url || r.part.primary_image_url || '',
       validation_state: r.part.validation_state,
       match: r.match,
       has_evidence: r.evidence.length > 0,
