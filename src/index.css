@@ -91,3 +91,44 @@
 .theme-light .ip-muted-text { color: hsl(var(--muted-foreground)) !important; }
 .theme-light .ip-surface-dark { background: hsl(var(--card)) !important; border-color: hsl(var(--border)) !important; }
 .theme-light .ip-grid-label { color: hsl(var(--muted-foreground)) !important; }
+
+/* Global light-theme bridge: legacy pages still use dark literal Tailwind colors.
+   The selected theme lives on <html>, so every route must honor it instead of
+   rendering a separate hard-coded palette. */
+.theme-light [class*="bg-[#0a0e12]"],
+.theme-light [class*="bg-[#080d12]"] { background-color: hsl(var(--background)) !important; }
+
+.theme-light [class*="bg-[#161a20]"],
+.theme-light [class*="bg-[#0d141b]"],
+.theme-light [class*="bg-[#0f151b]"],
+.theme-light [class*="bg-[#0b1015]"],
+.theme-light [class*="bg-[#10161d]"],
+.theme-light [class*="bg-[#11161c]"] { background-color: hsl(var(--card)) !important; }
+
+.theme-light [class*="bg-[#091016]"],
+.theme-light [class*="bg-[#0f1318]"] { background-color: hsl(var(--muted)) !important; }
+
+.theme-light [class*="border-white"] { border-color: hsl(var(--border)) !important; }
+.theme-light [class*="bg-white/"] { background-color: hsl(var(--muted) / 0.45) !important; }
+
+.theme-light [class~="text-white"] { color: hsl(var(--foreground)) !important; }
+.theme-light [class*="text-white/90"] { color: hsl(var(--foreground) / 0.90) !important; }
+.theme-light [class*="text-white/85"] { color: hsl(var(--foreground) / 0.85) !important; }
+.theme-light [class*="text-white/80"] { color: hsl(var(--foreground) / 0.80) !important; }
+.theme-light [class*="text-white/75"] { color: hsl(var(--foreground) / 0.75) !important; }
+.theme-light [class*="text-white/70"] { color: hsl(var(--foreground) / 0.70) !important; }
+.theme-light [class*="text-white/65"] { color: hsl(var(--foreground) / 0.65) !important; }
+.theme-light [class*="text-white/60"] { color: hsl(var(--foreground) / 0.60) !important; }
+.theme-light [class*="text-white/55"] { color: hsl(var(--foreground) / 0.55) !important; }
+.theme-light [class*="text-white/50"] { color: hsl(var(--foreground) / 0.50) !important; }
+.theme-light [class*="text-white/45"] { color: hsl(var(--foreground) / 0.45) !important; }
+.theme-light [class*="text-white/40"] { color: hsl(var(--foreground) / 0.40) !important; }
+.theme-light [class*="text-white/35"] { color: hsl(var(--foreground) / 0.35) !important; }
+.theme-light [class*="text-white/30"] { color: hsl(var(--foreground) / 0.30) !important; }
+.theme-light [class*="text-white/25"] { color: hsl(var(--foreground) / 0.25) !important; }
+.theme-light [class*="text-white/20"] { color: hsl(var(--foreground) / 0.20) !important; }
+
+.theme-light input[class*="text-white"],
+.theme-light textarea[class*="text-white"],
+.theme-light select[class*="text-white"] { color: hsl(var(--foreground)) !important; }
+.theme-light input[class*="placeholder:text-white"]::placeholder { color: hsl(var(--muted-foreground) / 0.70) !important; }
