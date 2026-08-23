@@ -193,6 +193,8 @@ export default function ResultCard({ result }) {
               referrerPolicy="no-referrer"
               onError={() => setImageSrc('')}
             />
+          ) : imageLookupPending ? (
+            <Loader2 className="w-5 h-5 text-[#5a9cd9]/60 animate-spin" aria-label="Buscando imagen" />
           ) : (
             <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{t.noVerifiedImage}</span>
           )}
