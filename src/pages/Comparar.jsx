@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 const STATE = {
@@ -19,8 +20,8 @@ function propertyLabel(value, language = 'es') {
   const raw = String(value || '').trim();
   return localizeSpecAttribute(raw, language);
 }
-function val(s) { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; if (normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw)) return `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}`; return original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'; }
-function canonical(s) { return String(s?.attribute_canonical || s?.attribute_name || s?.attribute || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+function val(s, language = 'es') { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; const rendered = normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw) ? `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}` : (original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'); return normalizeTechnicalNotation(rendered, { language }); }
+function canonical(s) { return canonicalTechnicalAttribute(s?.attribute_canonical || s?.attribute_name || s?.attribute || ''); }
 function comparisonFor(base, alt) { const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : []; return differences.find((d) => canonical(d) === canonical(base)) || null; }
 function stateFor(base, alt) { const hit = comparisonFor(base, alt); if (hit?.state) return hit.state; return (alt?.specs || []).some((s) => canonical(s) === canonical(base)) ? 'not_comparable' : 'base_only'; }
 function valueFor(base, alt) { const hit = comparisonFor(base, alt); if (hit && hit.candidate !== null && hit.candidate !== undefined && hit.candidate !== '') return hit.candidate; return (alt?.specs || []).find((s) => canonical(s) === canonical(base)); }
@@ -28,8 +29,8 @@ const COMPOUND_LABELS_ES = { diameter: 'Diámetro', length: 'Longitud', width: '
 function normalizedFor(base, alt) { const hit = comparisonFor(base, alt); return hit && hit.normalized_b !== null && hit.normalized_b !== undefined ? { value: hit.normalized_b, unit: hit.normalized_unit } : null; }
 function normalizedDisplayFor(normalized, language = 'es') {
   if (!normalized) return '';
-  if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${localizeSpecAttribute(COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente', language)}: ${item?.normalized_value ?? '—'}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
-  return normalized.unit ? `${normalized.value} ${normalized.unit}` : String(normalized.value);
+  if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${localizeSpecAttribute(COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente', language)}: ${normalizeTechnicalNotation(item?.normalized_value ?? '—', { language })}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
+  return normalizeTechnicalNotation(normalized.unit ? `${normalized.value} ${normalized.unit}` : String(normalized.value), { language });
 }
 function statusMeta(component, t) {
   const state = component?.comparison?.state;
@@ -65,14 +66,15 @@ const DECISION_VISUAL = {
   not_compatible: { label: 'NO COMPATIBLE', cls: 'border-red-400/60 bg-red-400/[0.08] text-red-300', dot: 'bg-red-400' }
 };
 
-function compactComparisonValue(value) {
+function compactComparisonValue(value, language = 'es') {
   if (value === null || value === undefined || value === '') return '—';
+  let rendered;
   if (typeof value === 'object') {
-    if (Array.isArray(value)) return value.map((item) => item?.normalized_value !== undefined ? `${item.normalized_value}${item.normalized_unit ? ` ${item.normalized_unit}` : ''}` : JSON.stringify(item)).join(' · ');
-    if (value.value !== undefined) return `${value.value}${value.unit ? ` ${value.unit}` : ''}`;
-    return JSON.stringify(value);
-  }
-  return String(value);
+    if (Array.isArray(value)) rendered = value.map((item) => item?.normalized_value !== undefined ? `${item.normalized_value}${item.normalized_unit ? ` ${item.normalized_unit}` : ''}` : JSON.stringify(item)).join(' · ');
+    else if (value.value !== undefined) rendered = `${value.value}${value.unit ? ` ${value.unit}` : ''}`;
+    else rendered = JSON.stringify(value);
+  } else rendered = String(value);
+  return normalizeTechnicalNotation(rendered, { language });
 }
 
 function StatusBadge({ component, base = false, t }) {
