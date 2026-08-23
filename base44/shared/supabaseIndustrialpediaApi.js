@@ -320,6 +320,14 @@ export async function getIndustrialpediaCategoryStats() {
       .finally(() => { categoryStatsCache.refreshPromise = null; });
   }
 
+  // En un arranque sin snapshot no mostramos conteos inventados ni ceros
+  // transitorios: esperamos la primera respuesta canónica. Con snapshot válido,
+  // la UI permanece inmediata y la revalidación sigue en segundo plano.
+  const hasAnyCount = Object.values(snapshot).some((value) => Number(value) > 0);
+  if (!hasAnyCount && categoryStatsCache.refreshPromise) {
+    return categoryStatsCache.refreshPromise;
+  }
+
   return snapshot;
 }
 
