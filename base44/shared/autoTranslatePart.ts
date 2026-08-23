@@ -24,6 +24,59 @@ function containsPartIdentifier(name: string, partNumber: string) {
   return Boolean(identifier) && cleanText(name).toLowerCase().includes(identifier);
 }
 
+// Quality guard for the failure mode visible in the UI: a record claims to be
+// Spanish/German/French/Chinese, but still contains the English source text.
+// This is intentionally broad enough to catch complete technical phrases, while
+// identifiers and manufacturer names remain protected by the translation prompt.
+const ENGLISH_LEAK_RE = /\b(?:thermometer|probe|specification|measurement|temperature|range|size|material|length|weight|surface|standard|beads|printer|heads|print|method|stainless|steel|assembly|station|cord|sheath|include|included|with|without|and|for|from|into|the|of)\b/i;
+
+function hasEnglishLeak(value: unknown, language: string) {
+  if (language === 'en') return false;
+  const text = typeof value === 'string' ? cleanText(value) : cleanText(JSON.stringify(value || {}), 8000);
+  return ENGLISH_LEAK_RE.test(text);
+}
+
+function translationNeedsRepair(item: any, language: string) {
+  if (language === 'en' || !item) return false;
+  return hasEnglishLeak(item.name, language)
+    || hasEnglishLeak(item.description, language)
+    || hasEnglishLeak(item.category, language)
+    || hasEnglishLeak(item.subcategory, language)
+    || hasEnglishLeak(item.specifications, language);
+}
+
+async function repairTargetLanguage(base44: any, language: string, source: any) {
+  const languageName: Record<string, string> = { es: 'Spanish', en: 'English', de: 'German', fr: 'French', zh: 'Simplified Chinese' };
+  const result = await base44.integrations.Core.InvokeLLM({
+    prompt: [
+      `Translate ALL human-language content below into ${languageName[language] || language}.`,
+      'This is a repair pass. Do not leave English sentences, English technical labels or English product-type words in the target language.',
+      'Keep only protected identifiers unchanged: verified manufacturer names, part/model numbers, standards, units, dimensions, numerical values, material grades and alphanumeric codes.',
+      'Translate specification labels AND human-language specification values. Do not invent facts.',
+      'Return concise industrial/MRO terminology.',
+      `Manufacturer: ${source.manufacturer}`,
+      `Part identifier: ${source.partNumber}`,
+      `Name: ${source.name}`,
+      `Description: ${source.description}`,
+      `Category: ${source.category}`,
+      `Subcategory: ${source.subcategory}`,
+      `Specifications JSON: ${JSON.stringify(source.specifications)}`
+    ].join('\n'),
+    response_json_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        description: { type: 'string' },
+        category: { type: 'string' },
+        subcategory: { type: 'string' },
+        specifications: { type: 'object' }
+      },
+      required: ['name', 'description', 'category', 'subcategory', 'specifications']
+    }
+  });
+  return result || null;
+}
+
 /**
  * Automatically creates the multilingual presentation layer for a new Part.
  * The Part record remains authoritative: identifiers, manufacturer, specs and
