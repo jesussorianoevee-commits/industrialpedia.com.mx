@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -22,7 +22,6 @@ import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
-import GlobalLanguageSelector from '@/components/GlobalLanguageSelector';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -43,13 +42,7 @@ const AuthenticatedApp = () => {
     }
   }
 
-  const location = useLocation();
-
-  // Render the main app. Home already contains the selector inside SiteHeader;
-  // every other route receives the same global control.
   return (
-    <>
-      {location.pathname !== '/' && <GlobalLanguageSelector />}
       <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -65,7 +58,6 @@ const AuthenticatedApp = () => {
       <Route path="/decidir" element={<TrialRoute><Decidir /></TrialRoute>} />
       <Route path="*" element={<PageNotFound />} />
       </Routes>
-    </>
   );
 };
 
