@@ -146,6 +146,7 @@ export default function ResultCard({ result }) {
               className="w-full h-full object-contain p-1.5"
               loading="lazy"
               referrerPolicy="no-referrer"
+              onError={() => setImageSrc('')}
             />
           ) : (
             <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{t.noVerifiedImage}</span>
