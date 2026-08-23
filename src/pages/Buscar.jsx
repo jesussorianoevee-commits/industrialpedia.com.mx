@@ -137,8 +137,8 @@ export default function Buscar() {
     }
   }, [q, area, filters, runSearch, runAreaBrowse]);
 
-  // Autocompletado determinístico: consulta únicamente nuestro Knowledge Core,
-  // DiscoveryIndex y Manufacturer. Nunca llama Tavily/Google mientras se escribe.
+  // Autocompletado determinístico: consulta únicamente el Knowledge Core interno
+  // y fabricantes registrados. Nunca mezcla DiscoveryIndex ni Tavily/Google.
   useEffect(() => {
     const term = input.trim();
     if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
