@@ -22,6 +22,15 @@ export function clearProductImageCache(partNumber, manufacturer = '') {
   try { sessionStorage.removeItem(cacheKey(partNumber, manufacturer)); } catch {}
 }
 
+/**
+ * @param {{
+ *   partNumber?: string;
+ *   manufacturer?: string;
+ *   sourceUrl?: string;
+ *   existingUrl?: string;
+ *   forceLookup?: boolean;
+ * }} options
+ */
 export async function resolveProductImage({ partNumber, manufacturer = '', sourceUrl = '', existingUrl = '', forceLookup = false } = {}) {
   const existing = normalizeImageUrl(existingUrl);
   if (existing && !forceLookup) return { image_url: existing, status: 'existing', verified: false };
