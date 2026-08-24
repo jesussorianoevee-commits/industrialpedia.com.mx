@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { isNonIndustrialQuery, isLikelyIndustrialSource, looksLikePartNumber } from '../shared/searchRules.js';
 import { sanitizeResultIdentity } from '../shared/identityGuard.js';
+import { deriveProductIdentity } from '../shared/productIdentity.js';
 import { isTechnicalSpecification } from '../shared/semanticResolver.js';
 import { sanitizeExtractedPair } from '../shared/extract.js';
 import { expandCatalogResults } from '../shared/tavilySearch.js';
@@ -31,6 +32,27 @@ assert.equal(contaminated.part_number, '');
 const officialManufacturer = sanitizeResultIdentity({ manufacturer_name: 'Festo', part_number: 'DSNU-25-25-PPV-A', source_type: 'official' }, 'Festo');
 assert.equal(officialManufacturer.manufacturer_name, 'Festo');
 assert.equal(officialManufacturer.part_number, 'DSNU-25-25-PPV-A');
+
+// Identidad de producto: un PN no puede sobrevivir como fabricante cuando la
+// identidad derivada demuestra el fabricante y el PN correctos.
+const asOneIdentity = deriveProductIdentity({
+  title: 'AS ONE Sensor MT-05K',
+  text: 'AS ONE Sensor MT-05K',
+  query: 'sensor',
+  manufacturer_hint: '',
+  part_number_hint: '',
+  source_url: 'https://example.com/product'
+});
+assert.equal(asOneIdentity.manufacturer, 'AS ONE');
+assert.equal(asOneIdentity.part_number, 'MT-05K');
+const correctedIdentity = sanitizeResultIdentity({
+  manufacturer_name: 'MT-05K',
+  part_number: 'Sensor MT-05K',
+  title: 'AS ONE Sensor MT-05K',
+  product_identity: asOneIdentity
+}, 'sensor');
+assert.equal(correctedIdentity.manufacturer_name, 'AS ONE');
+assert.equal(correctedIdentity.part_number, 'MT-05K');
 
 assert.equal(isTechnicalSpecification('Stroke', '25 mm').ok, true);
 assert.equal(isTechnicalSpecification('Supply voltage', '24 V DC').ok, true);
