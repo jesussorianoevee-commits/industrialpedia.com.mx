@@ -40,7 +40,7 @@ export default function ResultCard({ result }) {
     setImageVerified(result.image_verification_status === 'verified');
     setImageLookupPending(false);
 
-    const useImage = (url, verified = false) => {
+    const applyImage = (url, verified = false) => {
       const cleanUrl = typeof url === 'string' ? url.trim() : '';
       if (!cancelled && cleanUrl) {
         setImageSrc(cleanUrl);
@@ -58,7 +58,7 @@ export default function ResultCard({ result }) {
         try {
           const data = await getPartIndustrialpedia(result.id);
           const part = data?.part;
-          if (useImage(part?.image_url, part?.image_verification_status === 'verified')) return;
+          if (applyImage(part?.image_url, part?.image_verification_status === 'verified')) return;
         } catch { /* continuar con adquisición exacta */ }
       }
 
@@ -71,7 +71,7 @@ export default function ResultCard({ result }) {
           const cached = sessionStorage.getItem(cacheKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            if (parsed?.image_url && useImage(parsed.image_url, parsed.verified === true)) return;
+            if (parsed?.image_url && applyImage(parsed.image_url, parsed.verified === true)) return;
             if (parsed?.status === 'not_found') return;
           }
         } catch {}
@@ -92,7 +92,7 @@ export default function ResultCard({ result }) {
               : { status: acquired.status || 'not_found' }
             ));
           } catch {}
-          if (acquiredUrl) useImage(acquiredUrl, acquired.verified === true);
+          if (acquiredUrl) applyImage(acquiredUrl, acquired.verified === true);
         } catch {
           // La ausencia o fallo de una API externa no debe inventar una imagen.
         } finally {
