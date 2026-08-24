@@ -21,7 +21,7 @@ const KNOWN_MANUFACTURERS = [
   'Bürkert', 'Norgren', 'Camozzi', 'Aventics', 'Parker', 'Bimba',
   'Misumi', 'Igus', 'Schunk', 'Zimmer', 'Murr', 'Murrelektronik',
   'Hirschmann', 'Harting', 'Weidmüller', 'Wago', 'Molex', 'TE Connectivity',
-  'Tyco', 'Phoenix', 'Leuze', 'Baumer', 'Contrinex', 'Rechner'
+  'Tyco', 'Phoenix', 'Leuze', 'Baumer', 'Contrinex', 'Rechner', 'AS ONE'
 ];
 
 // Etiquetas que indican explícitamente un número de parte/modelo en el contenido.
@@ -86,20 +86,21 @@ function identifyManufacturer(query, content, hint) {
   // "válvula") from being used as a manufacturer name, and ensures the
   // manufacturer is backed by explicit evidence in the source itself.
   const text = String(content || '').toLowerCase();
+  const textNorm = normalizeBrand(content);
   if (hint && hint.trim()) {
     const hintNorm = normalizeBrand(hint);
     if (hintNorm && hintNorm.length >= 3) {
       const exact = KNOWN_MANUFACTURERS.find((m) => normalizeBrand(m) === hintNorm);
-      if (exact && text.includes(exact.toLowerCase())) return exact;
+      if (exact && (text.includes(exact.toLowerCase()) || textNorm.includes(normalizeBrand(exact)))) return exact;
       const partial = KNOWN_MANUFACTURERS.find((m) => normalizeBrand(m).includes(hintNorm) || hintNorm.includes(normalizeBrand(m)));
-      if (partial && text.includes(partial.toLowerCase())) return partial;
+      if (partial && (text.includes(partial.toLowerCase()) || textNorm.includes(normalizeBrand(partial)))) return partial;
     }
   }
   // Detect from content only — never from the query text. The query is the
   // user's search, not evidence in the source. A manufacturer must appear in
   // the content to be attributed to a product.
   for (const m of KNOWN_MANUFACTURERS) {
-    if (text.includes(m.toLowerCase())) return m;
+    if (text.includes(m.toLowerCase()) || textNorm.includes(normalizeBrand(m))) return m;
   }
   return '';
 }
