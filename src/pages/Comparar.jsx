@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
