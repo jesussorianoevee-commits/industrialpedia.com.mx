@@ -150,6 +150,34 @@ export function sanitizeResultIdentity(result, query) {
     copy.part_number = '';
   }
 
+  // Si el fabricante actual es un token estructuralmente idéntico a un PN
+  // demostrado, no conservarlo como fabricante. Esto no usa una regex de
+  // "fabricante inválido" (que rompería marcas legítimas con números); exige
+  // evidencia positiva de que el mismo token es el identificador de producto.
+  const identityPn = copy.product_identity?.part_number || '';
+  const manufacturerNorm = normalize(copy.manufacturer_name);
+  const partNumberNorm = normalize(copy.part_number);
+  const identityPnNorm = normalize(identityPn);
+  const manufacturerMatchesPn = Boolean(manufacturerNorm) && (
+    (partNumberNorm && manufacturerNorm === partNumberNorm) ||
+    (identityPnNorm && manufacturerNorm === identityPnNorm)
+  );
+  if (manufacturerMatchesPn) {
+    copy.manufacturer_name = '';
+  }
+
+  // La identidad derivada es la autoridad para los campos que ya logró
+  // demostrar con evidencia. Esto evita que un valor histórico contaminado
+  // sobreviva por un fallback de merge, sin inventar fabricantes nuevos.
+  if (copy.product_identity) {
+    if (copy.product_identity.manufacturer) {
+      copy.manufacturer_name = copy.product_identity.manufacturer;
+    }
+    if (copy.product_identity.part_number) {
+      copy.part_number = copy.product_identity.part_number;
+    }
+  }
+
   return copy;
 }
 
