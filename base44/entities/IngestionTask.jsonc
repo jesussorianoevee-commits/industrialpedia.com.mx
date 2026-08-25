@@ -35,6 +35,14 @@
       "type": "integer",
       "default": 3
     },
+    "revalidation_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "last_revalidation_date": {
+      "type": "string",
+      "format": "date-time"
+    },
     "last_error": {
       "type": "string"
     },
