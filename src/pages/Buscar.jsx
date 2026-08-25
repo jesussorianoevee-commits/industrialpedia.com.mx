@@ -106,20 +106,64 @@ export default function Buscar() {
     setKcData(null);
     setKcError(null);
     try {
-      const validation_states = f.only_published === false ? ['published', 'validated', 'incomplete', 'candidate'] : ['published'];
-      const res = await base44.functions.invoke('IndustrialpediaSearch', {
-        q: query,
-        filters: {
-          manufacturers: f.manufacturers,
-          categories: f.categories,
-          has_specification: f.has_specification,
-          validation_states
-        },
-        limit: 25,
-        offset: 0
-      });
+      // BUSCAR consulta directamente el contrato canónico de Supabase.
+      // Evitamos depender de IndustrialpediaSearch en Base44: esa función exige
+      // sesión aunque la ruta /buscar es pública y creaba un 401 artificial.
+      // Supabase sigue siendo la única fuente de verdad.
+      const api = await searchIndustrialpedia(query, 25, f.manufacturers.length === 1 ? f.manufacturers[0] : '');
       if (searchReqId.current !== reqId) return;
-      setKcData(res.data);
+
+      let results = Array.isArray(api?.results) ? api.results.map((r) => ({
+        id: r.part_id || r.id || null,
+        part_number: r.part_number || '',
+        manufacturer_name: r.manufacturer || r.manufacturer_name || '',
+        category: r.category || '',
+        description: r.description || r.name || '',
+        specifications: r.specifications && typeof r.specifications === 'object' ? r.specifications : {},
+        title: r.name || r.part_number || '',
+        image_url: r.image_url || r.image?.image_url || r.image?.url || r.primary_image_url || '',
+        image_verification_status: r.image_verification_status || r.image?.verification_status || null,
+        validation_state: r.status === 'verified' ? 'published' : (r.status || 'incomplete'),
+        match: r.match_type || 'candidate',
+        has_evidence: Number(r.evidence_count || 0) > 0,
+        evidence_count: Number(r.evidence_count || 0),
+        spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
+        source_ids: Array.isArray(r.source_ids) ? r.source_ids.filter(Boolean) : [],
+        discovery_state: r.discovery_state || null,
+        source_url: r.source_url || r.product_url || r.url || r.source?.url || null,
+        document_url: r.document_url || r.datasheet_url || null,
+        top_specs: r.specifications ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]) => ({
+          attribute,
+          value: typeof value === 'object' && value !== null ? (value.value ?? value) : value,
+          unit: typeof value === 'object' && value !== null ? (value.unit ?? null) : null,
+          validated: r.status === 'verified' || r.status === 'published'
+        })) : []
+      })) : [];
+
+      // La interfaz no vuelve a abrir registros no publicados por defecto.
+      if (f.only_published !== false) {
+        results = results.filter((r) => r.validation_state === 'published');
+      }
+      if (f.categories.length) results = results.filter((r) => f.categories.includes(r.category));
+      if (f.has_specification) results = results.filter((r) => r.spec_count > 0);
+
+      const manufacturers = {};
+      const categories = {};
+      results.forEach((r) => {
+        if (r.manufacturer_name) manufacturers[r.manufacturer_name] = (manufacturers[r.manufacturer_name] || 0) + 1;
+        if (r.category) categories[r.category] = (categories[r.category] || 0) + 1;
+      });
+
+      setKcData({
+        knowledge_core_results: results,
+        discovery_results: [],
+        web_results: [],
+        facets: {
+          manufacturers: Object.entries(manufacturers).map(([name, count]) => ({ name, count })),
+          categories: Object.entries(categories).map(([name, count]) => ({ name, count }))
+        },
+        meta: { total: results.length, source_policy: 'internal_knowledge_core_only' }
+      });
     } catch (e) {
       if (searchReqId.current !== reqId) return;
       setKcData(null);
