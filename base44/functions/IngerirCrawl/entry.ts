@@ -23,7 +23,8 @@ import { autoTranslatePart } from '../../shared/autoTranslatePart.ts';
 //   max_attempts?: number,   // reintentos por documento (default 3)
 //   backoff_ms?: number,     // backoff base entre reintentos (default 5000)
 //   dry_run?: boolean,
-//   rebuild?: boolean,         // true: reprocesar tareas históricas cuyo Document ya no está publicado
+//   rebuild?: boolean,         // true: reprocesar tareas históricas explícitamente
+//   revalidate_rejected?: boolean, // true: reingresar rejected/incomplete al mismo pipeline determinístico
 //   manufacturer_hint?: string  // pista MANUAL (precedencia MANUAL > INDUCIDO > GENERICO)
 // }
 
@@ -66,6 +67,10 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const dryRun = !!body.dry_run;
     const rebuild = !!body.rebuild;
+    // Operación explícita: evita bucles infinitos. Los terminales sólo se reingresan
+    // cuando el operador solicita revalidación.
+    const revalidateRejected = !!body.revalidate_rejected;
+    const reconstruction = rebuild || revalidateRejected;
     const enqueue = body.enqueue !== false;
     const limit = Math.max(1, Math.min(100, Number(body.limit) || LIMIT_DEFAULT));
     const concurrency = Math.max(1, Math.min(8, Number(body.concurrency) || CONC_DEFAULT));
@@ -101,7 +106,7 @@ export default async function (req) {
     // 2. Seleccion de tareas: cola normal + reconstrucción explícita de tareas históricas.
     const now = Date.now();
     const candidates = await base44.asServiceRole.entities.IngestionTask.list('created_date', 500);
-    const candidateDocuments = rebuild
+    const candidateDocuments = reconstruction
       ? await base44.asServiceRole.entities.Document.filter({ id: { $in: candidates.map((t) => t.document_id).filter(Boolean) } }, 'updated_date', 500).catch(() => [])
       : [];
     const documentById = new Map(candidateDocuments.map((d) => [d.id, d]));
@@ -114,6 +119,11 @@ export default async function (req) {
       if (t.state === 'processing') {
         const last = t.last_attempt_date ? Date.parse(t.last_attempt_date) : 0;
         return (now - last) >= STALE_MS;
+      }
+      if (revalidateRejected && (t.state === 'rejected' || t.state === 'incomplete') && t.document_id) {
+        // Ciclo explícito de revalidación: vuelve a ejecutar extracción + filtros
+        // sobre el origen, sin aceptar el resultado anterior como válido.
+        return !!documentById.get(t.document_id);
       }
       if (rebuild && t.document_id) {
         const d = documentById.get(t.document_id);
@@ -169,13 +179,16 @@ export default async function (req) {
     const report = [];
 
     async function processTask(task) {
-      if (!rebuild && task.content_hash && publishedHashes.has(task.content_hash)) {
+      if (!reconstruction && task.content_hash && publishedHashes.has(task.content_hash)) {
         if (!dryRun) await base44.asServiceRole.entities.IngestionTask.update(task.id, { state: 'skipped' });
         report.push({ task_id: task.id, url: task.url, status: 'skipped_duplicate_hash' }); processed++; return;
       }
       if (!dryRun) {
         await base44.asServiceRole.entities.IngestionTask.update(task.id, {
-          state: 'processing', attempts: (task.attempts || 0) + 1, last_attempt_date: new Date().toISOString()
+          state: 'processing', attempts: (task.attempts || 0) + 1,
+          revalidation_count: revalidateRejected ? (task.revalidation_count || 0) + 1 : (task.revalidation_count || 0),
+          last_revalidation_date: revalidateRejected ? new Date().toISOString() : (task.last_revalidation_date || ''),
+          last_attempt_date: new Date().toISOString()
         });
       }
       try {
@@ -361,7 +374,7 @@ export default async function (req) {
           // No publicar parcialmente: si siquiera un Part no tiene una relación de
           // aplicabilidad demostrada, todo el documento permanece INCOMPLETE.
           if (applicabilityMissing.length) {
-            const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+            const existingDoc = reconstruction && task.document_id ? documentById.get(task.document_id) : null;
             const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
               title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'incomplete'
             });
@@ -393,7 +406,7 @@ export default async function (req) {
             return;
           }
 
-          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+          const existingDoc = reconstruction && task.document_id ? documentById.get(task.document_id) : null;
           const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
             title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'published'
           });
@@ -495,7 +508,7 @@ export default async function (req) {
 
         if (gate.state !== 'published') {
           if (gate.state === 'incomplete') incomplete++; else rejected++;
-          const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+          const existingDoc = reconstruction && task.document_id ? documentById.get(task.document_id) : null;
           const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
             title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'other', status: gate.state
           });
@@ -523,7 +536,7 @@ export default async function (req) {
         }
 
         // PUBLICACION en Knowledge Core (cadena PART->SPEC->PROVENANCE->EVIDENCE->DOCUMENT->SOURCE)
-        const existingDoc = rebuild && task.document_id ? documentById.get(task.document_id) : null;
+        const existingDoc = reconstruction && task.document_id ? documentById.get(task.document_id) : null;
         const docRec = existingDoc || await base44.asServiceRole.entities.Document.create({
           title: extracted.title || task.url, file_url: task.url, content_hash: task.content_hash, document_type: 'datasheet', status: 'published'
         });
