@@ -7,13 +7,13 @@ import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
 import EmptyState from '@/components/search/EmptyState';
 import { AREAS } from '@/lib/taxonomy';
-import { getIndustrialpediaAreaParts } from '../../base44/shared/supabaseIndustrialpediaApi.js';
+import { getIndustrialpediaAreaParts, searchIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
 
-const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
+const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: true };
 
 export default function Buscar() {
   const [params, setParams] = useSearchParams();
