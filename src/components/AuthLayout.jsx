@@ -14,10 +14,10 @@ export default function AuthLayout({ icon: _icon = null, title = '', subtitle = 
     <div className="ip-auth-shell min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[1.05fr_0.95fr]">
       <section className="ip-auth-brand relative hidden overflow-hidden border-r border-border bg-[radial-gradient(circle_at_20%_15%,rgba(37,99,235,.24),transparent_32%),linear-gradient(145deg,#07111f,#0b1c31_60%,#06101d)] p-10 text-white lg:flex lg:flex-col">
         <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:36px_36px]" />
-        <div className="relative flex items-center gap-3 text-xl font-bold tracking-tight">
+        <Link to="/" className="relative flex items-center gap-3 text-xl font-bold tracking-tight cursor-pointer">
           <span className="grid h-11 w-11 place-items-center rounded-xl border border-blue-300/30 bg-blue-500/15 text-blue-300"><Factory className="h-6 w-6" /></span>
           INDUSTRIALPEDIA
-        </div>
+        </Link>
         <div className="relative my-auto max-w-xl">
           <p className="mb-4 text-sm font-semibold uppercase tracking-[.22em] text-blue-300">Inteligencia industrial</p>
           <h1 className="text-5xl font-bold leading-tight">La información técnica, donde la necesitas.</h1>
@@ -40,10 +40,10 @@ export default function AuthLayout({ icon: _icon = null, title = '', subtitle = 
               {backLabel}
             </Link>
           )}
-          <div className="mb-7 text-center lg:hidden">
+          <Link to="/" className="mb-7 block text-center lg:hidden cursor-pointer">
             <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg"><Factory className="h-6 w-6" /></div>
             <div className="font-bold tracking-tight text-foreground">INDUSTRIALPEDIA</div>
-          </div>
+          </Link>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-xl shadow-black/10 sm:p-9">
             <h2 className="text-3xl font-bold tracking-tight text-card-foreground">{title}</h2>
             {subtitle && <p className="mt-2 text-muted-foreground">{subtitle}</p>}
