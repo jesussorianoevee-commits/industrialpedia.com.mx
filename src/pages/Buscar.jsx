@@ -90,7 +90,7 @@ export default function Buscar() {
         res = await getIndustrialpediaAreaParts(areaKey, 10, 0);
       }
       if (searchReqId.current !== reqId) return;
-      setKcData({ knowledge_core_results: res.results, discovery_results: [], web_results: [], facets: { manufacturers: [], categories: [] }, meta: { mode: 'area', area: areaKey, total: res.total } });
+      setKcData({ knowledge_core_results: res.results, facets: { manufacturers: [], categories: [] }, meta: { mode: 'area', area: areaKey, total: res.total } });
     } catch (e) {
       if (searchReqId.current !== reqId) return;
       setKcData(null);
@@ -156,8 +156,6 @@ export default function Buscar() {
 
       setKcData({
         knowledge_core_results: results,
-        discovery_results: [],
-        web_results: [],
         facets: {
           manufacturers: Object.entries(manufacturers).map(([name, count]) => ({ name, count })),
           categories: Object.entries(categories).map(([name, count]) => ({ name, count }))
@@ -246,7 +244,6 @@ export default function Buscar() {
   // aplicada directamente sobre el registro canónico. Aquí no se hace ninguna
   // llamada a IA ni se sobreescribe el contenido original.
   const kcResults = kcData?.knowledge_core_results || [];
-  const discoveryResults = kcData?.discovery_results || [];
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
 
   return (
@@ -401,14 +398,6 @@ export default function Buscar() {
               </section>
             )}
 
-            {discoveryResults.length > 0 && (
-              <section>
-                <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">{t.structuredSources}</div>
-                <div className="space-y-3">
-                  {discoveryResults.map((r) => <ResultCard key={r.id || r.discovery_id || r.part_number} result={r} />)}
-                </div>
-              </section>
-            )}
           </div>
         )}
       </main>
