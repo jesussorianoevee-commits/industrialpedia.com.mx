@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
 import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
@@ -26,7 +25,6 @@ const STATE_LABELS = {
 
 export default function ResultCard({ result }) {
   const navigate = useNavigate();
-  const [materializing, setMaterializing] = useState(false);
   const [imageSrc, setImageSrc] = useState(normalizeImageUrl(result.image_url));
   const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
   const [imageLookupPending, setImageLookupPending] = useState(false);
@@ -104,7 +102,6 @@ export default function ResultCard({ result }) {
     if (!initialUrl) resolveImage();
     return () => { cancelled = true; };
   }, [result.id, result.part_number, result.image_url, result.image_verification_status, result.manufacturer_name, result.source_url, result.document_url, imageRetry]);
-  const [materializeError, setMaterializeError] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [alternativesLoading, setAlternativesLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
@@ -136,29 +133,13 @@ export default function ResultCard({ result }) {
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
   const displayCategory = result.category && !/^category$/i.test(String(result.category).trim()) ? localizeTechnicalTerm(result.category, language) : '';
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
-  const canOpenComparator = Boolean(result.id || (result.discovery_id && result.part_number));
+  const canOpenComparator = Boolean(result.id);
 
   const openComparator = async () => {
     setCompareError('');
     if (result.id) {
       navigate(`/comparar/${encodeURIComponent(result.id)}?pn=${encodeURIComponent(result.part_number || '')}`);
       return;
-    }
-    if (result.discovery_id && result.part_number) {
-      setAlternativesLoading(true);
-      try {
-        const res = await base44.functions.invoke('MaterializeDiscovery', {
-          discovery_id: result.discovery_id,
-          query: result.part_number || result.title || ''
-        });
-        const partId = res?.data?.part_id;
-        if (!partId) throw new Error('No se pudo preparar la ficha para buscar alternativas.');
-        navigate(`/comparar/${encodeURIComponent(partId)}?pn=${encodeURIComponent(result.part_number || '')}`);
-      } catch (e) {
-        setCompareError(e?.message || 'No se pudieron buscar alternativas para esta referencia.');
-      } finally {
-        setAlternativesLoading(false);
-      }
     }
   };
 
@@ -217,14 +198,6 @@ export default function ResultCard({ result }) {
           )}
         </div>
       </div>
-      {result.discovery_state === 'discovered' && (
-        <p className="text-white/35 text-[11px] mb-3">
-          {result.part_number ? t.foundSourcePart : t.foundSourceNoPart}
-        </p>
-      )}
-      {materializeError && (
-        <p className="text-red-300 text-[11px] mb-3">{materializeError}</p>
-      )}
       {compareError && <p className="text-amber-300 text-[11px] mb-3">{compareError}</p>}
 
       {result.top_specs.length > 0 && (
@@ -282,30 +255,6 @@ export default function ResultCard({ result }) {
           >
             {t.viewProduct} <ArrowRight className="w-3 h-3" />
           </a>
-        ) : result.discovery_id && result.part_number ? (
-          <button
-            disabled={materializing}
-            onClick={async () => {
-              setMaterializing(true);
-              setMaterializeError('');
-              try {
-                const res = await base44.functions.invoke('MaterializeDiscovery', {
-                  discovery_id: result.discovery_id,
-                  query: result.part_number || result.title || ''
-                });
-                const partId = res?.data?.part_id;
-                if (!partId) throw new Error('No se pudo crear la ficha desde la fuente encontrada.');
-                navigate(`/parte/${partId}`);
-              } catch (e) {
-                setMaterializeError(e?.message || 'No se pudo crear la ficha.');
-              } finally {
-                setMaterializing(false);
-              }
-            }}
-            className="flex items-center gap-1 bg-[#5a9cd9] hover:bg-[#4f8fc7] disabled:opacity-60 text-[#0a0e12] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-          >
-            {materializing ? t.creatingSheet : t.viewTechnicalSheet} <ArrowRight className="w-3 h-3" />
-          </button>
         ) : result.source_url ? (
           <a
             href={result.source_url}
