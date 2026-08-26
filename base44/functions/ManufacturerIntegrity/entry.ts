@@ -141,8 +141,8 @@ export default async function (req: Request) {
       continue;
     }
 
-    // Unique longest prefix to an existing Manufacturer is sufficient for a proposed repair.
-    const classification = CLASS.AUTO_REPAIR;
+    // Unique longest prefix to an existing Manufacturer is sufficient only for a repair candidate.
+    const classification = CLASS.AUTO_REPAIR_CANDIDATE;
     counts[classification]++;
     results.push({
       part_id: part.id,
