@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
     "regression:gate": "node base44/tests/regressionGate.mjs",
+    "unicode:shadow": "node base44/tests/unicodeNormalizationShadow.mjs",
     "classification:quality": "node base44/tests/classificationQualityGate.mjs",
     "classification:scale": "node base44/tests/classificationScaleGate.mjs",
     "quality:gate": "npm run regression:gate && npm run classification:quality && npm run classification:scale && npm run typecheck && npm run lint && npm run build",
