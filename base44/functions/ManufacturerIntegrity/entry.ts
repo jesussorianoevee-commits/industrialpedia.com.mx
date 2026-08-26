@@ -2,10 +2,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // INDUSTRIALPEDIA — Manufacturer Integrity
 // Deterministic detector only. Never updates Part or Manufacturer.
-// Classification: AUTO_REPAIR | NEEDS_REVIEW | IGNORE
+// Classification: AUTO_REPAIR_CANDIDATE | NEEDS_REVIEW | IGNORE
 
 const CLASS = Object.freeze({
-  AUTO_REPAIR: 'AUTO_REPAIR',
+  AUTO_REPAIR_CANDIDATE: 'AUTO_REPAIR_CANDIDATE',
   NEEDS_REVIEW: 'NEEDS_REVIEW',
   IGNORE: 'IGNORE'
 });
@@ -70,7 +70,7 @@ export default async function (req: Request) {
   const byId = new Map(manufacturers.map((m: any) => [m.id, m]));
 
   const results: any[] = [];
-  const counts = { AUTO_REPAIR: 0, NEEDS_REVIEW: 0, IGNORE: 0 };
+  const counts = { AUTO_REPAIR_CANDIDATE: 0, NEEDS_REVIEW: 0, IGNORE: 0 };
 
   for (const part of parts) {
     const current = part.manufacturer_id ? byId.get(part.manufacturer_id) : null;
