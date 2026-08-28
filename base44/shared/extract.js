@@ -237,6 +237,26 @@ export function extractPartNumber(text, title) {
   return matches[0] || '';
 }
 
+// Estrategia de respaldo, GENERICA (no especifica de rodamientos): la anterior
+// exige 1-4 letras antes del digito y por eso nunca reconoce numeros de parte
+// puramente numericos (comunes en rodamientos: "6205", "6304", "22213", etc.).
+// Solo se activa si extractPartNumber() no encontro nada. Exige corroboracion
+// estructural -- el primer bloque de la pagina 1 es un token corto, aislado
+// (sin espacios), y el bloque siguiente es una descripcion mas larga -- para
+// no adivinar un numero de parte de cualquier digito suelto en el documento.
+export function extractPartNumberFromLeadBlock(blocksPage1) {
+  const blocks = Array.isArray(blocksPage1) ? blocksPage1 : [];
+  if (blocks.length < 2) return '';
+  const first = blocks[0];
+  const second = blocks[1];
+  const candidate = String(first?.text || '').trim();
+  const followUp = String(second?.text || '').trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9\-\/.]{1,19}$/.test(candidate)) return '';
+  if (!/\d/.test(candidate)) return '';
+  if (followUp.length < 8 || followUp.split(/\s+/).length < 2) return '';
+  return candidate;
+}
+
 // Extracción de especificaciones desde texto plano (PDF/CSV-like). Determinística y conservadora:
 // sólo líneas "Etiqueta: valor con dígito" con etiqueta corta (<=6 palabras). No inventa datos.
 export function extractTextSpecs(text) {
