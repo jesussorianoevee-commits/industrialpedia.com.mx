@@ -322,10 +322,30 @@ export function extractStructuredSpecs(extracted) {
   }
 
   // También conserva relaciones "Attribute: value" cuando están en una línea real.
+  // Unidad de ingeniería exigida inmediatamente después del número: mismo principio
+  // de "no inventar" que ya usa buildPage() para su propio unitPattern — sin esta
+  // unidad, no se considera evidencia de una especificación técnica.
+  const NO_COLON_UNIT = /^(?:%|°?[cf]|mm|cm|km|kn|n|kg|mg|g|kw|mw|w|kv|mv|v|ma|ua|μa|µa|a|khz|mhz|hz|rpm|r\/min|kpa|mpa|bar|psi|nm|dm[23²³]?|mm[23²³]?|ms|us|μs|µs|s|db|dbm)\b/i;
   for (const block of extracted?.blocks || []) {
-    const m = block.text.match(/^(.{2,80}?)\s*[:：]\s*([^:]{1,80})$/);
-    if (!m || !/\d/.test(m[2])) continue;
-    const cleanPair = sanitizeExtractedPair(m[1], m[2]);
+    let attrRaw;
+    let valRaw;
+    const colonMatch = block.text.match(/^(.{2,80}?)\s*[:：]\s*([^:]{1,80})$/);
+    if (colonMatch && /\d/.test(colonMatch[2])) {
+      attrRaw = colonMatch[1];
+      valRaw = colonMatch[2];
+    } else {
+      // Formato "Etiqueta valor" sin separador (ej. SKF: "Bore diameter 25 mm").
+      // Solo se acepta si, tras la etiqueta, el primer token es un número seguido
+      // inmediatamente por una unidad de ingeniería reconocida — sin unidad, se
+      // descarta en vez de asumir que es una especificación.
+      const noColonMatch = block.text.match(/^([A-Za-z][A-Za-z0-9À-ÿ()/,.\-\s]{1,60}?)\s+([<>≤≥+\-±]?\d+(?:[.,]\d+)?\s*[^\s]*)$/);
+      if (noColonMatch && NO_COLON_UNIT.test(noColonMatch[2].replace(/^[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?\s*/, ''))) {
+        attrRaw = noColonMatch[1];
+        valRaw = noColonMatch[2];
+      }
+    }
+    if (attrRaw === undefined || valRaw === undefined) continue;
+    const cleanPair = sanitizeExtractedPair(attrRaw, valRaw);
     if (!cleanPair) continue;
     out.push({
       attribute: cleanPair.attribute,
