@@ -106,7 +106,7 @@ export function classifyIdentifier(candidate) {
 }
 
 const GENERIC_TECHNICAL_ATTRIBUTE = /(?:^|[^a-z])(voltage|current|frequency|power|resistance|capacitance|inductance|temperature|pressure|flow|force|torque|speed|stroke|bore|diameter|length|width|height|weight|dimension|accuracy|repeatability|resolution|response|switching|load|range|supply|input|output|operating|storage|lifetime|duty|cycle|impedance|gain|bandwidth|delay|rise|fall|leakage|threshold|sensitivity|material|mounting|connection|connector|interface|communication|protection|insulation|ingress|thread|port|housing|package|size|rating|class|degree|seal|travel|displacement|hardness|viscosity|density|capacity|volume|area)(?:$|[^a-z])/i;
-const ENGINEERING_VALUE = /[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v|mv|kv|a|ma|ua|μa|µa|ka|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|μf|µf|nf|pf|h|uh|μh|µh|mh|w|mw|kw|va|mm|cm|m|um|μm|µm|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|kb|mb|gb|bar|kpa|mpa|psi|rpm|ms|us|μs|µs|ns|s|db|dbm|deg|degree|x)(?:$|[ ,;\/])/i;
+const ENGINEERING_VALUE = /[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v|mv|kv|a|ma|ua|μa|µa|ka|hz|khz|mhz|ghz|ohm|ω|kohm|mohm|f|uf|μf|µf|nf|pf|h|uh|μh|µh|mh|w|mw|kw|va|mm|cm|m|um|μm|µm|nm|in|mil|kg|g|mg|lb|n|kn|l|ml|kb|mb|gb|bar|kpa|mpa|psi|rpm|r\/min|ms|us|μs|µs|ns|s|db|dbm|deg|degree|x)(?:$|[ ,;\/])/i;
 
 // Valores compuestos frecuentes en fichas de PLC/control: "14 DI 24 V DC",
 // "10 DO 24 V DC", "2 AI 0-10 V DC", etc. Siguen requiriendo un
