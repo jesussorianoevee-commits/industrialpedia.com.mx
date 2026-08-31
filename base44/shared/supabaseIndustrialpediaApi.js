@@ -80,7 +80,11 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   let canonicalId = String(partId || '').trim();
   const pn = String(partNumber || '').trim();
 
-  if (pn) {
+  // Cuando la ruta ya trae el UUID canónico, no debemos volver a resolverlo
+  // mediante búsqueda textual. La búsqueda pública puede no indexar todavía
+  // una referencia aunque la pieza exista y sea perfectamente comparable.
+  // El UUID de /comparar/:id es la fuente de verdad en este flujo.
+  if (!canonicalId && pn) {
     const search = await searchIndustrialpedia(pn, 10);
     const results = Array.isArray(search?.results) ? search.results : [];
     const exact = results.find((r) => String(r.part_number || '').trim().toLowerCase() === pn.toLowerCase());
