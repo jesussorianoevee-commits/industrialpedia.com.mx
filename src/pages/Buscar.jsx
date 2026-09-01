@@ -13,7 +13,7 @@ import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
 
-const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: true };
+const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false }; 
 
 export default function Buscar() {
   const [params, setParams] = useSearchParams();
