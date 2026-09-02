@@ -342,7 +342,8 @@ export default function Comparar() {
                 : '—';
               return { s, originalValue, candidateValue, state };
             }).filter((row) => row.originalValue !== '—' || row.candidateValue !== '—');
-            const visible = mobileRows;
+            const mobileKey = c.id || ci;
+            const visible = mobileRows.slice(0, expandedMobileComparisonTable[mobileKey] ? mobileRows.length : 6);
             return (
               <section key={c.id || ci} className="rounded-xl border border-white/10 bg-[#0d141b] overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
@@ -388,6 +389,12 @@ export default function Comparar() {
                     );
                   })}
                 </div>
+                {mobileRows.length > 6 && <div className="flex justify-center border-t border-white/[0.06] py-2">
+                  <button type="button" onClick={() => setExpandedMobileComparisonTable((current) => ({ ...current, [mobileKey]: !current[mobileKey] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={!!expandedMobileComparisonTable[mobileKey]}>
+                    {expandedMobileComparisonTable[mobileKey] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {expandedMobileComparisonTable[mobileKey] ? 'Ver menos' : `Ver más · ${mobileRows.length - 6} datos`}
+                  </button>
+                </div>}
 
               </section>
             );
