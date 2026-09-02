@@ -114,7 +114,8 @@ export default function Parte() {
         // La API canónica devuelve specifications; resultados antiguos de Base44
         // pueden traer únicamente top_specs. Normalizamos ambos contratos aquí
         // para no perder datos técnicos durante la transición.
-        const rawSpecs = p.specifications && typeof p.specifications === 'object' ? p.specifications : {};
+        const rawSpecs = p.specifications_labeled && typeof p.specifications_labeled === 'object' ? p.specifications_labeled : (p.specifications && typeof p.specifications === 'object' ? p.specifications : {});
+        const usesLabeledShape = Boolean(p.specifications_labeled);
         const fallbackSpecs = Array.isArray(p.top_specs) ? p.top_specs : [];
         const specEntries = Object.keys(rawSpecs).length > 0
           ? Object.entries(rawSpecs)
@@ -124,12 +125,17 @@ export default function Parte() {
           .filter(([attribute, raw]) => attribute && raw !== null && raw !== undefined && raw !== '')
           .map(([attribute, raw]) => {
             const isObject = raw && typeof raw === 'object' && !Array.isArray(raw);
-            const value = isObject ? (raw.value ?? null) : raw;
-            const unit = isObject ? (raw.unit ?? null) : null;
+            // specifications_labeled trae {value, label} desde spec_property_definitions
+            // (fuente unica de verdad, ya localizada en el backend). Si por algun
+            // motivo no viene labeled (fuente vieja), se cae al mecanismo previo.
+            const backendLabel = usesLabeledShape && isObject ? raw.label : null;
+            const value = usesLabeledShape && isObject ? raw.value : (isObject ? (raw.value ?? null) : raw);
+            const unit = isObject && !usesLabeledShape ? (raw.unit ?? null) : null;
             const localized = translatedSpecifications[attribute];
-            const localizedAttribute = localized && typeof localized === 'object'
-              ? (localized.attribute || localized.label || localizeSpecAttribute(attribute, language))
-              : (typeof localized === 'string' ? localized : localizeSpecAttribute(attribute, language));
+            const localizedAttribute = backendLabel
+              || (localized && typeof localized === 'object'
+                ? (localized.attribute || localized.label || localizeSpecAttribute(attribute, language))
+                : (typeof localized === 'string' ? localized : localizeSpecAttribute(attribute, language)));
             const localizedValue = localized && typeof localized === 'object'
               ? (localized.value ?? localizeSpecValue(value, language))
               : localizeSpecValue(value, language);
