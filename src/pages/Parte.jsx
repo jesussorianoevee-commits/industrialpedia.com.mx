@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, ShieldCheck, AlertCircle } from 'lucide-react';
 import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
@@ -52,6 +52,7 @@ export default function Parte() {
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [expandedSources, setExpandedSources] = useState(false);
   const { language, t } = useLanguage();
 
   useEffect(() => {
@@ -302,13 +303,14 @@ export default function Parte() {
               <div>
                 <div className="text-white/70 text-xs font-semibold mb-2">{t.distributor}</div>
                 <div className="space-y-2">
-                  {supplierSources.map((s) => (
+                  {supplierSources.slice(0, expandedSources ? supplierSources.length : 3).map((s) => (
                     <a key={s.id || s.url} href={s.product_url || s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-[#5a9cd9]/25 bg-[#5a9cd9]/5 p-3 hover:border-[#5a9cd9]/50">
                       <div className="text-white/80 text-xs font-medium">{s.provider_name || t.distributor}</div>
                       <div className="text-[#5a9cd9] text-[11px] mt-1 truncate">{s.product_url || s.url}</div>
                       {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
                     </a>
                   ))}
+                  {supplierSources.length > 3 && <button type="button" onClick={() => setExpandedSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={expandedSources}>{expandedSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedSources ? 'Ver menos' : `Ver más · ${supplierSources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}
