@@ -1,4 +1,5 @@
-import { FileText, Link2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, FileText, Link2 } from 'lucide-react';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
 
 function SpecRow({ spec, evidence, provenance, language }) {
@@ -32,6 +33,8 @@ function SpecRow({ spec, evidence, provenance, language }) {
 
 export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
   const { language, t } = useLanguage();
+  const [expanded, setExpanded] = useState(false);
+  const INITIAL_VISIBLE = 6;
   if (specs.length === 0) {
     return <p className="text-white/40 text-sm">{t.noTechnicalSpecsSource}</p>;
   }
@@ -40,7 +43,7 @@ export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.45fr)] gap-2 px-1.5 py-1.5 border-b border-white/10 text-[9px] uppercase tracking-wider text-white/30">
         <span>{t.technicalSpecs}</span><span></span><span className="text-right">{t.requiredValue}</span>
       </div>
-      {specs.map((s) => (
+      {specs.slice(0, expanded ? specs.length : INITIAL_VISIBLE).map((s) => (
         <SpecRow
           key={s.id}
           spec={s}
@@ -49,6 +52,19 @@ export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
           language={language}
         />
       ))}
+      {specs.length > INITIAL_VISIBLE && (
+        <div className="flex justify-center border-t border-white/10 py-2">
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#65a9e6]/60"
+            aria-expanded={expanded}
+          >
+            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {expanded ? 'Ver menos' : `Ver más · ${specs.length - INITIAL_VISIBLE} datos`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
