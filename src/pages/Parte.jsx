@@ -43,6 +43,7 @@ export default function Parte() {
   const navigate = useNavigate();
   const [part, setPart] = useState(null);
   const [specs, setSpecs] = useState([]);
+  const [unclassifiedSpecs, setUnclassifiedSpecs] = useState([]);
   const [evidenceBySpec, setEvidenceBySpec] = useState({});
   const [provenanceBySpec, setProvenanceBySpec] = useState({});
   const [docs, setDocs] = useState([]);
