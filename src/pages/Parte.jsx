@@ -47,6 +47,8 @@ export default function Parte() {
   const [provenanceBySpec, setProvenanceBySpec] = useState({});
   const [docs, setDocs] = useState([]);
   const [sources, setSources] = useState([]);
+  const [supplierSources, setSupplierSources] = useState([]);
+  const [technicalSources, setTechnicalSources] = useState([]);
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
@@ -145,7 +147,9 @@ export default function Parte() {
         setEvidenceBySpec({});
         setProvenanceBySpec({});
         setDocs([]);
-        setSources(Array.isArray(p.evidence) ? p.evidence.map((e) => e.source).filter(Boolean) : []);
+        setSources(Array.isArray(p.provenance?.sources) ? p.provenance.sources : (Array.isArray(p.evidence) ? p.evidence.map((e) => e.source).filter(Boolean) : []));
+        setSupplierSources(Array.isArray(p.provenance?.supplier_links) ? p.provenance.supplier_links : []);
+        setTechnicalSources(Array.isArray(p.provenance?.technical_sources) ? p.provenance.technical_sources : []);
       } catch (e) {
         setPart(null);
       } finally {
@@ -287,17 +291,54 @@ export default function Parte() {
           </div>
         )}
 
-        {sources.length > 0 && (
-          <div>
-            <h2 className="text-white font-semibold text-sm mb-2">{t.sourcesTitle}</h2>
-            <div className="space-y-2">
-              {sources.map((s) => (
-                <a key={s.id} href={s.url} target="_blank" rel="noreferrer" className="block bg-[#161a20] border border-white/10 rounded-lg p-3 text-white/60 text-xs hover:border-white/20">
-                  {s.url}
-                </a>
-              ))}
+        {(supplierSources.length > 0 || technicalSources.length > 0 || sources.length > 0) && (
+          <section className="bg-[#161a20] border border-white/10 rounded-xl p-4 space-y-4">
+            <div>
+              <h2 className="text-white font-semibold text-sm mb-1">{t.sourcesTitle} y trazabilidad</h2>
+              <p className="text-white/40 text-[11px] leading-relaxed">Aquí puedes ver de dónde provino el componente y qué fuentes respaldan sus datos técnicos.</p>
             </div>
-          </div>
+
+            {supplierSources.length > 0 && (
+              <div>
+                <div className="text-white/70 text-xs font-semibold mb-2">{t.distributor}</div>
+                <div className="space-y-2">
+                  {supplierSources.map((s) => (
+                    <a key={s.id || s.url} href={s.product_url || s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-[#5a9cd9]/25 bg-[#5a9cd9]/5 p-3 hover:border-[#5a9cd9]/50">
+                      <div className="text-white/80 text-xs font-medium">{s.provider_name || t.distributor}</div>
+                      <div className="text-[#5a9cd9] text-[11px] mt-1 truncate">{s.product_url || s.url}</div>
+                      {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {technicalSources.length > 0 && (
+              <div>
+                <div className="text-white/70 text-xs font-semibold mb-2">{t.officialManufacturer}</div>
+                <div className="space-y-2">
+                  {technicalSources.map((s) => (
+                    <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 hover:border-white/20">
+                      <div className="text-white/70 text-xs">{s.provider_name || t.officialManufacturer}</div>
+                      <div className="text-[#5a9cd9] text-[11px] mt-1 truncate">{s.url}</div>
+                      {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sources.length > 0 && technicalSources.length === 0 && supplierSources.length === 0 && (
+              <div>
+                <div className="text-white/70 text-xs font-semibold mb-2">{t.sourcesTitle}</div>
+                <div className="space-y-2">
+                  {sources.map((s) => (
+                    <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 text-white/60 text-xs hover:border-white/20">{s.url}</a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
