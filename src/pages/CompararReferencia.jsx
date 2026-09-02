@@ -78,7 +78,7 @@ export default function CompararReferencia() {
         <div className="mt-2 font-mono text-lg text-[#65a9e6]">{reference.partNumber || 'Sin número de parte'}</div>
         <div className="mt-1 text-sm text-white/55">{reference.manufacturer || 'Fabricante externo'} · {reference.category}</div>
         <div className="mt-4 grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(reference.specifications || {}).slice(0, 12).map(([k, v]) => <div key={k} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"><div className="text-[10px] text-white/30">{localizeSpecAttribute(k, language)}</div><div className="mt-1 text-xs font-mono text-white/75 break-words">{specValue(v)}</div></div>)}
+          {Object.entries(reference.specifications || {}).map(([k, v]) => <div key={k} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"><div className="text-[10px] text-white/30">{localizeSpecAttribute(k, language)}</div><div className="mt-1 text-xs font-mono text-white/75 break-words">{specValue(v)}</div></div>)}
         </div>
       </section>
 
@@ -93,7 +93,7 @@ export default function CompararReferencia() {
               <div className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold shrink-0 ${state.cls}`}><Icon className="h-3.5 w-3.5" />{state.label}</div>
             </div>
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]"><div><span className="text-white/30">Coinciden</span><div className="mt-1 font-mono text-white/75">{a.comparison?.equal_specs ?? a.comparison?.equal ?? 0}</div></div><div><span className="text-white/30">Compartidas</span><div className="mt-1 font-mono text-white/75">{a.comparison?.shared_specs ?? a.comparison?.compared ?? 0}</div></div><div><span className="text-white/30">Diferentes</span><div className="mt-1 font-mono text-amber-200">{a.comparison?.different_specs ?? a.comparison?.different ?? 0}</div></div><div><span className="text-white/30">Similitud</span><div className="mt-1 font-mono text-white/80">{a.comparison?.similarity_pct ?? '—'}%</div></div></div>
-            <div className="mt-4 flex flex-wrap gap-1.5 sm:gap-2">{Object.entries(a.specifications || {}).slice(0, 8).map(([k,v]) => <span key={k} className="rounded bg-white/[0.04] border border-white/10 px-2 py-1 text-[10px] text-white/55"><span className="text-white/30">{localizeSpecAttribute(k, language)}:</span> {specValue(v)}</span>)}</div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">{Object.entries(a.specifications || {}).map(([k,v]) => <div key={k} className="rounded bg-white/[0.04] border border-white/10 px-2 py-1.5 text-[10px] text-white/55"><span className="text-white/30">{localizeSpecAttribute(k, language)}:</span> {specValue(v)}</div>)}</div>
             {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#65a9e6] hover:underline">{t.compareModelSource} →</a>}
             {a.comparison?.state === 'strong_match' && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] text-amber-100/70">Coincidencia técnica fuerte, no autorización automática de sustitución. Valida requisitos críticos y documentación del fabricante antes de instalar.</div>}
           </article>;
