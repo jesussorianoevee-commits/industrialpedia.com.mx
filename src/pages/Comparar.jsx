@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
 import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
@@ -102,6 +102,8 @@ export default function Comparar() {
   const [expandedResults, setExpandedResults] = useState(false);
   const [expandedSpecs, setExpandedSpecs] = useState({});
   const [expandedMobileSpecs, setExpandedMobileSpecs] = useState({});
+  const [expandedComparisonTable, setExpandedComparisonTable] = useState(false);
+  const [expandedMobileComparisonTable, setExpandedMobileComparisonTable] = useState({});
   const { language, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -229,7 +231,7 @@ export default function Comparar() {
               {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
                 <div className="flex items-center justify-between gap-2"><div className="text-sm font-bold uppercase tracking-wider text-white/55">Ficha técnica</div><div className="text-[9px] font-mono text-white/25">{c.specs.length} datos</div></div>
                 <div className="mt-2 grid grid-cols-1 gap-2 2xl:grid-cols-2">
-                  {c.specs.map((s, j) => {
+                  {c.specs.slice(0, expandedSpecs[c.id || i] ? c.specs.length : 6).map((s, j) => {
                     const baseSpec = (base.specs || []).find((b) => canonical(b) === canonical(s));
                     const propertyState = baseSpec ? stateFor(baseSpec, c) : 'candidate_only';
                     const isIncompatible = propertyState === 'different' && c.comparison?.state === 'not_compatible';
@@ -252,7 +254,12 @@ export default function Comparar() {
                     </div>;
                   })}
                 </div>
-
+                {c.specs.length > 6 && <div className="mt-2 flex justify-center border-t border-white/[0.06] pt-2">
+                  <button type="button" onClick={() => setExpandedSpecs((current) => ({ ...current, [c.id || i]: !current[c.id || i] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={!!expandedSpecs[c.id || i]}>
+                    {expandedSpecs[c.id || i] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {expandedSpecs[c.id || i] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}
+                  </button>
+                </div>}
               </div>}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
                 <span className="text-sm text-white/55">Resultado</span>
