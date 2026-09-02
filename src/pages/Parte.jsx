@@ -52,6 +52,7 @@ export default function Parte() {
   const [partEvidence, setPartEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [expandedPartEvidence, setExpandedPartEvidence] = useState(false);
   const [expandedSupplierSources, setExpandedSupplierSources] = useState(false);
   const [expandedTechnicalSources, setExpandedTechnicalSources] = useState(false);
   const [expandedGeneralSources, setExpandedGeneralSources] = useState(false);
@@ -264,12 +265,25 @@ export default function Parte() {
           <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
             <div className="text-white font-semibold text-sm mb-2">{t.componentEvidence}</div>
             <div className="space-y-2">
-              {partEvidence.map((ev) => (
+              {partEvidence.slice(0, expandedPartEvidence ? partEvidence.length : 2).map((ev) => (
                 <div key={ev.id} className="text-[11px] text-white/55 leading-relaxed">
                   <div>{ev.evidence}</div>
                   {ev.source?.url && <a href={ev.source.url} target="_blank" rel="noreferrer" className="text-[#5a9cd9] hover:underline mt-1 inline-block">{ev.source.name || ev.source.url}</a>}
                 </div>
               ))}
+              {partEvidence.length > 2 && (
+                <div className="flex justify-center border-t border-white/10 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPartEvidence((value) => !value)}
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#65a9e6]/60"
+                    aria-expanded={expandedPartEvidence}
+                  >
+                    {expandedPartEvidence ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {expandedPartEvidence ? 'Ver menos' : `Ver más · ${partEvidence.length - 2} evidencias`}
+                  </button>
+                </div>
+              )}
             </div>
           </section>
         )}
