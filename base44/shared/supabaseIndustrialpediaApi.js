@@ -43,12 +43,15 @@ export async function getIndustrialpediaCatalogStats() {
   return data;
 }
 
-export async function getPartIndustrialpedia(id) {
+export async function getPartIndustrialpedia(id, language = 'es') {
   // La ficha usa el mismo contrato canónico de Industrialpedia Search.
   // Evitamos el RPC legacy get_part_v1 porque no garantiza el payload técnico.
+  // lang controla el idioma de specifications_labeled (nombres canónicos desde
+  // spec_property_definitions), resuelto en el backend, fuente única de verdad.
   const url = new URL(FUNCTION_URL);
   url.searchParams.set('mode', 'part');
   url.searchParams.set('id', id);
+  url.searchParams.set('lang', language);
   const response = await fetch(url, {
     method: 'GET',
     headers: {
