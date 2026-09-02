@@ -321,13 +321,14 @@ export default function Parte() {
               <div>
                 <div className="text-white/70 text-xs font-semibold mb-2">{t.officialManufacturer}</div>
                 <div className="space-y-2">
-                  {technicalSources.map((s) => (
+                  {technicalSources.slice(0, expandedTechnicalSources ? technicalSources.length : 3).map((s) => (
                     <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 hover:border-white/20">
                       <div className="text-white/70 text-xs">{s.provider_name || t.officialManufacturer}</div>
                       <div className="text-[#5a9cd9] text-[11px] mt-1 truncate">{s.url}</div>
                       {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
                     </a>
                   ))}
+                  {technicalSources.length > 3 && <button type="button" onClick={() => setExpandedTechnicalSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={expandedTechnicalSources}>{expandedTechnicalSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedTechnicalSources ? 'Ver menos' : `Ver más · ${technicalSources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}
@@ -336,9 +337,10 @@ export default function Parte() {
               <div>
                 <div className="text-white/70 text-xs font-semibold mb-2">{t.sourcesTitle}</div>
                 <div className="space-y-2">
-                  {sources.map((s) => (
+                  {sources.slice(0, expandedGeneralSources ? sources.length : 3).map((s) => (
                     <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 text-white/60 text-xs hover:border-white/20">{s.url}</a>
                   ))}
+                  {sources.length > 3 && <button type="button" onClick={() => setExpandedGeneralSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={expandedGeneralSources}>{expandedGeneralSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedGeneralSources ? 'Ver menos' : `Ver más · ${sources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}
