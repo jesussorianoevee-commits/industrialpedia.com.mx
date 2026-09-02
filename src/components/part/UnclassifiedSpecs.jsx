@@ -1,6 +1,25 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 
+// Prefijos de fabricante conocidos que ensucian la lectura del codigo crudo.
+// Quitarlos es solo formato -- no inventa significado tecnico ni pretende
+// ser una traduccion curada (eso vive en spec_property_definitions para las
+// propiedades SI clasificadas). Aqui solo hacemos legible lo ilegible.
+const KNOWN_PREFIXES = ['siemens_', 'mouser_', 'analog_', 'diodes_'];
+
+function humanizeRawLabel(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return s;
+  for (const prefix of KNOWN_PREFIXES) {
+    if (s.toLowerCase().startsWith(prefix)) {
+      s = s.slice(prefix.length);
+      break;
+    }
+  }
+  s = s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 // Estos datos SI vienen de una fuente real (misma evidencia que el resto de la
 // ficha), pero ningun alias de la taxonomia los reconocio todavia como una
 // propiedad formal. Por eso NUNCA se mezclan con SpecList: mezclarlos haria
@@ -32,7 +51,7 @@ export default function UnclassifiedSpecs({ items }) {
           </p>
           {items.map((it) => (
             <div key={it.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-2 px-1.5 py-1.5 border-t border-white/5">
-              <span className="text-white/40 text-[11px] break-words">{it.label}</span>
+              <span className="text-white/40 text-[11px] break-words">{humanizeRawLabel(it.label)}</span>
               <span className="text-white/60 text-[11px] text-right break-words">{it.value ?? '—'}</span>
             </div>
           ))}
