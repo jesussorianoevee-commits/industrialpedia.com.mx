@@ -283,7 +283,7 @@ export default function Comparar() {
                 {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-sm font-bold text-white/85">Comparativa · {c.part_number}</div>)}
                 <div className="border-l border-white/[0.06] p-3 text-sm font-bold ip-compare-accent">Original · {base.part_number}</div>
               </div>
-              {specRows.map((s, idx) => {
+              {specRows.slice(0, expandedComparisonTable ? specRows.length : 6).map((s, idx) => {
                 const values = alternatives.map((c) => {
                   const candidate = valueFor(s, c);
                   return candidate !== null && candidate !== undefined && candidate !== '' ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
@@ -307,6 +307,12 @@ export default function Comparar() {
               })}
             </div>
           </div>
+          {specRows.length > 6 && <div className="mt-2 flex justify-center">
+            <button type="button" onClick={() => setExpandedComparisonTable((value) => !value)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={expandedComparisonTable}>
+              {expandedComparisonTable ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              {expandedComparisonTable ? 'Ver menos' : `Ver más · ${specRows.length - 6} datos`}
+            </button>
+          </div>}
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/55">
             <span className="flex items-center gap-1.5"><span className="ip-compare-match">✓</span> Igual al original</span>
             <span className="flex items-center gap-1.5"><span className="ip-compare-warning">⚠</span> Diferente / similar</span>
