@@ -145,6 +145,15 @@ export default function Parte() {
           })
           .filter(isTechnicalDisplaySpec);
         setSpecs(specList);
+        // Datos tecnicos reales pero sin definicion formal en la taxonomia todavia
+        // (ningun alias los reconocio). Se muestran aparte, nunca mezclados con
+        // specifications verificadas/comparables, para no fingir que son canonicas.
+        const unclassifiedRaw = Array.isArray(p.specifications_unclassified) ? p.specifications_unclassified : [];
+        setUnclassifiedSpecs(unclassifiedRaw.map((u, i) => ({
+          id: `${p.id}:unclassified:${i}`,
+          label: u.raw_label,
+          value: u.value
+        })));
         // Evidence returned by the Knowledge Core is currently part-level.
         // Do not incorrectly attach one identity evidence record to every specification.
         setPartEvidence(Array.isArray(p.evidence) ? p.evidence : []);
