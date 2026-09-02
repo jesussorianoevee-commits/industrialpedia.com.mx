@@ -5,6 +5,7 @@ import { getPartIndustrialpedia } from '../../base44/shared/supabaseIndustrialpe
 import { localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalText, useLanguage } from '@/lib/i18n';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import SpecList from '@/components/part/SpecList';
+import UnclassifiedSpecs from '@/components/part/UnclassifiedSpecs';
 import TraceabilityChain from '@/components/part/TraceabilityChain';
 import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
 import { getDisplayPartReference } from '@/lib/partIdentity';
@@ -301,6 +302,7 @@ export default function Parte() {
         <div>
           <h2 className="text-white font-semibold text-sm mb-3">{t.technicalSpecs}</h2>
           <SpecList specs={specs} evidenceBySpec={evidenceBySpec} provenanceBySpec={provenanceBySpec} />
+          <UnclassifiedSpecs items={unclassifiedSpecs} />
         </div>
 
         {docs.length > 0 && (
