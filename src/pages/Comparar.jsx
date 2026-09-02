@@ -189,7 +189,7 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            {(base.specs || []).slice(0, 6).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
+            {(base.specs || []).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
           </div>
         </div>
       </section>
@@ -229,7 +229,7 @@ export default function Comparar() {
               {Array.isArray(c.specs) && c.specs.length > 0 && <div className="mt-3 rounded-lg border border-white/[0.07] bg-[#091016]/70 p-3">
                 <div className="flex items-center justify-between gap-2"><div className="text-sm font-bold uppercase tracking-wider text-white/55">Ficha técnica</div><div className="text-[9px] font-mono text-white/25">{c.specs.length} datos</div></div>
                 <div className="mt-2 grid grid-cols-1 gap-2 2xl:grid-cols-2">
-                  {(expandedSpecs[c.id] ? c.specs : c.specs.slice(0, 6)).map((s, j) => {
+                  {c.specs.map((s, j) => {
                     const baseSpec = (base.specs || []).find((b) => canonical(b) === canonical(s));
                     const propertyState = baseSpec ? stateFor(baseSpec, c) : 'candidate_only';
                     const isIncompatible = propertyState === 'different' && c.comparison?.state === 'not_compatible';
@@ -252,7 +252,7 @@ export default function Comparar() {
                     </div>;
                   })}
                 </div>
-                {c.specs.length > 6 && <button type="button" onClick={() => setExpandedSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))} className="mt-3 w-full rounded-md border border-[#65a9e6]/25 bg-[#65a9e6]/[0.05] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider ip-compare-accent hover:bg-[#65a9e6]/[0.10]">{expandedSpecs[c.id] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}</button>}
+
               </div>}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
                 <span className="text-sm text-white/55">Resultado</span>
@@ -329,7 +329,7 @@ export default function Comparar() {
                 : '—';
               return { s, originalValue, candidateValue, state };
             }).filter((row) => row.originalValue !== '—' || row.candidateValue !== '—');
-            const visible = expandedMobileSpecs[c.id] ? mobileRows : mobileRows.slice(0, 8);
+            const visible = mobileRows;
             return (
               <section key={c.id || ci} className="rounded-xl border border-white/10 bg-[#0d141b] overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
@@ -375,15 +375,7 @@ export default function Comparar() {
                     );
                   })}
                 </div>
-                {mobileRows.length > 8 && (
-                  <button
-                    type="button"
-                    onClick={() => setExpandedMobileSpecs((prev) => ({ ...prev, [c.id]: !prev[c.id] }))}
-                    className="w-full border-t border-white/[0.07] bg-[#65a9e6]/[0.04] px-3 py-2.5 text-[9px] font-semibold uppercase tracking-wider ip-compare-accent"
-                  >
-                    {expandedMobileSpecs[c.id] ? 'Ver menos' : `Ver más · ${mobileRows.length - 8} datos`}
-                  </button>
-                )}
+
               </section>
             );
           })}
@@ -454,7 +446,7 @@ export default function Comparar() {
           <span className="flex items-center gap-1.5"><X className="h-3.5 w-3.5 ip-compare-danger" /> No coincide</span>
           <span className="flex items-center gap-1.5"><span className="text-white/30">○</span> No especificado</span>
         </div>
-        <p className="mt-3 text-[10px] text-white/30">La comparación inicial muestra un máximo de 5 alternativas para mantener una lectura clara. Si necesitas ampliar la búsqueda, puedes solicitar más alternativas. La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
+        <p className="mt-3 text-[10px] text-white/30">La comparación muestra todos los datos técnicos disponibles para cada componente. El límite de 5 alternativas solo controla cuántas piezas se muestran inicialmente, no cuántas especificaciones técnicas se comparan. La comparación usa únicamente datos del Knowledge Core. “Compatible” solo se declara cuando las reglas de familia y los requisitos disponibles permiten demostrarlo; datos críticos faltantes llevan a revisión.</p>
       </>
     </main>
   </div>;
