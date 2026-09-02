@@ -131,7 +131,11 @@ export default function ResultCard({ result }) {
     product_name: result.product_name
   });
   const displayManufacturer = manufacturerIsSameAsPartNumber ? '' : result.manufacturer_name;
-  const displayCategory = result.category && !/^category$/i.test(String(result.category).trim()) ? localizeTechnicalTerm(result.category, language) : '';
+  // category_label viene ya resuelto desde technical_families (fuente unica
+  // de verdad en Supabase). Si no viene (fuente vieja o familia sin registrar
+  // todavia), se cae al mecanismo previo de traduccion local.
+  const displayCategory = result.category_label
+    || (result.category && !/^category$/i.test(String(result.category).trim()) ? localizeTechnicalTerm(result.category, language) : '');
   const canCompareReference = isFestoDiscovery && inferReferenceCategory() && Object.keys(referenceSpecs).length >= 2;
   const canOpenComparator = Boolean(result.id);
 
