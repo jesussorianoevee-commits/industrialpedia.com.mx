@@ -69,7 +69,7 @@ export default function Parte() {
         // especificaciones o modelos y no identifican unívocamente el componente.
         let p = null;
         try {
-          const apiResponse = await getPartIndustrialpedia(id);
+          const apiResponse = await getPartIndustrialpedia(id, language);
           p = apiResponse?.part || null;
         } catch {
           p = null;
