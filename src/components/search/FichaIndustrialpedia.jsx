@@ -119,14 +119,14 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             <p className="text-[11px] text-white/35 text-center">{t.foundSourceNoPart}</p>
           </div>
         ) : !ficha ? null : (
-          <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
-            <section className="ip-card border-white/10 p-4 sm:p-6">
+          <div className="p-3 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6">
+            <section className="ip-card border-white/10 p-3.5 sm:p-5 md:p-6">
               <div className="flex items-start gap-4">
                 {ficha.image_url && !imgError ? (
                   <img
                     src={ficha.image_url}
                     alt=""
-                    className="h-20 w-20 sm:h-28 sm:w-28 rounded-xl bg-white shrink-0 border border-white/10 object-contain p-2"
+                    className="h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28 rounded-xl bg-white shrink-0 border border-white/10 object-contain p-2"
                     referrerPolicy="no-referrer"
                     onError={() => setImgError(true)}
                   />
@@ -158,10 +158,10 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
             </section>
 
             <section className="ip-card border-white/10 overflow-hidden">
-              <div className="px-5 sm:px-6 py-5 border-b border-white/10">
+              <div className="px-4 sm:px-5 md:px-6 py-4 sm:py-5 border-b border-white/10">
                 <h2 className="text-[16px] sm:text-[17px] font-semibold tracking-[0.18em] text-white/75 font-mono">{t.technicalSpecs}</h2>
               </div>
-              <div className="px-5 sm:px-6">
+              <div className="px-4 sm:px-5 md:px-6">
                 {specs.length === 0 && grouped.length === 0 && unverifiedSpecs.length === 0 && basicSpecs.length === 0 ? (
                   <div className="py-10 text-center text-xs text-white/35">{t.noTechnicalSpecsSource}</div>
                 ) : (
