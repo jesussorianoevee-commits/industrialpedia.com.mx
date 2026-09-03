@@ -40,7 +40,7 @@ const COMPOUND_LABELS_ES = { diameter: 'Diámetro', length: 'Longitud', width: '
 function normalizedFor(base, alt) { const hit = comparisonFor(base, alt); return hit && hit.normalized_b !== null && hit.normalized_b !== undefined ? { value: hit.normalized_b, unit: hit.normalized_unit } : null; }
 function normalizedDisplayFor(normalized, language = 'es') {
   if (!normalized) return '';
-  if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${localizeSpecAttribute(COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente', language)}: ${normalizeTechnicalNotation(item?.normalized_value ?? '—', { language })}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
+  if (Array.isArray(normalized.value)) return normalized.value.map((item) => `${localizeSpecAttributeStrict(COMPOUND_LABELS_ES[item?.component] || item?.component || 'Componente', language)}: ${normalizeTechnicalNotation(item?.normalized_value ?? '—', { language })}${item?.normalized_unit ? ` ${item.normalized_unit}` : ''}`).join(' · ');
   return normalizeTechnicalNotation(normalized.unit ? `${normalized.value} ${normalized.unit}` : String(normalized.value), { language });
 }
 function statusMeta(component, t) {
