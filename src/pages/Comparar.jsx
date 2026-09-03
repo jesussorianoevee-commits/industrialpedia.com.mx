@@ -161,12 +161,12 @@ export default function Comparar() {
     }
   }
 
-  return <div className="ip-comparison min-h-screen bg-[#080d12] text-white">
-    <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-3">
+  return <div className="ip-comparison ip-shell">
+    <header className="ip-header">
+      <div className="ip-container ip-header-inner">
         <button type="button" onClick={returnToFicha} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white" aria-label="Volver a ficha"><ArrowLeft className="h-4 w-4" /></button>
-        <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
-        <div className="hidden md:flex items-center gap-6 ml-6 text-xs text-white/45"><span>{t.search}</span><span className="rounded-full bg-[#102333] px-4 py-2 ip-compare-accent">{t.compare}</span><span>Fabricantes</span><span>Recursos</span></div>
+        <div className="ip-brand"><span className="text-white">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
+        <nav className="ip-nav hidden md:flex ml-4"><span className="ip-nav-item">{t.search}</span><span className="ip-nav-item ip-nav-item-active">{t.compare}</span><span className="ip-nav-item">Fabricantes</span><span className="ip-nav-item">Recursos</span></nav>
         <div className="ml-auto flex items-center gap-2">
           <span className="hidden sm:inline rounded-lg border border-white/10 px-3 py-2 text-xs text-white/55">{language.toUpperCase()}</span>
           <button
@@ -182,7 +182,7 @@ export default function Comparar() {
       </div>
     </header>
 
-    <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-7 w-full min-w-0">
+    <main className="ip-container py-4 sm:py-7 min-w-0">
       <button type="button" onClick={returnToFicha} className="mb-4 flex items-center gap-2 text-xs ip-compare-accent hover:text-white"><ArrowLeft className="h-3.5 w-3.5" /> Volver a ficha</button>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t.technicalComparison}</h1><p className="mt-1 text-sm text-white/45">{t.compareSubtitle}</p></div>
@@ -291,55 +291,6 @@ export default function Comparar() {
             </div>;
           })}
             </div>
-          </div>
-        </section>
-
-        <section className="mb-4 hidden rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5 md:block">
-          <div className="mb-4 flex items-start gap-3">
-            <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#65a9e6]" />
-            <div><h2 className="text-lg font-semibold text-white/95">Comparación completa</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí puedes revisar todos los datos frente a la pieza original.</p></div>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
-            <div className="min-w-[820px]">
-              <div className="grid border-b border-white/[0.08] bg-white/[0.025]" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
-                <div className="p-3 text-sm font-bold text-white/75">Dato</div>
-                {alternatives.map((c, i) => <div key={c.id || i} className="border-l border-white/[0.06] p-3 text-sm font-bold text-white/85">Comparativa · {c.part_number}</div>)}
-                <div className="border-l border-white/[0.06] p-3 text-sm font-bold ip-compare-accent">Original · {base.part_number}</div>
-              </div>
-              {specRows.slice(0, expandedComparisonTable ? specRows.length : 6).map((s, idx) => {
-                const values = alternatives.map((c) => {
-                  const candidate = valueFor(s, c);
-                  return candidate !== null && candidate !== undefined && candidate !== '' ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
-                });
-                const baseValue = val(s, language);
-                const states = alternatives.map((c) => stateFor(s, c));
-                const hasRelevantDifference = states.some((state) => state === 'different' || state === 'not_comparable' || state === 'candidate_only');
-                const hasMatch = states.some((state) => state === 'equal');
-                if (!hasRelevantDifference && !hasMatch) return null;
-                return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
-                  <div className="p-3 text-base font-semibold text-white/80">{propertyLabelFromSpec(s, language)}</div>
-                  {alternatives.map((c, i) => {
-                    const state = states[i];
-                    const tone = state === 'equal' ? 'ip-compare-match' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'ip-compare-danger' : 'ip-compare-warning') : state === 'not_comparable' ? 'ip-compare-danger' : 'text-white/40';
-                    const bg = state === 'equal' ? 'bg-[#16c79a]/[0.07]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
-                    const icon = state === 'equal' ? '✓' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? '✕' : '⚠') : state === 'not_comparable' ? '✕' : '○';
-                    return <div key={c.id || i} className={`min-w-0 overflow-hidden border-l border-white/[0.06] p-3 ${bg}`}><div className={`flex min-w-0 items-start gap-2 font-mono text-base font-semibold leading-relaxed ${tone}`}><span className="shrink-0" aria-hidden="true">{icon}</span><span className="min-w-0 whitespace-normal break-words [overflow-wrap:anywhere]">{values[i]}</span></div><div className="mt-1 text-xs text-white/45">{state === 'equal' ? 'Igual al original' : state === 'different' ? 'Diferente' : state === 'not_comparable' ? 'No comparable' : 'No especificado'}</div></div>;
-                  })}
-                  <div className="border-l border-white/[0.06] bg-[#65a9e6]/[0.035] p-3 font-mono text-base font-semibold text-white/95">{baseValue}</div>
-                </div>;
-              })}
-            </div>
-          </div>
-          {specRows.length > 6 && <div className="mt-2 flex justify-center">
-            <button type="button" onClick={() => setExpandedComparisonTable((value) => !value)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={expandedComparisonTable}>
-              {expandedComparisonTable ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {expandedComparisonTable ? 'Ver menos' : `Ver más · ${specRows.length - 6} datos`}
-            </button>
-          </div>}
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/55">
-            <span className="flex items-center gap-1.5"><span className="ip-compare-match">✓</span> Igual al original</span>
-            <span className="flex items-center gap-1.5"><span className="ip-compare-warning">⚠</span> Diferente / similar</span>
-            <span className="flex items-center gap-1.5"><span className="ip-compare-danger">✕</span> Diferencia crítica</span>
           </div>
         </section>
 
