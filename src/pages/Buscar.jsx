@@ -266,7 +266,7 @@ export default function Buscar() {
           </button>
 
           {showHistory && history.length > 0 && input.trim().length === 0 && (
-            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
+            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden ip-card shadow-2xl">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/40">
                   <Clock className="w-3 h-3" /> {t.recentSearches}
@@ -298,7 +298,7 @@ export default function Buscar() {
           )}
 
           {input.trim().length >= 2 && input.trim() !== q.trim() && (suggestionsLoading || suggestions.length > 0) && (
-            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#11161c] shadow-2xl">
+            <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden ip-card shadow-2xl">
               {suggestionsLoading ? (
                 <div className="px-4 py-4 text-xs text-white/40 flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> {t.discoveringProducts}</div>
               ) : (
