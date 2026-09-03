@@ -39,7 +39,7 @@ export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
     return <p className="text-white/40 text-sm">{t.noTechnicalSpecsSource}</p>;
   }
   return (
-    <div className="bg-[#11161c] border border-white/10 rounded-lg px-2">
+    <div className="ip-card px-2">
       <button
         type="button"
         onClick={() => specs.length > INITIAL_VISIBLE && setExpanded((value) => !value)}
