@@ -176,18 +176,25 @@ export default function ResultCard({ result }) {
       <div className="mb-3 flex gap-3">
         <div className="w-[72px] h-[72px] sm:w-20 sm:h-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden shadow-inner">
           {isUsableImageUrl(imageSrc) ? (
-            <img
-              src={imageSrc}
-              alt={result.part_number || ''}
-              className="w-full h-full object-contain p-1.5"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => {
-                clearProductImageCache(result.part_number, result.manufacturer_name || '');
-                if (imageRetry < 1) setImageRetry((n) => n + 1);
-                else setImageSrc('');
-              }}
-            />
+            <button
+              type="button"
+              onClick={() => setImagePreviewOpen(true)}
+              className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#5a9cd9] rounded-2xl"
+              aria-label={`Ampliar imagen de ${result.part_number || 'la pieza'}`}
+            >
+              <img
+                src={imageSrc}
+                alt={result.part_number || ''}
+                className="w-full h-full object-contain p-1.5"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={() => {
+                  clearProductImageCache(result.part_number, result.manufacturer_name || '');
+                  if (imageRetry < 1) setImageRetry((n) => n + 1);
+                  else setImageSrc('');
+                }}
+              />
+            </button>
           ) : imageLookupPending ? (
             <Loader2 className="w-5 h-5 text-[#5a9cd9]/60 animate-spin" aria-label="Buscando imagen" />
           ) : (
