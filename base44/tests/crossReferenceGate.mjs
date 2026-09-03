@@ -62,6 +62,17 @@ const officialResult = resolveCrossReference(base, official, rules);
 assert.equal(officialResult.state, STATES.REPLACE);
 assert.equal(officialResult.relation, 'official_replacement');
 
+// Generic verified evidence must never promote an undeclared official relation.
+const genericVerified = {
+  ...equivalent,
+  part_number: 'G-700',
+  relations: [{ type: 'official_replacement', from_part_number: 'A-100' }],
+  evidence: [{ type: 'datasheet', verified: true }]
+};
+const genericResult = resolveCrossReference(base, genericVerified, rules);
+assert.notEqual(genericResult.state, STATES.REPLACE);
+assert.notEqual(genericResult.relation, 'official_replacement');
+
 // Determinism: identical inputs produce byte-stable JSON output.
 assert.equal(JSON.stringify(resolveCrossReference(base, equivalent, rules)), JSON.stringify(resolveCrossReference(base, equivalent, rules)));
 
