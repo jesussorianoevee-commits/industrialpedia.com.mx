@@ -40,6 +40,6 @@ assert.equal(mismatchResult.critical_fail, 1);
 
 console.log(JSON.stringify({
   status: 'FAMILY_GOVERNANCE_GATE_OK',
-  checks: 4,
+  checks: 6,
   policy: 'no governed family rules => no automatic equivalence'
 }, null, 2));
