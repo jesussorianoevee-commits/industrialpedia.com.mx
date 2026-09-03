@@ -294,7 +294,7 @@ export default function Comparar() {
           </div>
         </section>
 
-        <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+        <section className="mb-4 hidden rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5 md:block">
           <div className="mb-4 flex items-start gap-3">
             <div className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#65a9e6]" />
             <div><h2 className="text-lg font-semibold text-white/95">Comparación completa</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí puedes revisar todos los datos frente a la pieza original.</p></div>
