@@ -94,7 +94,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 ip-mobile-safe-bottom" onClick={onClose}>
       <div
-        className="bg-[#0b1015] border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-3xl max-h-[94vh] sm:max-h-[92vh] overflow-y-auto shadow-2xl"
+        className="ip-card border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-4xl max-h-[94vh] sm:max-h-[92vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-3 bg-[#0b1015]/95 backdrop-blur border-b border-white/10">
@@ -120,7 +120,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
           </div>
         ) : !ficha ? null : (
           <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
-            <section className="rounded-xl border border-white/10 bg-[#10161d] p-4 sm:p-6">
+            <section className="ip-card border-white/10 p-4 sm:p-6">
               <div className="flex items-start gap-4">
                 {ficha.image_url && !imgError ? (
                   <img
@@ -157,7 +157,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
               </div>
             </section>
 
-            <section className="rounded-xl border border-white/10 bg-[#0f151b] overflow-hidden">
+            <section className="ip-card border-white/10 overflow-hidden">
               <div className="px-5 sm:px-6 py-5 border-b border-white/10">
                 <h2 className="text-[16px] sm:text-[17px] font-semibold tracking-[0.18em] text-white/75 font-mono">{t.technicalSpecs}</h2>
               </div>
