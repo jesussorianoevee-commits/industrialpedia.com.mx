@@ -21,9 +21,9 @@ export default function Hero({ partCount, loading, lastUpdated }) {
   const submit = (e) => { e.preventDefault(); goSearch(q); };
 
   return (
-    <section className="px-3 sm:px-5 pt-8 sm:pt-14 pb-8 sm:pb-12 md:pt-16 md:pb-14 text-center">
-      <div className="ip-card max-w-[1180px] mx-auto rounded-[20px] sm:rounded-[24px] border-primary/15 bg-gradient-to-b from-primary/[0.035] to-transparent px-3 sm:px-8 py-8 sm:py-12 md:py-14 shadow-[0_18px_60px_-40px_hsl(var(--primary)/.35)]">
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 ip-muted text-[10px] mb-5 tracking-[0.16em] uppercase">
+    <section className="px-3 sm:px-5 pt-5 sm:pt-10 pb-6 sm:pb-10 md:pt-14 md:pb-12 text-center">
+      <div className="ip-card max-w-[1180px] mx-auto rounded-[16px] sm:rounded-[22px] border-primary/15 bg-gradient-to-b from-primary/[0.035] to-transparent px-3 sm:px-8 py-6 sm:py-10 md:py-12 shadow-[0_18px_60px_-40px_hsl(var(--primary)/.35)]">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 ip-muted text-[10px] mb-4 sm:mb-5 tracking-[0.16em] uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/.7)]" />
         {loading ? t.loadingParts : `${partCount.toLocaleString()} ${t.foundParts}`}
       </div>
@@ -32,10 +32,10 @@ export default function Hero({ partCount, loading, lastUpdated }) {
           {t.updatedAutomatically} · {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       )}
-      <h1 className="text-[38px] sm:text-[48px] md:text-[68px] leading-[0.98] font-bold tracking-[-0.045em] ip-text mb-5 max-w-4xl mx-auto">
+      <h1 className="text-[34px] sm:text-[48px] md:text-[68px] leading-[1] font-bold tracking-[-0.045em] ip-text mb-4 sm:mb-5 max-w-4xl mx-auto">
         {t.findYourPart} <span className="ip-accent">{t.sparePart}</span><br className="hidden sm:block" /> {t.inSeconds}
       </h1>
-      <p className="ip-muted text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-7 sm:mb-9">
+      <p className="ip-muted text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-5 sm:mb-8">
         {t.searchParts}
       </p>
       <form onSubmit={submit} className="max-w-[900px] mx-auto relative">
@@ -53,11 +53,11 @@ export default function Hero({ partCount, loading, lastUpdated }) {
           </div>
         )}
       </form>
-      <div className="flex items-center justify-center flex-wrap gap-2 mt-5 sm:mt-6">
+      <div className="flex items-center justify-center flex-wrap gap-2 mt-4 sm:mt-6">
         <span className="ip-muted text-[10px] uppercase tracking-wider mr-1">{t.examples}</span>
         {POPULAR_TAGS.slice(0, 6).map((t) => <button key={t} onClick={() => navigate(`/buscar?q=${encodeURIComponent(t)}`)} className="px-2.5 py-1.5 rounded-md bg-secondary border border-border ip-muted text-[11px] hover:text-primary transition-colors">{t}</button>)}
       </div>
-      <div className="mt-8 sm:mt-10 pt-5 border-t border-border/60 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 ip-muted text-[11px]">
+      <div className="mt-6 sm:mt-9 pt-4 sm:pt-5 border-t border-border/60 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 ip-muted text-[11px]">
         <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 ip-accent" /> {t.structuredInfo}</span>
         <span className="hidden sm:inline opacity-30">•</span>
         <span className="hidden sm:inline-flex items-center gap-1.5"><ArrowRight className="w-3.5 h-3.5 ip-accent" /> {t.upToFiveAlternatives}</span>
