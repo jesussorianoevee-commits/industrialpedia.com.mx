@@ -4,6 +4,11 @@ import { evaluateCrossReference, STATES } from '../shared/crossReferenceEngine.j
 const base = { part_number: 'BASE-1', family_code: 'mixed_family', specifications: { size: '10' } };
 const candidate = { part_number: 'CAND-1', family_code: 'mixed_family', specifications: { size: '10' }, evidence: [{ type: 'datasheet', verified: true }] };
 
+// A database-marked mixed family is hard-blocked from automatic equivalence.
+const blocked = evaluateCrossReference(base, candidate, [{ family_code: 'mixed_family', property_code: 'size', requirement_level: 'critical', comparison_operator: 'equal', active: true }], { status: 'BLOCKED_MIXED_FAMILY', reason: 'CATEGORY_MIXES_MULTIPLE_TECHNICAL_PRODUCT_TYPES' });
+assert.equal(blocked.state, STATES.SIMILAR_REVIEW);
+assert.equal(blocked.family_readiness, 'BLOCKED_MIXED_FAMILY');
+
 // A family with only supporting rules is never eligible for automatic equivalence.
 const supportingOnly = [{
   family_code: 'mixed_family', property_code: 'size', requirement_level: 'supporting', comparison_operator: 'equal', active: true
