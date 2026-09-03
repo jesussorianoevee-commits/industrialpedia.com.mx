@@ -105,11 +105,18 @@
   .ip-button-primary, .ip-button-secondary { min-height: 42px; }
 }
 
+@media (max-width: 900px) {
+  .ip-nav { display: none !important; }
+  .ip-header-inner { justify-content: space-between; }
+}
+
 @media (max-width: 639px) {
   .ip-container { padding-inline: 12px; }
   .ip-header-inner { min-height: 52px; gap: 10px; }
   .ip-brand { font-size: 11px; letter-spacing: .12em; }
   .ip-nav-item { padding: 7px 8px; }
+  .ip-header-inner { gap: 8px; }
+  .ip-header .ip-brand { max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
   .ip-card { border-radius: 10px; }
   .ip-button-primary, .ip-button-secondary, .ip-button-tertiary { min-height: 44px; }
   .ip-button-primary, .ip-button-secondary { padding-inline: 14px; }
