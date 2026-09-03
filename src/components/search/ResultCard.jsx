@@ -353,6 +353,32 @@ export default function ResultCard({ result }) {
           <button type="button" onClick={() => setCompareError('Esta referencia todavía no tiene una identidad técnica suficiente para buscar alternativas.')} className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 hover:bg-white/[0.05]">{t.findAlternatives}</button>
         )}
       </div>
+
+      {imagePreviewOpen && isUsableImageUrl(imageSrc) && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Imagen de ${result.part_number || 'la pieza'}`}
+          onClick={() => setImagePreviewOpen(false)}
+        >
+          <div className="relative w-full max-w-4xl max-h-full flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setImagePreviewOpen(false)}
+              className="self-end mb-3 px-5 py-3 rounded-lg bg-white text-black font-semibold text-base"
+            >
+              Cerrar
+            </button>
+            <img
+              src={imageSrc}
+              alt={`Imagen de ${result.part_number || 'la pieza'}`}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg bg-white p-2"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
