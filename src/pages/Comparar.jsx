@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronUp, ShieldCheck, AlertTriangle, XCircle, CheckCircle2, X, Moon, Sun } from 'lucide-react';
 import { compareIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../base44/shared/technicalNotation.js';
-import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttributeStrict } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 
@@ -20,7 +20,16 @@ const PROPERTY_LABELS_ES = {
 const STATUS_LABELS_ES = { equal: 'Igual', different: 'Diferente', base_only: 'Solo base', candidate_only: 'Solo alternativa', not_comparable: 'No comparable' };
 function propertyLabel(value, language = 'es') {
   const raw = String(value || '').trim();
-  return localizeSpecAttribute(raw, language);
+  return localizeSpecAttributeStrict(raw, language);
+}
+// Prefiere el nombre real (display_name_es de spec_property_definitions,
+// resuelto en compareIndustrialpedia via mode=property_labels). Si la
+// propiedad todavia no esta formalizada en la taxonomia, cae a la version
+// estricta -- nunca a la mezcla palabra por palabra (produce texto roto
+// tipo "potencia loss" en vez de quedarse en ingles limpio).
+function propertyLabelFromSpec(spec, language = 'es') {
+  if (spec?.has_formal_label && spec?.attribute_canonical) return spec.attribute_canonical;
+  return propertyLabel(spec?.attribute_name || spec?.attribute || '', language);
 }
 function val(s, language = 'es') { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; const rendered = normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw) ? `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}` : (original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'); return normalizeTechnicalNotation(rendered, { language }); }
 function canonical(s) { return canonicalTechnicalAttribute(s?.attribute_canonical || s?.attribute_name || s?.attribute || ''); }
