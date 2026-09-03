@@ -281,7 +281,7 @@ export default function Parte() {
         <CompatibilityCommunity part={part} />
 
         {partEvidence.length > 0 && (
-          <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
+          <section className="ip-card p-4">
             <button
               type="button"
               onClick={() => partEvidence.length > 2 && setExpandedPartEvidence((value) => !value)}
@@ -327,7 +327,7 @@ export default function Parte() {
             <h2 className="text-white font-semibold text-sm mb-2">{t.document}</h2>
             <div className="space-y-2">
               {docs.map((d) => (
-                <a key={d.id} href={d.file_url} target="_blank" rel="noreferrer" className="block bg-[#161a20] border border-white/10 rounded-lg p-3 hover:border-white/20">
+                <a key={d.id} href={d.file_url} target="_blank" rel="noreferrer" className="ip-card block p-3 hover:border-white/20">
                   <div className="text-white/70 text-xs truncate">{d.title || d.file_url}</div>
                   {d.file_url && <div className="text-[#5a9cd9] text-[11px] mt-0.5 truncate">{d.file_url}</div>}
                   <div className="text-white/30 text-[10px] mt-1">{d.document_type || 'datasheet'} · {d.status}</div>
@@ -338,7 +338,7 @@ export default function Parte() {
         )}
 
         {(supplierSources.length > 0 || technicalSources.length > 0 || sources.length > 0) && (
-          <section className="bg-[#161a20] border border-white/10 rounded-xl p-4 space-y-4">
+          <section className="ip-card p-4 space-y-4">
             <div>
               <h2 className="text-white font-semibold text-sm mb-1">{t.sourcesTitle} y trazabilidad</h2>
               <p className="text-white/40 text-[11px] leading-relaxed">Aquí puedes ver de dónde provino el componente y qué fuentes respaldan sus datos técnicos.</p>
