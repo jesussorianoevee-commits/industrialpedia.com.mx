@@ -200,7 +200,7 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            {(base.specs || []).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
+            {(base.specs || []).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabelFromSpec(s, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
           </div>
         </div>
       </section>
@@ -249,7 +249,7 @@ export default function Comparar() {
                     const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
                     const baseValueForCard = baseSpec ? val(baseSpec, language) : '—';
                     return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2.5 py-2 ${valueBg}`}>
-                      <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabel(s.attribute_name || s.attribute, language)}</div></div>
+                      <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabelFromSpec(s, language)}</div></div>
                       <div className="mt-2 grid grid-cols-2 gap-2" dir="ltr">
                         <div className={`min-w-0 rounded border border-white/[0.06] px-2 py-1.5 ${valueBg}`}>
                           <div className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/45" title={`Comparativa · ${c.part_number}`}>Comparativa · {c.part_number}</div>
@@ -303,7 +303,7 @@ export default function Comparar() {
                 const hasMatch = states.some((state) => state === 'equal');
                 if (!hasRelevantDifference && !hasMatch) return null;
                 return <div key={`${s.attribute_name}-${idx}`} className="grid border-b border-white/[0.06] last:border-b-0" style={{gridTemplateColumns:`180px repeat(${alternatives.length}, minmax(190px, 1fr)) 190px`}}>
-                  <div className="p-3 text-base font-semibold text-white/80">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
+                  <div className="p-3 text-base font-semibold text-white/80">{propertyLabelFromSpec(s, language)}</div>
                   {alternatives.map((c, i) => {
                     const state = states[i];
                     const tone = state === 'equal' ? 'ip-compare-match' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'ip-compare-danger' : 'ip-compare-warning') : state === 'not_comparable' ? 'ip-compare-danger' : 'text-white/40';
@@ -381,7 +381,7 @@ export default function Comparar() {
                     return (
                       <div key={`${s.attribute_name}-${j}`} className="grid grid-cols-[1fr_auto] gap-3 p-3">
                         <div className="min-w-0">
-                          <div className="text-[10px] text-white/45">{propertyLabel(s.attribute_name || s.attribute, language)}</div>
+                          <div className="text-[10px] text-white/45">{propertyLabelFromSpec(s, language)}</div>
                           <div className="mt-1 grid grid-cols-2 gap-2" dir="ltr">
                             <div className={`min-w-0 rounded-md px-2 py-1.5 ${state === 'equal' ? 'bg-[#16c79a]/[0.06]' : state === 'different' ? (c.comparison?.state === 'not_compatible' ? 'bg-red-400/[0.06]' : 'bg-amber-400/[0.06]') : state === 'not_comparable' ? 'bg-red-400/[0.06]' : 'bg-white/[0.025]'}`}>
                               <div className="text-[8px] uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
@@ -425,7 +425,7 @@ export default function Comparar() {
             </div>
 
             {specRows.map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabel(s.attribute_name || s.attribute, language) }</div>
+              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabelFromSpec(s, language) }</div>
               {cols.map((c, ci) => {
                 const isBaseColumn = c.id === base.id;
                 const candidate = isBaseColumn ? s : valueFor(s, c);
