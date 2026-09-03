@@ -237,7 +237,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
               </section>
             )}
 
-            <section className="rounded-xl border border-white/10 bg-white/[0.015] p-4">
+            <section className="ip-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-white/35">{t.source}</div>
