@@ -78,7 +78,7 @@ export default function CompatibilityCommunity({ part }) {
   };
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#161a20] p-4 sm:p-5">
+    <section className="ip-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
         <div className="rounded-lg bg-[#47bcb6]/10 p-2 text-[#47bcb6]"><Users className="h-5 w-5" /></div>
         <div className="min-w-0 flex-1">
