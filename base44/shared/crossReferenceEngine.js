@@ -166,7 +166,7 @@ export function evaluateCrossReference(base, candidate, rules = []) {
   if (requiredFail > 0) {
     return { state: STATES.INSUFFICIENT_EVIDENCE, relation: null, family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons };
   }
-  if (!ruleCount || missing > 0 || notComparable > 0) {
+  if (!ruleCount || missing > 0 || notComparable > 0 || familyReadiness !== 'READY') {
     return { state: hasEvidence ? STATES.SIMILAR_REVIEW : STATES.INSUFFICIENT_EVIDENCE, relation: 'similar', family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: 0, required_total: requiredTotal, reasons: reasons.concat(missing ? ['MISSING_REQUIRED_COMPARISON_DATA'] : [], notComparable ? ['NON_COMPARABLE_DATA'] : []) };
   }
 
