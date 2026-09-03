@@ -29,6 +29,7 @@ export default function ResultCard({ result }) {
   const [imageVerified, setImageVerified] = useState(result.image_verification_status === 'verified');
   const [imageLookupPending, setImageLookupPending] = useState(false);
   const [imageRetry, setImageRetry] = useState(0);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
