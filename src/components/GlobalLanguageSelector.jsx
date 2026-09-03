@@ -38,7 +38,7 @@ export default function GlobalLanguageSelector() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] min-w-40 rounded-2xl border border-white/10 bg-[#11161c] p-1.5 shadow-2xl">
+        <div className="absolute right-0 top-[calc(100%+8px)] min-w-40 ip-card p-1.5 shadow-2xl">
           {languages.map((item) => (
             <button
               key={item.code}
