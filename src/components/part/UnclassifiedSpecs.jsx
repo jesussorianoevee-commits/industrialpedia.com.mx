@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
-import { useLanguage, localizeSpecAttribute } from '@/lib/i18n';
+import { useLanguage, localizeSpecAttribute, localizeSpecValue } from '@/lib/i18n';
 
 // Prefijos de fabricante conocidos que ensucian la lectura del codigo crudo.
 // Quitarlos es solo formato -- no inventa significado tecnico ni pretende
@@ -54,7 +54,7 @@ export default function UnclassifiedSpecs({ items }) {
           {items.map((it) => (
             <div key={it.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-2 px-1.5 py-1.5 border-t border-white/5">
               <span className="text-white/40 text-[11px] break-words">{localizeSpecAttribute(humanizeRawLabel(it.label), language)}</span>
-              <span className="text-white/60 text-[11px] text-right break-words">{it.value ?? '—'}</span>
+              <span className="text-white/60 text-[11px] text-right break-words">{it.value != null ? localizeSpecValue(it.value, language) : '—'}</span>
             </div>
           ))}
         </div>
