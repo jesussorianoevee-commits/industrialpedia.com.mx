@@ -72,22 +72,22 @@ export default function Decidir() {
   const results = Array.isArray(data?.results) ? data.results : [];
 
   return (
-    <div className="min-h-screen bg-[#080d12] text-white">
-      <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-4">
+    <div className="ip-shell">
+      <header className="ip-header">
+        <div className="ip-container ip-header-inner">
           <Link to="/" className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4" /></Link>
-          <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
-          <span className="text-xs text-white/35">{t.technicalDecision}</span>
+          <div className="ip-brand"><span>INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
+          <span className="text-xs text-white/45">{t.technicalDecision}</span>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-3 sm:px-4 py-5 sm:py-8 w-full">
+      <main className="ip-container py-5 sm:py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">{t.decisionTitle}</h1>
           <p className="mt-1 max-w-2xl text-sm text-white/45">{t.decisionSubtitle}</p>
         </div>
 
-        <form onSubmit={decide} className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+        <form onSubmit={decide} className="ip-card p-4 sm:p-5">
           <div className="grid gap-4 md:grid-cols-[1fr_2fr] min-w-0">
             <label className="block">
               <span className="text-[10px] uppercase tracking-wider text-white/35">{t.technicalFamily}</span>
