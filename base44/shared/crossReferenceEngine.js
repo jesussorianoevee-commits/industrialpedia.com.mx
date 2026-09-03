@@ -194,4 +194,4 @@ export function resolveCrossReference(base, candidate, rules = []) {
   return technical;
 }
 
-export { STATES };
+export { STATES, RELATION_STRENGTH };
