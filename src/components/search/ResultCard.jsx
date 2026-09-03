@@ -254,7 +254,7 @@ export default function ResultCard({ result }) {
         {result.id ? (
           <Link
             to={`/parte/${result.id}`}
-            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
+            className="ip-button-primary inline-flex items-center gap-1.5 shadow-sm"
           >
             {t.viewComponent} <ArrowRight className="w-3 h-3" />
           </Link>
@@ -263,7 +263,7 @@ export default function ResultCard({ result }) {
             href={result.source_url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
+            className="ip-button-primary inline-flex items-center gap-1.5 shadow-sm"
           >
             {t.viewProduct} <ArrowRight className="w-3 h-3" />
           </a>
@@ -272,7 +272,7 @@ export default function ResultCard({ result }) {
             href={result.source_url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors shadow-sm"
+            className="ip-button-primary inline-flex items-center gap-1.5 shadow-sm"
           >
             {t.viewSource} <ArrowRight className="w-3 h-3" />
           </a>
@@ -283,7 +283,7 @@ export default function ResultCard({ result }) {
               type="button"
               disabled={alternativesLoading}
               onClick={openComparator}
-              className="flex items-center gap-1 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60"
+              className="ip-button-secondary inline-flex items-center gap-1 disabled:opacity-60"
             >
               {alternativesLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.creatingSheet}</> : t.findAlternatives}
             </button>
@@ -291,7 +291,7 @@ export default function ResultCard({ result }) {
               type="button"
               disabled={alternativesLoading}
               onClick={openComparator}
-              className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
+              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#5a9cd9]/35 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/15 disabled:opacity-60"
             >
               <GitCompareArrows className="w-3 h-3" /> {t.compare}
             </button>
@@ -319,7 +319,7 @@ export default function ResultCard({ result }) {
                   setCompareLoading(false);
                 }
               }}
-              className="flex items-center gap-1 text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-60"
+              className="ip-button-secondary inline-flex items-center gap-1 disabled:opacity-60"
             >
               {t.findAlternatives}
             </button>
@@ -344,13 +344,13 @@ export default function ResultCard({ result }) {
                   setCompareLoading(false);
                 }
               }}
-              className="flex items-center gap-1 text-[#65a9e6] text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 disabled:opacity-60"
+              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#5a9cd9]/35 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/15 disabled:opacity-60"
             >
               {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compare}</>}
             </button>
           </>
         ) : (
-          <button type="button" onClick={() => setCompareError('Esta referencia todavía no tiene una identidad técnica suficiente para buscar alternativas.')} className="text-white/60 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/15 hover:bg-white/[0.05]">{t.findAlternatives}</button>
+          <button type="button" onClick={() => setCompareError('Esta referencia todavía no tiene una identidad técnica suficiente para buscar alternativas.')} className="ip-button-tertiary border border-white/10 hover:bg-white/[0.05]">{t.findAlternatives}</button>
         )}
       </div>
 
