@@ -40,9 +40,19 @@ export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
   }
   return (
     <div className="bg-[#11161c] border border-white/10 rounded-lg px-2">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.45fr)] gap-2 px-1.5 py-1.5 border-b border-white/10 text-[9px] uppercase tracking-wider text-white/30">
-        <span>{t.technicalSpecs}</span><span></span><span className="text-right">{t.requiredValue}</span>
-      </div>
+      <button
+        type="button"
+        onClick={() => specs.length > INITIAL_VISIBLE && setExpanded((value) => !value)}
+        className={`w-full grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1.45fr)] gap-2 px-1.5 py-1.5 border-b border-white/10 text-[9px] uppercase tracking-wider text-white/30 text-left ${specs.length > INITIAL_VISIBLE ? 'cursor-pointer hover:text-white/50 transition-colors' : 'cursor-default'}`}
+        aria-expanded={expanded}
+        disabled={specs.length <= INITIAL_VISIBLE}
+      >
+        <span className="flex items-center gap-1">
+          {specs.length > INITIAL_VISIBLE && (expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+          {t.technicalSpecs}
+        </span>
+        <span></span><span className="text-right">{t.requiredValue}</span>
+      </button>
       {specs.slice(0, expanded ? specs.length : INITIAL_VISIBLE).map((s) => (
         <SpecRow
           key={s.id}
