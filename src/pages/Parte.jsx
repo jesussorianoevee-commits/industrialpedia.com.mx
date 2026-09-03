@@ -237,7 +237,7 @@ export default function Parte() {
             if (window.history.length > 1) navigate(-1);
             else navigate('/buscar', { replace: true });
           }}
-          className="flex items-center gap-2 text-white/60 hover:text-white text-sm"
+          className="ip-button-tertiary inline-flex items-center gap-2 px-2"
           aria-label={t.backToSearch}
         >
           <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
@@ -249,9 +249,9 @@ export default function Parte() {
         <div className="ip-card p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
             <div className="min-w-0 flex-1">
-              <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
+              <div className="text-white font-bold text-base sm:text-lg leading-snug break-words">{part.display_name || part.part_number}</div>
               <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.display_reference || part.part_number}</h1>
-              <div className="text-white/50 text-sm">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
+              <div className="text-white/50 text-xs sm:text-sm leading-relaxed break-words">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
             </div>
             <div className="flex items-start gap-2 shrink-0">
               {part.image_url && <button
@@ -390,15 +390,15 @@ export default function Parte() {
           </section>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
           <button
             type="button"
             onClick={() => navigate(`/comparar/${encodeURIComponent(part.id)}?pn=${encodeURIComponent(part.part_number || '')}`)}
-            className="flex-1 text-white text-xs font-semibold px-3 py-2 rounded-lg border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+            className="ip-button-secondary w-full"
           >
             {t.findAlternatives}
           </button>
-          <Link to={`/comparar/${encodeURIComponent(part.id)}?pn=${encodeURIComponent(part.part_number || '')}`} className="flex-1 text-center text-white text-xs font-semibold px-3 py-2 rounded-lg border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 hover:bg-[#5a9cd9]/20 transition-colors">{t.compare}</Link>
+          <Link to={`/comparar/${encodeURIComponent(part.id)}?pn=${encodeURIComponent(part.part_number || '')}`} className="ip-button-tertiary w-full border border-primary/30 bg-primary/10 hover:bg-primary/15 text-center">{t.compare}</Link>
         </div>
       </main>
 
