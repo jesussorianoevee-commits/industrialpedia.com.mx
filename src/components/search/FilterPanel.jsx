@@ -12,7 +12,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
   const active = (filters.manufacturers?.length || 0) + (filters.categories?.length || 0) + (filters.has_specification ? 1 : 0) + (filters.only_published === false ? 1 : 0);
 
   return (
-    <div className="bg-[#161a20] border border-white/10 rounded-xl p-4">
+    <div className="ip-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
           <Filter className="w-4 h-4" /> {t.filters}
