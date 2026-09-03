@@ -184,7 +184,7 @@ export default function Parte() {
   }
   if (!part) {
     return (
-      <div className="min-h-screen bg-[#0a0e12] grid-bg flex flex-col items-center justify-center gap-3">
+      <div className="ip-shell grid-bg flex flex-col items-center justify-center gap-3">
         <p className="text-white/50 text-sm">{t.partNotFound}</p>
         <Link to="/buscar" className="text-[#5a9cd9] text-sm hover:underline">← {t.backToSearch}</Link>
       </div>
@@ -225,8 +225,9 @@ export default function Parte() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0e12] grid-bg">
-      <header className="sticky top-0 z-30 bg-[#0a0e12]/90 backdrop-blur-md border-b border-white/10 px-4 py-3">
+    <div className="ip-shell grid-bg">
+      <header className="ip-header">
+        <div className="ip-container ip-header-inner">
         <button
           type="button"
           onClick={() => {
@@ -241,10 +242,11 @@ export default function Parte() {
         >
           <ArrowLeft className="w-4 h-4" /> {t.back} a {t.search.toUpperCase()}
         </button>
+        </div>
       </header>
 
-      <main className="px-3 sm:px-4 py-4 sm:py-5 max-w-2xl mx-auto space-y-4 w-full min-w-0">
-        <div className="bg-[#161a20] border border-white/10 rounded-xl p-4 sm:p-5">
+      <main className="ip-container py-4 sm:py-6 max-w-[900px] space-y-4 sm:space-y-5">
+        <div className="ip-card p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
             <div className="min-w-0 flex-1">
               <div className="text-white font-bold text-lg">{part.display_name || part.part_number}</div>
@@ -315,7 +317,7 @@ export default function Parte() {
         )}
 
         <div>
-          <h2 className="text-white font-semibold text-sm mb-3">{t.technicalSpecs}</h2>
+          <h2 className="ip-section-title text-white mb-3">{t.technicalSpecs}</h2>
           <SpecList specs={specs} evidenceBySpec={evidenceBySpec} provenanceBySpec={provenanceBySpec} />
           <UnclassifiedSpecs items={unclassifiedSpecs} />
         </div>
