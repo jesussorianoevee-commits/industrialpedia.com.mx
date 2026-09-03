@@ -201,8 +201,21 @@ export default function Comparar() {
             <div className="mt-2 max-w-xl text-sm text-white/55">{base.product_name || base.description || ''}</div>
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
-            {(base.specs || []).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabelFromSpec(s, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
+            {(base.specs || []).slice(0, expandedBaseSpecs ? base.specs.length : 6).map((s, i) => <div key={i}><div className="text-white/55">{propertyLabelFromSpec(s, language) }</div><div className="mt-1 font-mono text-base font-semibold text-white/90">{val(s, language)}</div></div>)}
           </div>
+          {(base.specs || []).length > 6 && (
+            <div className="mt-3 flex justify-center border-t border-white/10 pt-3">
+              <button
+                type="button"
+                onClick={() => setExpandedBaseSpecs((value) => !value)}
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors"
+                aria-expanded={expandedBaseSpecs}
+              >
+                {expandedBaseSpecs ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                {expandedBaseSpecs ? 'Ver menos' : `Ver más · ${base.specs.length - 6} datos`}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
