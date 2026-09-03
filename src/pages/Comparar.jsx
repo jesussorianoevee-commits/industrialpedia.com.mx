@@ -189,7 +189,7 @@ export default function Comparar() {
         <div className="hidden sm:block rounded-lg border border-white/10 px-3 py-2 text-[10px] font-mono text-white/35">{data.candidates_considered || 0} {t.candidatesConsulted}</div>
       </div>
 
-      <section className="mb-5 overflow-hidden rounded-xl border border-white/10 bg-[#0d141b]">
+      <section className="ip-card mb-5 overflow-hidden">
         <div className="grid gap-5 p-5 md:grid-cols-[150px_1fr_1fr] md:items-center">
           <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-[#091016]">
             {base.image_url ? <img src={base.image_url} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" /> : <div className="text-[10px] text-white/25">{t.noImage}</div>}
@@ -260,7 +260,7 @@ export default function Comparar() {
                     const isIncompatible = propertyState === 'different' && c.comparison?.state === 'not_compatible';
                     const valueTone = propertyState === 'equal' ? 'ip-compare-match' : isIncompatible ? 'ip-compare-danger' : propertyState === 'different' ? 'ip-compare-warning' : 'text-white/55';
                     const valueBg = propertyState === 'equal' ? 'bg-[#16c79a]/[0.06]' : isIncompatible ? 'bg-red-400/[0.06]' : propertyState === 'different' ? 'bg-amber-400/[0.06]' : '';
-                    const indicator = propertyState === 'equal' ? '🟢' : isIncompatible ? '🔴' : propertyState === 'different' ? '🟡' : '⚪';
+                    const indicator = propertyState === 'equal' ? '✓' : isIncompatible ? '✕' : propertyState === 'different' ? '!' : '·';
                     const baseValueForCard = baseSpec ? val(baseSpec, language) : '—';
                     return <div key={j} className={`min-w-0 rounded-md border border-white/[0.04] px-2.5 py-2 ${valueBg}`}>
                       <div className="flex items-center gap-1.5"><span className="text-[10px]" aria-hidden="true">{indicator}</span><div className="truncate text-[11px] font-medium text-white/55">{propertyLabelFromSpec(s, language)}</div></div>
@@ -375,7 +375,7 @@ export default function Comparar() {
           })}
         </div>
 
-        <div className="hidden md:block ip-scroll-x rounded-xl border border-white/10 bg-[#0d141b] shadow-2xl shadow-black/20">
+        <div className="hidden md:block ip-scroll-x ip-card overflow-hidden shadow-xl shadow-black/15">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
