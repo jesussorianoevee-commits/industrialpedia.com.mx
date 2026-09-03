@@ -75,6 +75,22 @@
 }
 
 /* Industrialpedia design tokens and theme bridge */
+.ip-shell { min-height: 100vh; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.ip-container { width: 100%; max-width: 1180px; margin-inline: auto; padding-inline: 16px; }
+.ip-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid hsl(var(--border) / 0.72); background: hsl(var(--background) / 0.94); backdrop-filter: blur(18px); }
+.ip-header-inner { min-height: 56px; display: flex; align-items: center; gap: 16px; }
+.ip-brand { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; letter-spacing: .16em; font-weight: 600; white-space: nowrap; }
+.ip-nav { display: flex; align-items: center; gap: 6px; }
+.ip-nav-item { border-radius: 8px; padding: 7px 10px; color: hsl(var(--muted-foreground)); font-size: 12px; }
+.ip-nav-item-active { background: hsl(var(--primary) / 0.10); color: hsl(var(--primary)); }
+.ip-card { border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); }
+.ip-button-primary { min-height: 40px; border-radius: 9px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0 16px; font-size: 12px; font-weight: 650; }
+.ip-button-secondary { min-height: 40px; border-radius: 9px; border: 1px solid hsl(var(--border)); background: hsl(var(--secondary)); color: hsl(var(--foreground)); padding: 0 16px; font-size: 12px; font-weight: 600; }
+.ip-button-tertiary { min-height: 40px; border-radius: 9px; color: hsl(var(--primary)); padding: 0 10px; font-size: 12px; font-weight: 600; }
+.ip-section-title { font-size: 16px; line-height: 1.25; font-weight: 650; letter-spacing: -.01em; }
+.ip-section-label { color: hsl(var(--muted-foreground)); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
+.ip-data-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
 .ip-surface { background: hsl(var(--card)); color: hsl(var(--card-foreground)); }
 .ip-border { border-color: hsl(var(--border)); }
 .ip-text { color: hsl(var(--foreground)); }
