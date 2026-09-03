@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
 // Publishable/anon key: safe for client applications. Never use the service-role key here.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
 const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17`;
+import { resolveCrossReference } from './crossReferenceEngine.js';
 
 async function call(params) {
   const url = new URL(FUNCTION_URL);
@@ -73,6 +74,45 @@ export async function getPartIndustrialpedia(id, language = 'es') {
     };
   }
   return data;
+}
+
+async function getCrossReferenceRules(familyCode) {
+  const family = String(familyCode || '').trim();
+  if (!family) return [];
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cross_reference_rules_public_v1`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({ p_family_code: family })
+    });
+    if (!response.ok) return [];
+    const rows = await response.json().catch(() => []);
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+function mapCrossReferenceState(state) {
+  switch (state) {
+    case 'EXACT':
+    case 'REPLACE':
+    case 'EQUIVALENT':
+    case 'COMPATIBLE':
+      return 'compatible';
+    case 'NOT_SUBSTITUTABLE':
+      return 'not_compatible';
+    case 'INSUFFICIENT_EVIDENCE':
+      return 'insufficient';
+    case 'SIMILAR_REVIEW':
+    default:
+      return 'review';
+  }
 }
 
 export async function compareIndustrialpedia(partId, partNumber = '', limit = 3) {
@@ -190,6 +230,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     };
   }
 
+  const crossReferenceRules = await getCrossReferenceRules(baseRaw.category || '');
   const alternatives = (data.alternatives || []).map((a) => ({
     id: a.id,
     part_number: a.part_number,
@@ -252,6 +293,20 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
       else if (row.comparison === 'not_comparable') acc.not_comparable++;
       return acc;
     }, { equal: 0, different: 0, missing: 0, candidate_only: 0, not_comparable: 0 });
+    const technicalBase = {
+      part_number: baseRaw.part_number,
+      family_code: baseRaw.category,
+      specifications: baseRaw.specifications || {}
+    };
+    const technicalCandidate = {
+      part_number: alt.part_number,
+      family_code: baseRaw.category,
+      specifications: alt.specifications || {}
+    };
+    const crossReference = crossReferenceRules.length
+      ? resolveCrossReference(technicalBase, technicalCandidate, crossReferenceRules)
+      : null;
+
     return {
       ...alt,
       comparison: {
@@ -261,7 +316,18 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
         differences,
         matrix_status: matrix.status,
         comparison_mode: matrix.comparison_mode || 'technical_matrix',
-        manufacturer_independent: matrix.manufacturer_independent === true
+        manufacturer_independent: matrix.manufacturer_independent === true,
+        ...(crossReference ? {
+          cross_reference_state: crossReference.state,
+          cross_reference_relation: crossReference.relation,
+          cross_reference_score: crossReference.score,
+          cross_reference_reasons: crossReference.reasons,
+          cross_reference_critical_fail: crossReference.critical_fail,
+          cross_reference_critical_total: crossReference.critical_total,
+          cross_reference_required_fail: crossReference.required_fail,
+          cross_reference_required_total: crossReference.required_total,
+          state: mapCrossReferenceState(crossReference.state)
+        } : {})
       }
     };
   });
