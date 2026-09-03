@@ -113,7 +113,7 @@ export default function Decidir() {
           {error && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-xs text-amber-100/75">{error}</div>}
           {trialNotice === 'last' && <div className="mt-4 text-xs text-[#65a9e6]">Te queda 1 prueba gratuita.</div>}
           {trialNotice === 'limit' && (
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-center">
+            <div className="mt-4 ip-card p-4 text-center">
               <div className="font-semibold">¿Deseas probar más?</div>
               <div className="mt-1 text-sm text-white/45">Regístrate :)</div>
               <button type="button" onClick={() => navigate('/login?returnTo=%2Fdecidir')} className="mt-3 rounded-lg bg-[#65a9e6] px-4 py-2 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
@@ -136,7 +136,7 @@ export default function Decidir() {
             </div>
 
             {results.length === 0 ? (
-              <div className="rounded-xl border border-white/10 bg-[#0d141b] p-7 text-center">
+              <div className="ip-card p-5 sm:p-7 text-center">
                 <XCircle className="mx-auto h-5 w-5 text-white/25" />
                 <div className="mt-2 text-sm text-white/55">{t.noResults}</div>
                 <div className="mt-1 text-[10px] text-white/30">Esto no significa que no exista una solución; significa que el Knowledge Core no tiene evidencia suficiente para esta consulta.</div>
@@ -146,7 +146,7 @@ export default function Decidir() {
               const Icon = meta.icon;
               const details = normalizeRows(result.specifications || result.specs || result.attributes || result.matched_requirements);
               return (
-                <article key={result.id || result.part_id || result.part_number || index} className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+                <article key={result.id || result.part_id || result.part_number || index} className="ip-card p-4 sm:p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="font-mono text-sm text-[#65a9e6] break-all">{result.part_number || result.part_id || 'Candidato sin número de parte'}</div>
