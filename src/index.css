@@ -91,6 +91,30 @@
 .ip-section-label { color: hsl(var(--muted-foreground)); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
 .ip-data-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
+/* Responsive system: one Industrialpedia layout, three density levels.
+   Desktop gets breathing room, tablet uses the available width, Android stays
+   compact without changing the information hierarchy. */
+@media (min-width: 1024px) {
+  .ip-container { padding-inline: 24px; }
+  .ip-header-inner { min-height: 60px; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .ip-container { max-width: 960px; padding-inline: 20px; }
+  .ip-card { border-radius: 11px; }
+  .ip-button-primary, .ip-button-secondary { min-height: 42px; }
+}
+
+@media (max-width: 639px) {
+  .ip-container { padding-inline: 12px; }
+  .ip-header-inner { min-height: 52px; gap: 10px; }
+  .ip-brand { font-size: 11px; letter-spacing: .12em; }
+  .ip-nav-item { padding: 7px 8px; }
+  .ip-card { border-radius: 10px; }
+  .ip-button-primary, .ip-button-secondary, .ip-button-tertiary { min-height: 44px; }
+  .ip-button-primary, .ip-button-secondary { padding-inline: 14px; }
+}
+
 .ip-surface { background: hsl(var(--card)); color: hsl(var(--card-foreground)); }
 .ip-border { border-color: hsl(var(--border)); }
 .ip-text { color: hsl(var(--foreground)); }
