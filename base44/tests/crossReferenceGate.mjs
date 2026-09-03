@@ -25,6 +25,12 @@ assert.equal(eq.state, STATES.EQUIVALENT);
 assert.equal(eq.critical_fail, 0);
 assert.equal(eq.different, 0);
 
+const rangeRules = [{ family_code: 'sensor_proximity', property_code: 'supply_voltage', requirement_level: 'critical', comparison_operator: 'range_overlap', active: true }];
+const rangePass = evaluateCrossReference({ ...base, specifications: { supply_voltage: { min: 10, max: 30 } } }, { ...equivalent, specifications: { supply_voltage: { min: 10, max: 36 } } }, rangeRules);
+assert.equal(rangePass.state, STATES.EQUIVALENT);
+const rangeFail = evaluateCrossReference({ ...base, specifications: { supply_voltage: { min: 10, max: 30 } } }, { ...equivalent, specifications: { supply_voltage: { min: 31, max: 36 } } }, rangeRules);
+assert.equal(rangeFail.state, STATES.NOT_SUBSTITUTABLE);
+
 const criticalFail = { ...equivalent, part_number: 'C-300', specifications: { ...equivalent.specifications, supply_voltage: '12 VDC' } };
 const fail = evaluateCrossReference(base, criticalFail, rules);
 assert.equal(fail.state, STATES.NOT_SUBSTITUTABLE);
