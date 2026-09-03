@@ -65,4 +65,4 @@ assert.equal(officialResult.relation, 'official_replacement');
 // Determinism: identical inputs produce byte-stable JSON output.
 assert.equal(JSON.stringify(resolveCrossReference(base, equivalent, rules)), JSON.stringify(resolveCrossReference(base, equivalent, rules)));
 
-console.log(JSON.stringify({ status: 'CROSS_REFERENCE_GATE_OK', checks: 10, policy: 'critical rules override similarity score' }, null, 2));
+console.log(JSON.stringify({ status: 'CROSS_REFERENCE_GATE_OK', checks: 12, policy: 'critical rules override similarity score' }, null, 2));
