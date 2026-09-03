@@ -457,4 +457,30 @@ export async function decideIndustrialpedia(family, requirements, limit = 10) {
   return call({ mode: 'decide', family, requirements: JSON.stringify(requirements), limit });
 }
 
+// Navegacion por caso de uso -- validada con la investigacion de RoboDK/
+// RoboMercato (metricas/criterios fijos por categoria). Deterministica: la
+// lista de casos de uso vive en la tabla use_cases, poblada solo con
+// familias que ya tienen piezas reales publicadas -- nunca una promesa
+// vacia. Sin IA en ningun punto de este flujo.
+export async function getUseCasesIndustrialpedia() {
+  const data = await call({ mode: 'use_cases' });
+  return Array.isArray(data?.use_cases) ? data.use_cases : [];
+}
+
+export async function browseByFamilyIndustrialpedia(familyCode, limit = 12) {
+  const data = await call({ mode: 'browse', family: familyCode, limit });
+  const results = Array.isArray(data?.results) ? data.results : [];
+  return results.map((r) => ({
+    id: r.part_id,
+    part_number: r.part_number || '',
+    manufacturer_name: r.manufacturer || '',
+    category: r.category || '',
+    category_label: r.category_label || '',
+    description: r.description || r.name || '',
+    specifications: r.specifications && typeof r.specifications === 'object' ? r.specifications : {},
+    image_url: r.image_url || '',
+    image_verification_status: r.image_verification_status || null
+  }));
+}
+
 export const INDUSTRIALPEDIA_API_VERSION = 'v8-frozen';
