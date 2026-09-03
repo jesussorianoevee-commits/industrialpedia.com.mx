@@ -280,7 +280,16 @@ export default function Parte() {
 
         {partEvidence.length > 0 && (
           <section className="bg-[#161a20] border border-white/10 rounded-xl p-4">
-            <div className="text-white font-semibold text-sm mb-2">{t.componentEvidence}</div>
+            <button
+              type="button"
+              onClick={() => partEvidence.length > 2 && setExpandedPartEvidence((value) => !value)}
+              className={`w-full flex items-center gap-1.5 text-white font-semibold text-sm mb-2 text-left ${partEvidence.length > 2 ? 'cursor-pointer hover:text-white/80 transition-colors' : 'cursor-default'}`}
+              aria-expanded={expandedPartEvidence}
+              disabled={partEvidence.length <= 2}
+            >
+              {partEvidence.length > 2 && (expandedPartEvidence ? <ChevronUp className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />)}
+              {t.componentEvidence}
+            </button>
             <div className="space-y-2">
               {partEvidence.slice(0, expandedPartEvidence ? partEvidence.length : 2).map((ev) => (
                 <div key={ev.id} className="text-[11px] text-white/55 leading-relaxed">
