@@ -33,7 +33,7 @@ export default function UnclassifiedSpecs({ items }) {
   const { language } = useLanguage();
   if (!items || items.length === 0) return null;
   return (
-    <div className="mt-3 bg-[#11161c] border border-white/10 rounded-lg px-2">
+    <div className="ip-card mt-3 px-2">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
