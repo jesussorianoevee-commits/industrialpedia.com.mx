@@ -40,6 +40,11 @@ La recuperación de candidatos debe ser amplia pero determinista: misma familia 
 ## Score
 El score es auxiliar y nunca puede sobreescribir una regla crítica. La decisión final se basa en constraints y evidencia. Para evitar el problema de "80% similar", un candidato con fallo crítico queda fuera aunque tenga muchas coincidencias.
 
+## Gobernanza de reglas
+Las reglas de sustitución son datos gobernados, no parámetros libres de UI. `comparison_family_requirements` queda protegido con niveles y operadores permitidos, tolerancias acotadas, unicidad por familia/propiedad/versión e índices para resolver reglas activas de forma reproducible.
+
+Una familia sin reglas activas **no puede producir `EQUIVALENT` por similitud**; permanece en revisión o evidencia insuficiente. Antes de activar una familia nueva se debe demostrar que representa un mismo tipo funcional y que sus propiedades críticas/interfaces están disponibles en los datos.
+
 ## Familias iniciales prioritarias
 1. sensores/proximidad
 2. neumática/cilindros
