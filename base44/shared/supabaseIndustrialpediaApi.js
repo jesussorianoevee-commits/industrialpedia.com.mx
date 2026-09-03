@@ -130,14 +130,19 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   let displayNameMap = {};
   if (allPropertyCodes.size > 0) {
     try {
+      // No se consulta la tabla directo con la llave publica -- RLS no tiene
+      // politica de lectura anonima para spec_property_definitions (el
+      // proyecto expone datos solo via Edge Functions con service_role, no
+      // acceso REST directo a tablas). Se usa mode=property_labels de
+      // search-v17, mismo patron que ya usa el resto de la app.
       const codesList = [...allPropertyCodes];
-      const defsResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/spec_property_definitions?property_code=in.(${codesList.map((c) => `"${c}"`).join(',')})&select=property_code,display_name_es,display_name_en`,
-        { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` } }
+      const labelsResponse = await fetch(
+        `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17?mode=property_labels&codes=${encodeURIComponent(codesList.join(','))}`,
+        { headers: { apikey: SUPABASE_PUBLISHABLE_KEY } }
       );
-      const defs = await defsResponse.json().catch(() => []);
-      if (Array.isArray(defs)) {
-        displayNameMap = Object.fromEntries(defs.map((d) => [d.property_code, d.display_name_es || d.display_name_en || null]).filter(([, v]) => v));
+      const labelsData = await labelsResponse.json().catch(() => null);
+      if (labelsData?.labels && typeof labelsData.labels === 'object') {
+        displayNameMap = labelsData.labels;
       }
     } catch {
       // Si falla la consulta de nombres, seguimos con el fallback local --
