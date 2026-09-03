@@ -225,7 +225,7 @@ export default function Comparar() {
             <div><h2 className="text-base font-semibold text-white/95">{t.compatibilityMap}</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Primero se muestran las piezas candidatas; después se comparan sus fichas técnicas propiedad por propiedad contra el componente base.</p></div>
             <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-white/25">BASE → ALTERNATIVAS</span>
           </div>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3">
               {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
               <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider ip-compare-match">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
