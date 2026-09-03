@@ -157,7 +157,7 @@ export default function ResultCard({ result }) {
         ? { label: t.pendingVerification, cls: 'text-[#e68a00] bg-[#e68a00]/10' }
         : { label: stateLabel, cls: 'text-white/50 bg-white/10' };
   return (
-    <div className="bg-[#161a20] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-[0_16px_38px_-30px_rgba(0,0,0,.9)] hover:border-[#5a9cd9]/35 hover:bg-[#181d24] transition-all">
+    <div className="ip-card p-4 sm:p-5 shadow-[0_16px_38px_-30px_rgba(0,0,0,.9)] hover:border-[#5a9cd9]/35 hover:bg-[#181d24] transition-all">
       <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-white/[0.06]">
         <div className="min-w-0">
           <div className={`text-sm font-semibold leading-snug line-clamp-2 ${displayProductName ? 'text-white' : 'text-white/50'}`}>
