@@ -249,7 +249,7 @@ export default function Buscar() {
   return (
     <div className="ip-shell grid-bg">
       <header className="ip-header px-3 sm:px-5 py-3 ip-mobile-safe-top">
-        <form onSubmit={submit} className="relative mx-auto max-w-[1120px] flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-xl pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
+        <form onSubmit={submit} className="relative mx-auto max-w-[1120px] flex items-center gap-2 ip-card pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -343,7 +343,7 @@ export default function Buscar() {
           <div className="mx-auto mt-2 max-w-2xl px-2 text-center text-xs text-[#65a9e6]">Te queda 1 prueba gratuita.</div>
         )}
         {trialNotice === 'limit' && (
-          <div className="mx-auto mt-3 max-w-md rounded-xl border border-white/10 bg-[#11161c] p-4 text-center shadow-xl">
+          <div className="ip-card mx-auto mt-3 max-w-md p-4 text-center shadow-xl">
             <div className="font-semibold text-white">¿Deseas probar más?</div>
             <div className="mt-1 text-sm text-white/50">Regístrate :)</div>
             <button type="button" onClick={() => navigate(`/login?returnTo=${encodeURIComponent('/buscar')}`)} className="mt-4 w-full rounded-lg bg-[#65a9e6] px-4 py-2.5 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
