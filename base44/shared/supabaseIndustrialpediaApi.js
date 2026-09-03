@@ -98,6 +98,28 @@ async function getCrossReferenceRules(familyCode) {
   }
 }
 
+async function getCrossReferenceGovernance(familyCode) {
+  const family = String(familyCode || '').trim();
+  if (!family) return null;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cross_reference_family_governance_public_v1`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({ p_family_code: family })
+    });
+    if (!response.ok) return null;
+    const rows = await response.json().catch(() => []);
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 function mapCrossReferenceState(state) {
   switch (state) {
     case 'EXACT':
@@ -231,6 +253,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   }
 
   const crossReferenceRules = await getCrossReferenceRules(baseRaw.category || '');
+  const crossReferenceGovernance = await getCrossReferenceGovernance(baseRaw.category || '');
   const alternatives = (data.alternatives || []).map((a) => ({
     id: a.id,
     part_number: a.part_number,
@@ -303,8 +326,8 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
       family_code: baseRaw.category,
       specifications: alt.specifications || {}
     };
-    const crossReference = crossReferenceRules.length
-      ? resolveCrossReference(technicalBase, technicalCandidate, crossReferenceRules)
+    const crossReference = (crossReferenceRules.length || crossReferenceGovernance)
+      ? resolveCrossReference(technicalBase, technicalCandidate, crossReferenceRules, crossReferenceGovernance)
       : null;
 
     return {
@@ -320,6 +343,8 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
         ...(crossReference ? {
           cross_reference_state: crossReference.state,
           cross_reference_relation: crossReference.relation,
+          cross_reference_family_readiness: crossReference.family_readiness || null,
+          cross_reference_governance_reason: crossReferenceGovernance?.reason || null,
           cross_reference_score: crossReference.score,
           cross_reference_reasons: crossReference.reasons,
           cross_reference_critical_fail: crossReference.critical_fail,
