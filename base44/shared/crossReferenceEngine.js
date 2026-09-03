@@ -157,6 +157,8 @@ export function evaluateCrossReference(base, candidate, rules = []) {
   const ruleCount = applicableRules.length;
   const score = ruleCount ? Math.round((equal / ruleCount) * 100) : 0;
   const hasEvidence = Array.isArray(candidate.evidence) && candidate.evidence.length > 0;
+  const governedRules = applicableRules.filter((r) => ['critical', 'required'].includes(canonicalKey(r.requirement_level)));
+  const familyReadiness = governedRules.length === 0 ? 'REVIEW_ONLY_NO_GOVERNED_RULES' : criticalTotal === 0 ? 'REVIEW_ONLY_NO_CRITICAL_RULES' : 'READY';
 
   if (criticalFail > 0) {
     return { state: STATES.NOT_SUBSTITUTABLE, relation: null, family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: criticalFail, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons };
