@@ -78,10 +78,30 @@ function evidenceAllowsRelation(candidate, relation) {
  * Compare one candidate against a base part.
  * `rules` are data, not code: [{property_code, requirement_level, comparison_operator, tolerance_pct}].
  */
-export function evaluateCrossReference(base, candidate, rules = []) {
+export function evaluateCrossReference(base, candidate, rules = [], governance = null) {
   if (!base || !candidate) throw new TypeError('base and candidate are required');
 
   const baseFamily = canonicalKey(base.family_code || base.category);
+  const governanceStatus = canonicalKey(governance?.status);
+  if (governanceStatus === 'blocked_mixed_family') {
+    return {
+      state: STATES.SIMILAR_REVIEW,
+      relation: 'similar',
+      family_match: true,
+      family_readiness: 'BLOCKED_MIXED_FAMILY',
+      score: 0,
+      compared: 0,
+      equal: 0,
+      different: 0,
+      missing: 0,
+      not_comparable: 0,
+      critical_fail: 0,
+      critical_total: 0,
+      required_fail: 0,
+      required_total: 0,
+      reasons: [governance?.reason || 'BLOCKED_MIXED_FAMILY']
+    };
+  }
   const candidateFamily = canonicalKey(candidate.family_code || candidate.category);
   if (!baseFamily || !candidateFamily || baseFamily !== candidateFamily) {
     return {
@@ -161,24 +181,24 @@ export function evaluateCrossReference(base, candidate, rules = []) {
   const familyReadiness = governedRules.length === 0 ? 'REVIEW_ONLY_NO_GOVERNED_RULES' : criticalTotal === 0 ? 'REVIEW_ONLY_NO_CRITICAL_RULES' : 'READY';
 
   if (criticalFail > 0) {
-    return { state: STATES.NOT_SUBSTITUTABLE, relation: null, family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: criticalFail, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons };
+    return { state: STATES.NOT_SUBSTITUTABLE, relation: null, family_match: true, family_readiness: familyReadiness, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: criticalFail, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons }; 
   }
   if (requiredFail > 0) {
-    return { state: STATES.INSUFFICIENT_EVIDENCE, relation: null, family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons };
+    return { state: STATES.INSUFFICIENT_EVIDENCE, relation: null, family_match: true, family_readiness: familyReadiness, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: requiredFail, required_total: requiredTotal, reasons }; 
   }
   if (!ruleCount || missing > 0 || notComparable > 0 || familyReadiness !== 'READY') {
-    return { state: hasEvidence ? STATES.SIMILAR_REVIEW : STATES.INSUFFICIENT_EVIDENCE, relation: 'similar', family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: 0, required_total: requiredTotal, reasons: reasons.concat(missing ? ['MISSING_REQUIRED_COMPARISON_DATA'] : [], notComparable ? ['NON_COMPARABLE_DATA'] : []) };
+    return { state: hasEvidence ? STATES.SIMILAR_REVIEW : STATES.INSUFFICIENT_EVIDENCE, relation: 'similar', family_match: true, family_readiness: familyReadiness, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: 0, required_total: requiredTotal, reasons: reasons.concat(missing ? ['MISSING_REQUIRED_COMPARISON_DATA'] : [], notComparable ? ['NON_COMPARABLE_DATA'] : []) }; 
   }
 
-  return { state: STATES.EQUIVALENT, relation: 'equivalent', family_match: true, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: 0, required_total: requiredTotal, reasons: ['ALL_ACTIVE_RULES_PASS'] };
+  return { state: STATES.EQUIVALENT, relation: 'equivalent', family_match: true, family_readiness: familyReadiness, score, compared, equal, different, missing, not_comparable: notComparable, critical_fail: 0, critical_total: criticalTotal, required_fail: 0, required_total: requiredTotal, reasons: ['ALL_ACTIVE_RULES_PASS'] }; 
 }
 
 /**
  * Applies explicit, documented relations before technical equivalence.
  * This prevents an official replacement from being downgraded to a generic similarity score.
  */
-export function resolveCrossReference(base, candidate, rules = []) {
-  const technical = evaluateCrossReference(base, candidate, rules);
+export function resolveCrossReference(base, candidate, rules = [], governance = null) {
+  const technical = evaluateCrossReference(base, candidate, rules, governance);
   const relations = Array.isArray(candidate.relations) ? candidate.relations : [];
 
   for (const relation of ['official_replacement', 'successor', 'compatible']) {
