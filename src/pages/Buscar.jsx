@@ -247,9 +247,9 @@ export default function Buscar() {
   const facets = kcData?.facets || { manufacturers: [], categories: [] };
 
   return (
-    <div className="min-h-screen bg-[#0a0e12] grid-bg">
-      <header className="sticky top-0 z-30 bg-[#0a0e12]/92 backdrop-blur-xl border-b border-white/[0.07] shadow-[0_12px_35px_-28px_rgba(0,0,0,.8)] px-3 sm:px-5 py-3 ip-mobile-safe-top">
-        <form onSubmit={submit} className="relative mx-auto max-w-3xl flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-2xl pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
+    <div className="ip-shell grid-bg">
+      <header className="ip-header px-3 sm:px-5 py-3 ip-mobile-safe-top">
+        <form onSubmit={submit} className="relative mx-auto max-w-[1120px] flex items-center gap-2 bg-[#161a20] border border-white/10 rounded-xl pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
@@ -351,7 +351,7 @@ export default function Buscar() {
         )}
       </header>
 
-      <main className="px-3 sm:px-5 py-6 sm:py-8 max-w-3xl mx-auto w-full">
+      <main className="px-3 sm:px-5 py-6 sm:py-8 max-w-[1120px] mx-auto w-full">
         <div className="flex items-center justify-between gap-2 mb-5 sm:mb-6 pb-4 border-b border-white/[0.06]">
           <div className="text-white/40 text-xs">
             {!q && !area ? t.searchParts : (
