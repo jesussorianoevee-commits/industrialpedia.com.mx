@@ -438,7 +438,7 @@ export default function Comparar() {
               </div>)}
             </div>
 
-            {specRows.map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
+            {specRows.slice(0, expandedComparisonTable ? specRows.length : 6).map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
               <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabelFromSpec(s, language) }</div>
               {cols.map((c, ci) => {
                 const isBaseColumn = c.id === base.id;
