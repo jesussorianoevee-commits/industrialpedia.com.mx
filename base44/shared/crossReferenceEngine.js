@@ -39,6 +39,26 @@ function numeric(value) {
   return match ? Number(match[0]) : null;
 }
 
+function numericRange(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const min = numeric(value.min);
+    const max = numeric(value.max);
+    if (min != null && max != null && min <= max) return { min, max };
+    const single = numeric(value.value);
+    return single == null ? null : { min: single, max: single };
+  }
+  const s = String(value).trim().replace(',', '.');
+  const range = s.match(/(-?\d+(?:\.\d+)?)\s*(?:\.\.|-|–|—|to|\.\.\.)\s*(-?\d+(?:\.\d+)?)/i);
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    return min <= max ? { min, max } : { min: max, max: min };
+  }
+  const single = numeric(s);
+  return single == null ? null : { min: single, max: single };
+}
+
 function evaluateRule(baseValue, candidateValue, rule) {
   if (baseValue == null || candidateValue == null || baseValue === '' || candidateValue === '') {
     return { state: 'missing', pass: false, comparable: false };
@@ -46,6 +66,14 @@ function evaluateRule(baseValue, candidateValue, rule) {
 
   if (rule.comparison_operator === 'equal') {
     const pass = valuesEqual(baseValue, candidateValue);
+    return { state: pass ? 'equal' : 'different', pass, comparable: true };
+  }
+
+  if (rule.comparison_operator === 'range_overlap') {
+    const a = numericRange(baseValue);
+    const b = numericRange(candidateValue);
+    if (!a || !b) return { state: 'not_comparable', pass: false, comparable: false };
+    const pass = Math.max(a.min, b.min) <= Math.min(a.max, b.max);
     return { state: pass ? 'equal' : 'different', pass, comparable: true };
   }
 
