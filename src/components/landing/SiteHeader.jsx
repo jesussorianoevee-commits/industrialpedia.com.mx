@@ -52,7 +52,7 @@ export default function SiteHeader() {
             <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="ip-button-tertiary flex items-center gap-1.5 h-9 px-2.5 sm:px-3 border border-white/10 bg-white/[0.03] hover:bg-primary/10">
               <Globe className="w-4 h-4 text-[#5a9cd9]" /> <span className="font-semibold">{language.toUpperCase()}</span><span className="text-white/30">▾</span>
             </button>
-            {languageOpen && <div className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-40 rounded-2xl border border-white/10 bg-[#11161c] p-1.5 shadow-2xl">
+            {languageOpen && <div className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-40 ip-card p-1.5 shadow-2xl">
               {languages.map((item) => <button key={item.code} type="button" onClick={() => { setLanguage(item.code); setLanguageOpen(false); }} className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs ${item.code === language ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}>
                 <span>{item.flag}</span><span>{item.label}</span><span className="ml-auto text-[9px] uppercase opacity-50">{item.code}</span>
               </button>)}
