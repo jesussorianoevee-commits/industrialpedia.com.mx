@@ -95,8 +95,10 @@ function evaluateRule(baseValue, candidateValue, rule) {
 
 function evidenceAllowsRelation(candidate, relation) {
   if (relation === 'official_replacement' || relation === 'successor') {
+    // Generic verification is insufficient for an official/successor relation.
+    // The evidence itself must explicitly identify the relation and be verified.
     return Array.isArray(candidate.evidence) && candidate.evidence.some((e) =>
-      e && (e.type === relation || e.relation === relation || e.verified === true)
+      e && (e.type === relation || e.relation === relation) && e.verified === true
     );
   }
   return true;
