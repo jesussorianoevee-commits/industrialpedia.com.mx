@@ -23,19 +23,19 @@ export default function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 ip-dark-header backdrop-blur-xl bg-[#0a0e12]/90 border-b border-white/[0.07] shadow-[0_12px_35px_-28px_rgba(0,0,0,.8)] transition-colors">
-      <div className="mx-auto max-w-5xl px-3 sm:px-5 min-h-16 py-2.5 flex items-center justify-between gap-2">
+    <header className="ip-header">
+      <div className="ip-container ip-header-inner py-2.5">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
           <span className="w-9 h-9 rounded-xl border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 flex items-center justify-center shadow-[0_0_24px_-10px_rgba(90,156,217,.7)]">
             <span className="w-2 h-2 rounded-full bg-[#5a9cd9] shadow-[0_0_12px_rgba(90,156,217,.8)]" />
           </span>
-          <span className="ip-invert-text text-white font-bold tracking-[0.1em] sm:tracking-[0.16em] text-xs sm:text-sm group-hover:text-[#5a9cd9] transition-colors">INDUSTRIALPEDIA</span>
+          <span className="ip-brand group-hover:text-primary transition-colors">INDUSTRIALPEDIA</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1">
-          <Link to="/buscar" className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors">{t.search}</Link>
-          <Link to="/comparar-referencia" className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors">{t.compare}</Link>
-          <Link to="/decidir" className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors">{t.decide}</Link>
+        <nav className="ip-nav hidden md:flex" aria-label="Navegación principal">
+          <Link to="/buscar" className="ip-nav-item">{t.search}</Link>
+          <Link to="/comparar-referencia" className="ip-nav-item">{t.compare}</Link>
+          <Link to="/decidir" className="ip-nav-item">{t.decide}</Link>
         </nav>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -43,13 +43,13 @@ export default function SiteHeader() {
             onClick={toggleTheme}
             aria-label={light ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
             title={light ? 'Modo claro activo · Cambiar a oscuro' : 'Modo oscuro activo · Cambiar a claro'}
-            className="flex items-center gap-2 h-9 px-2.5 sm:px-3 rounded-xl border border-[#5a9cd9]/30 bg-[#5a9cd9]/10 text-[#5a9cd9] hover:bg-[#5a9cd9]/20 hover:border-[#5a9cd9]/60 transition-all"
+            className="ip-button-tertiary flex items-center gap-2 h-9 px-2.5 sm:px-3 border border-primary/30 bg-primary/10 hover:bg-primary/15"
           >
             {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span className="hidden sm:inline text-[11px] font-medium">{light ? t.light : t.dark}</span>
           </button>
           <div className="relative">
-            <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="flex items-center gap-1.5 h-9 px-2.5 sm:px-3 rounded-xl border border-white/15 bg-white/[0.03] text-white/70 hover:text-white hover:border-[#5a9cd9]/50 hover:bg-[#5a9cd9]/10 text-xs transition-all">
+            <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="ip-button-tertiary flex items-center gap-1.5 h-9 px-2.5 sm:px-3 border border-white/10 bg-white/[0.03] hover:bg-primary/10">
               <Globe className="w-4 h-4 text-[#5a9cd9]" /> <span className="font-semibold">{language.toUpperCase()}</span><span className="text-white/30">▾</span>
             </button>
             {languageOpen && <div className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-40 rounded-2xl border border-white/10 bg-[#11161c] p-1.5 shadow-2xl">
@@ -58,7 +58,7 @@ export default function SiteHeader() {
               </button>)}
             </div>}
           </div>
-          <Link to="/login" className="hidden xs:inline-flex sm:inline-flex px-3.5 py-2 rounded-xl border border-white/15 text-white text-xs font-medium hover:bg-white/5 hover:border-white/25 transition-colors">{t.login}</Link>
+          <Link to="/login" className="ip-button-secondary hidden xs:inline-flex sm:inline-flex px-3.5">{t.login}</Link>
         </div>
       </div>
     </header>
