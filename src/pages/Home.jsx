@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import SiteHeader from '@/components/landing/SiteHeader';
 import Hero from '@/components/landing/Hero';
 import CategorySection from '@/components/landing/CategorySection';
+import UseCasesSection from '@/components/landing/UseCasesSection';
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
@@ -77,6 +78,7 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1 mx-auto w-full max-w-6xl">
         <Hero partCount={partCount} loading={loading} lastUpdated={lastUpdated} />
+        <UseCasesSection />
         <CategorySection counts={counts} />
         <ForumCard />
         <WorkflowSteps />
