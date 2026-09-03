@@ -229,6 +229,22 @@ export function localizeSpecAttribute(attribute, language = 'es') {
   return translated;
 }
 
+// Version "estricta" para texto SIN CLASIFICAR (specifications_unclassified):
+// a diferencia de localizeSpecAttribute, NUNCA mezcla espa\u00f1ol e ingl\u00e9s
+// palabra por palabra -- ese texto es, por definicion, ilimitado e
+// impredecible (cualquier fabricante puede meter cualquier frase nueva), asi
+// que un diccionario de palabras sueltas jamas lo cubre completo y termina
+// produciendo mezclas rotas tipo "24 v encoder supply salida". Aqui: frase
+// completa reconocida -> se traduce entera; si no -> se deja en ingles
+// limpio, nunca a medias.
+export function localizeSpecAttributeStrict(attribute, language = 'es') {
+  const original = String(attribute || '').trim();
+  const key = normalizeI18nKey(original);
+  if (!original) return '';
+  if (SPEC_ATTRIBUTE_I18N[key]?.[language]) return SPEC_ATTRIBUTE_I18N[key][language];
+  return original;
+}
+
 const TECHNICAL_PHRASE_I18N = {
   'interface module': { es: 'módulo de interfaz', en: 'interface module', de: 'Schnittstellenmodul', fr: 'module d’interface', zh: '接口模块' },
   '2-port interface module': { es: 'módulo de interfaz de 2 puertos', en: '2-port interface module', de: '2-Port-Schnittstellenmodul', fr: 'module d’interface à 2 ports', zh: '2 端口接口模块' },
