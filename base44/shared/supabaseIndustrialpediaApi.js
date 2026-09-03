@@ -114,14 +114,47 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
   }
   if (data.status === 'error') throw new Error(data.code || 'comparison_error');
 
+  // Los nombres reales (display_name_es) viven en spec_property_definitions,
+  // fuente unica de verdad -- igual que en la ficha de producto. Sin esto,
+  // el comparador tenia que adivinar localmente y mezclaba espanol/ingles
+  // palabra por palabra (ej. "potencia loss", "supply voltaje max").
+  const allPropertyCodes = new Set();
+  const collectCodes = (specs) => {
+    if (specs && typeof specs === 'object' && !Array.isArray(specs)) {
+      Object.keys(specs).forEach((k) => allPropertyCodes.add(k));
+    }
+  };
+  collectCodes(data.base?.specifications);
+  (data.alternatives || []).forEach((alt) => collectCodes(alt?.specifications));
+
+  let displayNameMap = {};
+  if (allPropertyCodes.size > 0) {
+    try {
+      const codesList = [...allPropertyCodes];
+      const defsResponse = await fetch(
+        `${SUPABASE_URL}/rest/v1/spec_property_definitions?property_code=in.(${codesList.map((c) => `"${c}"`).join(',')})&select=property_code,display_name_es,display_name_en`,
+        { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}` } }
+      );
+      const defs = await defsResponse.json().catch(() => []);
+      if (Array.isArray(defs)) {
+        displayNameMap = Object.fromEntries(defs.map((d) => [d.property_code, d.display_name_es || d.display_name_en || null]).filter(([, v]) => v));
+      }
+    } catch {
+      // Si falla la consulta de nombres, seguimos con el fallback local --
+      // nunca bloqueamos la comparacion por esto.
+    }
+  }
+
   const specsToArray = (specifications) => {
     if (!specifications || typeof specifications !== 'object' || Array.isArray(specifications)) return [];
     return Object.entries(specifications).map(([attribute_name, raw]) => {
       const objectValue = raw && typeof raw === 'object' && !Array.isArray(raw);
+      const formalLabel = displayNameMap[attribute_name] || null;
       return {
         id: attribute_name,
         attribute_name,
-        attribute_canonical: attribute_name,
+        attribute_canonical: formalLabel || attribute_name,
+        has_formal_label: Boolean(formalLabel),
         original_value: objectValue ? (raw.value ?? null) : raw,
         original_unit: objectValue ? (raw.unit ?? null) : null,
         normalized_value: objectValue ? (raw.value ?? null) : raw,
