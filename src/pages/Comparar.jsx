@@ -220,7 +220,7 @@ export default function Comparar() {
       </section>
 
       <>
-        <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+        <section className="ip-card mb-4 p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div><h2 className="text-base font-semibold text-white/95">{t.compatibilityMap}</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Primero se muestran las piezas candidatas; después se comparan sus fichas técnicas propiedad por propiedad contra el componente base.</p></div>
             <span className="hidden sm:inline text-[10px] uppercase tracking-wider text-white/25">BASE → ALTERNATIVAS</span>
@@ -294,7 +294,7 @@ export default function Comparar() {
           </div>
         </section>
 
-        <section className="mb-4 rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+        <section className="ip-card mb-4 p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-[#65a9e6]" />
             <div><h2 className="text-base font-semibold text-white/95">Fichas técnicas comparadas</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí se ve exactamente qué dato de la ficha de cada fabricante coincide, difiere o falta.</p></div>
@@ -319,7 +319,7 @@ export default function Comparar() {
             const mobileKey = c.id || ci;
             const visible = mobileRows.slice(0, expandedMobileComparisonTable[mobileKey] ? mobileRows.length : 6);
             return (
-              <section key={c.id || ci} className="rounded-xl border border-white/10 bg-[#0d141b] overflow-hidden">
+              <section key={c.id || ci} className="ip-card overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
                   <div className="min-w-0">
                     <div className="text-[9px] uppercase tracking-wider text-white/30">{t.alternatives || 'Alternativa'}</div>
@@ -411,7 +411,7 @@ export default function Comparar() {
         </div>
 
         {(data.candidates_considered || 0) > alternatives.length && !expandedResults && !loadingMore && (
-          <div className="mt-5 flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#0d141b] px-5 py-4 text-center">
+          <div className="ip-card mt-5 flex flex-col items-center gap-2 px-5 py-4 text-center">
             <div className="text-xs font-medium text-white/65">{t.noMore}</div>
             <div className="text-[10px] text-white/35">{t.expandSearch}</div>
             <button
