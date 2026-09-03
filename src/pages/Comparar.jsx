@@ -113,6 +113,7 @@ export default function Comparar() {
   const [expandedMobileSpecs, setExpandedMobileSpecs] = useState({});
   const [expandedComparisonTable, setExpandedComparisonTable] = useState(false);
   const [expandedMobileComparisonTable, setExpandedMobileComparisonTable] = useState({});
+  const [expandedBaseSpecs, setExpandedBaseSpecs] = useState(false);
   const { language, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
