@@ -59,7 +59,7 @@ export default function CompararReferencia() {
   const reference = data.reference || ref;
 
   return <div className="min-h-screen bg-[#080d12] text-white">
-    <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#080d12]/95 backdrop-blur-xl">
+    <header className="ip-header">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
         <button onClick={() => navigate(-1)} className="rounded-lg border border-white/10 p-2 text-white/60 hover:text-white"><ArrowLeft className="h-4 w-4" /></button>
         <div className="font-mono text-sm tracking-[0.18em]"><span className="font-semibold">INDUSTRIAL</span><span className="text-[#168fd5]">PEDIA</span></div>
@@ -73,7 +73,7 @@ export default function CompararReferencia() {
         <p className="mt-1 text-sm text-white/40">La referencia externa no se almacena en Industrialpedia. Se compara en esta sesión contra el Knowledge Core. Se requieren mínimo 3 especificaciones técnicas válidas para evitar falsos equivalentes.</p>
       </div>
 
-      <section className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5 mb-5">
+      <section className="ip-card p-4 sm:p-5 mb-5">
         <div className="text-[10px] uppercase tracking-wider text-white/30">REFERENCIA</div>
         <div className="mt-2 font-mono text-lg text-[#65a9e6]">{reference.partNumber || 'Sin número de parte'}</div>
         <div className="mt-1 text-sm text-white/55">{reference.manufacturer || 'Fabricante externo'} · {reference.category}</div>
@@ -84,10 +84,10 @@ export default function CompararReferencia() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Alternativas encontradas</h2><span className="text-[10px] text-white/30">{alternatives.length} candidato(s)</span></div>
-        {alternatives.length === 0 ? <div className="rounded-xl border border-white/10 bg-[#0d141b] p-8 text-center text-sm text-white/40">No hay suficientes datos comparables en el Knowledge Core. Esto no significa que no exista un equivalente; significa que la evidencia disponible no alcanza el umbral técnico.</div> : alternatives.map((a) => {
+        {alternatives.length === 0 ? <div className="ip-card p-8 text-center text-sm text-white/40">No hay suficientes datos comparables en el Knowledge Core. Esto no significa que no exista un equivalente; significa que la evidencia disponible no alcanza el umbral técnico.</div> : alternatives.map((a) => {
           const state = stateMeta[a.comparison?.state] || stateMeta.low_similarity;
           const Icon = state.icon;
-          return <article key={a.id} className="rounded-xl border border-white/10 bg-[#0d141b] p-4 sm:p-5">
+          return <article key={a.id} className="ip-card p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0"><div className="font-mono text-sm text-[#65a9e6] break-all">{a.part_number}</div><div className="mt-1 text-sm text-white/75">{a.name || 'Producto'}</div><div className="mt-1 text-[11px] text-white/35">{a.category || ''} · {a.status || 'candidate'}</div></div>
               <div className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold shrink-0 ${state.cls}`}><Icon className="h-3.5 w-3.5" />{state.label}</div>
