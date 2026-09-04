@@ -32,7 +32,58 @@ async function call(params) {
 }
 
 export async function searchIndustrialpedia(q, limit = 25, manufacturer = '') {
-  return call({ q, limit, manufacturer });
+  // Contrato canónico v17 primero. Si el gateway de Edge falla o devuelve un
+  // conjunto vacío, hacemos recuperación determinística contra el mismo RPC
+  // canónico v4. No ampliamos el universo, no quitamos filtros y no inventamos
+  // resultados: ambos caminos consultan el mismo Knowledge Core.
+  try {
+    const primary = await call({ q, limit, manufacturer });
+    if (Array.isArray(primary?.results) && primary.results.length > 0) return primary;
+
+    const fallbackResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_search_v4`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({ search_query: q, result_limit: Math.min(Number(limit) || 25, 50), manufacturer_query: manufacturer || null })
+    });
+    const fallback = await fallbackResponse.json().catch(() => null);
+    if (fallbackResponse.ok && Array.isArray(fallback)) {
+      return {
+        api_version: 'v4-fallback',
+        query: q,
+        count: fallback.length,
+        results: fallback,
+        recovered_from_empty_gateway: true
+      };
+    }
+    return primary;
+  } catch (primaryError) {
+    const fallbackResponse = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_search_v4`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({ search_query: q, result_limit: Math.min(Number(limit) || 25, 50), manufacturer_query: manufacturer || null })
+    });
+    const fallback = await fallbackResponse.json().catch(() => null);
+    if (fallbackResponse.ok && Array.isArray(fallback)) {
+      return {
+        api_version: 'v4-fallback',
+        query: q,
+        count: fallback.length,
+        results: fallback,
+        recovered_from_gateway_error: true
+      };
+    }
+    throw primaryError;
+  }
 }
 
 export async function getIndustrialpediaCatalogStats() {
