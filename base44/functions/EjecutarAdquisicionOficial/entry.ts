@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
-const TARGET = `${SUPABASE_URL}/functions/v1/industrialpedia-structured-acquisition-v1`;
+import { STRUCTURED_ACQUISITION_FUNCTION_URL } from '../../shared/endpointRegistry.js';
+
+const TARGET = STRUCTURED_ACQUISITION_FUNCTION_URL;
 
 // Puente interno: reutiliza el JWT del usuario autenticado de Base44.
 // No contiene ni expone service-role/secret keys y no modifica la seguridad de Supabase.
