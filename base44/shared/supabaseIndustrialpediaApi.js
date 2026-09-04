@@ -1,7 +1,12 @@
-const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
+import {
+  CATALOG_STATS_FUNCTION_URL,
+  SEARCH_FUNCTION_URL,
+  SUPABASE_URL
+} from './endpointRegistry.js';
+
 // Publishable/anon key: safe for client applications. Never use the service-role key here.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
-const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17`;
+const FUNCTION_URL = SEARCH_FUNCTION_URL;
 import { resolveCrossReference } from './crossReferenceEngine.js';
 
 async function call(params) {
@@ -31,7 +36,7 @@ export async function searchIndustrialpedia(q, limit = 25, manufacturer = '') {
 }
 
 export async function getIndustrialpediaCatalogStats() {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/industrialpedia-catalog-stats`, {
+  const response = await fetch(CATALOG_STATS_FUNCTION_URL, {
     method: 'GET',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -199,7 +204,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
       // search-v17, mismo patron que ya usa el resto de la app.
       const codesList = [...allPropertyCodes];
       const labelsResponse = await fetch(
-        `${SUPABASE_URL}/functions/v1/industrialpedia-search-v17?mode=property_labels&codes=${encodeURIComponent(codesList.join(','))}`,
+        `${SEARCH_FUNCTION_URL}?mode=property_labels&codes=${encodeURIComponent(codesList.join(','))}`,
         { headers: { apikey: SUPABASE_PUBLISHABLE_KEY } }
       );
       const labelsData = await labelsResponse.json().catch(() => null);
