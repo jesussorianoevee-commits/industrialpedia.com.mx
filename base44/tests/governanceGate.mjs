@@ -11,7 +11,8 @@ const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true
   return [rel];
 });
 const sourceFiles = walk('src').concat(walk('base44')).filter((f) => /\.(js|jsx|ts|tsx|mjs)$/.test(f));
-const source = sourceFiles.map((f) => read(f)).join('\n');
+const productionFiles = sourceFiles.filter((f) => !f.startsWith('base44/tests/'));
+const source = productionFiles.map((f) => read(f)).join('\n');
 
 // 1) One canonical search endpoint in application code.
 assert.equal(INDUSTRIALPEDIA_ENDPOINTS.search.name, 'industrialpedia-search-v17');
@@ -23,7 +24,7 @@ assert.ok(directSearchRefs.every((name) => name === 'industrialpedia-search-v17'
 // 2) Version changes happen only in the registry, never in consumers.
 const registry = read('base44/shared/endpointRegistry.js');
 assert.match(registry, /industrialpedia-search-v17/);
-for (const file of sourceFiles.filter((f) => !f.endsWith('endpointRegistry.js'))) {
+for (const file of productionFiles.filter((f) => !f.endsWith('endpointRegistry.js'))) {
   const text = read(file);
   assert.doesNotMatch(text, /functions\/v1\/industrialpedia-search-v\d+/,
     `hard-coded versioned search URL in ${file}`);
