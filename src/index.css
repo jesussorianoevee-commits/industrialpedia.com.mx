@@ -101,6 +101,8 @@
 .ip-part-summary-label { color: hsl(var(--primary)); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; }
 .ip-part-summary-title { color: hsl(var(--foreground) / .88); font-size: 14px; font-weight: 650; }
 .ip-part-reference-box { border: 1px solid hsl(var(--border)); border-radius: 9px; padding: 10px; background: hsl(var(--card) / .72); }
+.ip-part-reference-box > span { display: block; }
+.ip-part-reference-box > span:last-child { margin-top: 4px; font-size: 13px; line-height: 1.25; }
 .ip-part-explorer { min-width: 0; }
 .ip-part-visual { position: relative; min-height: 330px; overflow: hidden; border: 1px solid hsl(var(--border) / .85); border-radius: 11px 11px 0 0; background: hsl(214 32% 6%); cursor: default; touch-action: none; user-select: none; }
 .ip-part-visual.is-dragging { cursor: grabbing; }
