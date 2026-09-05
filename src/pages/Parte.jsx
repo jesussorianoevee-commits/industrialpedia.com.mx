@@ -10,6 +10,7 @@ import TraceabilityChain from '@/components/part/TraceabilityChain';
 import CompatibilityCommunity from '@/components/part/CompatibilityCommunity';
 import { getDisplayPartReference } from '@/lib/partIdentity';
 import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
+import InteractivePartImage from '@/components/part/InteractivePartImage';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
@@ -246,35 +247,61 @@ export default function Parte() {
       </header>
 
       <main className="ip-container py-4 sm:py-6 max-w-[900px] space-y-4 sm:space-y-5">
-        <div className="ip-card p-4 sm:p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-            <div className="min-w-0 flex-1">
-              <div className="text-white font-bold text-base sm:text-lg leading-snug break-words">{part.display_name || part.part_number}</div>
-              <h1 className="mt-1 font-mono text-white/75 text-sm break-all">{part.display_reference || part.part_number}</h1>
-              <div className="text-white/50 text-xs sm:text-sm leading-relaxed break-words">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</div>
+        <section className="ip-part-hero">
+          <div className="ip-part-hero-main">
+            <div className="ip-part-hero-heading">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-white font-bold text-lg sm:text-xl leading-tight break-words">{part.display_name || part.part_number}</h1>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${st.cls} shrink-0`}>{st.label}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm">
+                  <span className="font-mono text-white/70 break-all">{part.display_reference || part.part_number}</span>
+                  <span className="text-white/20">·</span>
+                  <span className="text-white/45 break-words">{part.manufacturer_name}{part.category ? ` · ${part.category}` : ''}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] shrink-0">
+                {hasAnyEvidence ? (
+                  <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.evidenceCount}</span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}</span>
+                )}
+              </div>
             </div>
-            <div className="flex items-start gap-2 shrink-0">
-              {part.image_url && <button
-                type="button"
-                onClick={() => setImagePreviewOpen(true)}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-white/10 cursor-pointer hover:border-[#5a9cd9] focus:outline-none focus:ring-2 focus:ring-[#5a9cd9]"
-                aria-label={`${t.enlargeImage}: ${part.part_number || t.partNumber}`}
-                title={t.tapImageToEnlarge}
-              >
-                <img src={part.image_url} alt={part.part_number || ''} className="w-full h-full object-contain p-1" referrerPolicy="no-referrer" onError={recoverBrokenImage} />
-              </button>}
-              <span className={`text-[10px] px-2 py-0.5 rounded ${st.cls} shrink-0`}>{st.label}</span>
+
+            <div className="ip-part-hero-content">
+              <div className="min-w-0">
+                <InteractivePartImage
+                  src={part.image_url}
+                  alt={part.part_number || part.display_name}
+                  partNumber={part.part_number}
+                  specs={specs}
+                  onOpen={() => setImagePreviewOpen(true)}
+                />
+                {!part.image_url && (
+                  <button type="button" onClick={recoverBrokenImage} className="mt-2 text-[10px] text-primary hover:underline">Intentar recuperar imagen</button>
+                )}
+              </div>
+
+              <aside className="ip-part-summary">
+                <div className="ip-part-summary-label">Encontrar · pieza identificada</div>
+                <div className="ip-part-summary-title">Referencia técnica</div>
+                <div className="ip-part-reference-box">
+                  <span className="text-[9px] uppercase tracking-wider text-white/30">Número de parte</span>
+                  <span className="mt-1 font-mono text-sm text-white/85 break-all">{part.part_number}</span>
+                </div>
+                {part.description && !isSpecificationBlob(part.description) && (
+                  <p className="text-white/50 text-xs leading-relaxed">{part.description}</p>
+                )}
+                <div className="mt-auto pt-3 border-t border-white/[0.07]">
+                  <div className="text-[9px] uppercase tracking-wider text-white/30">Siguiente paso</div>
+                  <div className="mt-1 text-xs text-white/60">Explora los datos y pasa a Comparar cuando estés listo.</div>
+                </div>
+              </aside>
             </div>
           </div>
-          {part.description && !isSpecificationBlob(part.description) && <p className="text-white/55 text-sm leading-relaxed mt-2">{part.description}</p>}
-          <div className="flex items-center gap-2 mt-3 text-[11px]">
-            {hasAnyEvidence ? (
-              <span className="flex items-center gap-1 text-[#47bcb6]"><ShieldCheck className="w-3.5 h-3.5" /> {partEvidence.length} {t.evidenceCount}</span>
-            ) : (
-              <span className="flex items-center gap-1 text-[#e68a00]"><AlertCircle className="w-3.5 h-3.5" /> {t.noEvidence}</span>
-            )}
-          </div>
-        </div>
+        </section>
 
         <TraceabilityChain counts={{ parts: 1, specs: specs.length, provenance: Object.values(provenanceBySpec).flat().length, evidence: partEvidence.length + Object.values(evidenceBySpec).flat().length, documents: docs.length, sources: sources.length }} />
 
