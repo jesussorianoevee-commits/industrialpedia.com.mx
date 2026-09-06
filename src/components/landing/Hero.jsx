@@ -25,7 +25,7 @@ export default function Hero({ partCount, loading, lastUpdated }) {
       <div className="ip-card max-w-[1180px] mx-auto rounded-[16px] sm:rounded-[22px] border-primary/15 bg-gradient-to-b from-primary/[0.035] to-transparent px-3 sm:px-8 py-6 sm:py-10 md:py-12 shadow-[0_18px_60px_-40px_hsl(var(--primary)/.35)]">
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 ip-muted text-[10px] mb-4 sm:mb-5 tracking-[0.16em] uppercase">
         <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/.7)]" />
-        {loading ? t.loadingParts : `${partCount.toLocaleString()} ${t.foundParts}`}
+        {loading || !Number.isFinite(partCount) ? t.loadingParts : `${partCount.toLocaleString()} ${t.foundParts}`}
       </div>
       {!loading && lastUpdated && (
         <div className="text-[10px] ip-muted -mt-3 mb-5 opacity-70">
