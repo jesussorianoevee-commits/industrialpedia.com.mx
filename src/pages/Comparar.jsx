@@ -119,6 +119,7 @@ export default function Comparar() {
   // El comparador debe usar exactamente la misma ruta para no depender de que el
   // RPC de comparación traiga image_url materializado.
   const [resolvedImages, setResolvedImages] = useState({});
+  const [imageRecoveryAttempted, setImageRecoveryAttempted] = useState({});
   const { language, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -144,6 +145,7 @@ export default function Comparar() {
       if (key) initial[key] = normalizeImageUrl(part?.image_url);
     });
     setResolvedImages(initial);
+    setImageRecoveryAttempted({});
 
     (async () => {
       await Promise.all(parts.map(async (part) => {
@@ -174,6 +176,11 @@ export default function Comparar() {
   const recoverImage = async (part) => {
     const key = String(part?.id || part?.part_number || '').trim();
     if (!key || !part?.part_number) return;
+    if (imageRecoveryAttempted[key]) {
+      setResolvedImages((current) => ({ ...current, [key]: '' }));
+      return;
+    }
+    setImageRecoveryAttempted((current) => ({ ...current, [key]: true }));
     clearProductImageCache(part.part_number, part.manufacturer_name || '');
     setResolvedImages((current) => ({ ...current, [key]: '' }));
     try {
