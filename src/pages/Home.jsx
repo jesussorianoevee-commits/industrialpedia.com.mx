@@ -8,7 +8,8 @@ import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
-  const [partCount, setPartCount] = useState(0);
+  // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
+  const [partCount, setPartCount] = useState(null);
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
