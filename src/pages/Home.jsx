@@ -47,13 +47,12 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      try {
-        await refreshCount();
-      } catch (e) {
-        // Knowledge Core vacío o no disponible: mostrar estados vacíos honestos
-      } finally {
-        setLoading(false);
+      let refreshed = false;
+      for (let attempt = 0; attempt < 3 && !refreshed; attempt += 1) {
+        refreshed = await refreshCount();
+        if (!refreshed && attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       }
+      setLoading(false);
     })();
   }, []);
 
