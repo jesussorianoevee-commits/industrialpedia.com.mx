@@ -293,6 +293,11 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     manufacturer_name: baseRaw.manufacturer_name || '',
     category: baseRaw.category || '',
     description: baseRaw.description || baseRaw.name || '',
+    // El comparador también necesita la procedencia de la pieza base. Cuando
+    // image_url no viene materializado, el mismo resolver determinístico del
+    // catálogo puede usar source_url como evidencia exacta para localizar la
+    // imagen, en lugar de intentar una búsqueda ciega solo por número de parte.
+    source: { url: baseRaw.source_url || baseRaw.source?.url || '', domain: baseRaw.source_url || baseRaw.source?.url || '' },
     specs: specsToArray(baseRaw.specifications),
     image_url: baseRaw.image?.image_url || baseRaw.image?.url || baseRaw.image_url || baseRaw.primary_image_url || ''
   };
