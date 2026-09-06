@@ -36,7 +36,6 @@ export default function Home() {
       const categoryStats = await getIndustrialpediaCategoryStats();
       if (categoryStats && typeof categoryStats === 'object') {
         setCounts(categoryStats);
-        refreshed = true;
       }
     } catch {
       // Conservamos los últimos conteos válidos; nunca reemplazamos datos por ceros.
