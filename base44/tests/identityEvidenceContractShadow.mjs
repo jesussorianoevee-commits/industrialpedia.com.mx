@@ -175,6 +175,41 @@ function validateVqzFIsolation(partNumber) {
   cases.push('all_segments_participate_in_summary');
 }
 
+// 8) F de rosca y bracket F no son intercambiables.
+{
+  assert.deepEqual(parseVqzPortToken('02'), { port_code: '02', thread_code: null });
+  assert.deepEqual(parseVqzPortToken('02F'), { port_code: '02', thread_code: 'F' });
+  assert.deepEqual(parseVqzPortToken('C6F'), { port_code: 'C6', thread_code: 'F' });
+  cases.push('F_thread_is_position_bound');
+}
+
+// 9) Puerto sin F sigue siendo válido: no depende de una interpretación de bracket.
+{
+  const result = validateVqzFIsolation('VQZ3521-5YZ1-02-Q');
+  assert.equal(result.pass, true);
+  assert.equal(result.thread_code, null);
+  assert.equal(result.bracket, null);
+  cases.push('plain_port_without_F_accepted');
+}
+
+// 10) F pegada al puerto se interpreta como rosca, incluso con C6.
+{
+  const result = validateVqzFIsolation('VQZ3121-5YZ1-C6F-Q');
+  assert.equal(result.pass, true);
+  assert.equal(result.thread_code, 'F');
+  assert.equal(result.bracket, null);
+  cases.push('thread_F_not_bracket_F');
+}
+
+// 11) Un bracket F sobre 3 posiciones debe rechazarse y no puede rescatarse
+// reinterpretándolo como rosca.
+{
+  const result = validateVqzFIsolation('VQZ3521-5YZ1-02-Q-F');
+  assert.equal(result.pass, false);
+  assert.equal(result.reason, 'bracket_F_not_allowed_for_3_position');
+  cases.push('bracket_F_on_3_position_rejected');
+}
+
 console.log(JSON.stringify({
   status: 'IDENTITY_EVIDENCE_CONTRACT_SHADOW_OK',
   cases: cases.length,
