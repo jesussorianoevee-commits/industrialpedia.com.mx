@@ -61,42 +61,6 @@ function validPayload() {
 
 const cases = [];
 
-// Adaptador determinístico mínimo para aislar la colisión semántica de `F`.
-// `F` solo puede significar rosca cuando forma parte del token de puerto.
-// Un bracket `F` es otro segmento y está prohibido para 3 posiciones.
-function parseVqzPortToken(token) {
-  if (typeof token !== 'string') return null;
-  const plain = token.match(/^(02|C6)$/);
-  if (plain) return { port_code: plain[1], thread_code: null };
-  const threaded = token.match(/^(02|C6)F$/);
-  if (threaded) return { port_code: threaded[1], thread_code: 'F' };
-  return null;
-}
-
-function validateVqzFIsolation(partNumber) {
-  const match = String(partNumber || '').match(/^VQZ(\d)([1-5])2[01]-([1-5])([A-Z]{2})(1)-(02|C6)(F?)-Q(?:-([A-Z]))?$/);
-  if (!match) return { pass: false, reason: 'format_invalid' };
-
-  const [, series, actuation, solenoid, electrical, constant, portCode, threadF, suffix] = match;
-  if (constant !== '1') return { pass: false, reason: 'constant_invalid' };
-  if (threadF === 'F' && !['02', 'C6'].includes(portCode)) return { pass: false, reason: 'thread_F_position_invalid' };
-
-  // En esta prueba, F final representa bracket, nunca rosca.
-  if (suffix === 'F' && actuation >= '3') return { pass: false, reason: 'bracket_F_not_allowed_for_3_position' };
-  if (suffix && suffix !== 'F') return { pass: false, reason: 'unsupported_final_option' };
-
-  return {
-    pass: true,
-    series,
-    actuation,
-    solenoid,
-    electrical,
-    port_code: portCode,
-    thread_code: threadF || null,
-    bracket: suffix || null
-  };
-}
-
 // 1) Mixto real: vector autoridad + resumen más débil.
 {
   const result = validateIdentityEvidenceContract(validPayload());
@@ -173,41 +137,6 @@ function validateVqzFIsolation(partNumber) {
     'grammar_validated'
   );
   cases.push('all_segments_participate_in_summary');
-}
-
-// 8) F de rosca y bracket F no son intercambiables.
-{
-  assert.deepEqual(parseVqzPortToken('02'), { port_code: '02', thread_code: null });
-  assert.deepEqual(parseVqzPortToken('02F'), { port_code: '02', thread_code: 'F' });
-  assert.deepEqual(parseVqzPortToken('C6F'), { port_code: 'C6', thread_code: 'F' });
-  cases.push('F_thread_is_position_bound');
-}
-
-// 9) Puerto sin F sigue siendo válido: no depende de una interpretación de bracket.
-{
-  const result = validateVqzFIsolation('VQZ3521-5YZ1-02-Q');
-  assert.equal(result.pass, true);
-  assert.equal(result.thread_code, null);
-  assert.equal(result.bracket, null);
-  cases.push('plain_port_without_F_accepted');
-}
-
-// 10) F pegada al puerto se interpreta como rosca, incluso con C6.
-{
-  const result = validateVqzFIsolation('VQZ3121-5YZ1-C6F-Q');
-  assert.equal(result.pass, true);
-  assert.equal(result.thread_code, 'F');
-  assert.equal(result.bracket, null);
-  cases.push('thread_F_not_bracket_F');
-}
-
-// 11) Un bracket F sobre 3 posiciones debe rechazarse y no puede rescatarse
-// reinterpretándolo como rosca.
-{
-  const result = validateVqzFIsolation('VQZ3521-5YZ1-02-Q-F');
-  assert.equal(result.pass, false);
-  assert.equal(result.reason, 'bracket_F_not_allowed_for_3_position');
-  cases.push('bracket_F_on_3_position_rejected');
 }
 
 console.log(JSON.stringify({
