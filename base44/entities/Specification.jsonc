@@ -37,7 +37,7 @@
         "series",
         "unknown"
       ],
-      "default": "model"
+      "default": "unknown"
     },
     "validation_state": {
       "type": "string",
