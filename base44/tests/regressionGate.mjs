@@ -64,6 +64,27 @@ assert.equal(isTechnicalSpecification('SKU', '00062920').ok, false);
 assert.equal(isTechnicalSpecification('Quantity', '25').ok, false);
 assert.equal(isTechnicalSpecification('Price', '$120').ok, false);
 
+// VUVG / válvulas direccionales: atributos cualitativos demostrados deben
+// atravesar la misma autoridad compartida sin abrir la puerta a etiquetas libres.
+for (const [attribute, value] of [
+  ['Valve function', '5/2-way, monostable'],
+  ['Actuation type', 'Electrical'],
+  ['Reset method', 'Mechanical spring / Pneumatic spring'],
+  ['Exhaust air function', 'Adjustable'],
+  ['Sealing principle', 'Soft'],
+  ['Manual override', 'Detenting / Non-detenting / Covered'],
+  ['Type of control', 'Piloted'],
+  ['Lap', 'Positive overlap'],
+  ['Operating medium', 'Compressed air per ISO 8573-1:2010 [7:4:4]'],
+  ['Vibration resistance', 'Test level 2 per FN942017-4 and EN60068-2-6'],
+  ['Shock resistance', 'Test level 2 per FN942017-5 and EN60068-2-27'],
+  ['Seals material', 'HNBR / NBR'],
+  ['Housing material', 'Wrought aluminum alloy']
+]) {
+  assert.equal(isTechnicalSpecification(attribute, value).ok, true, `VUVG qualitative spec: ${attribute}`);
+}
+assert.equal(isTechnicalSpecification('Industry', 'Automation Machinery Manufacturing').ok, false);
+
 // Ficha técnica: assets/Markdown/URLs nunca pueden convertirse en specs.
 assert.equal(sanitizeExtractedPair('![APC logo toggle]', '//www.se.com/us/en/assets/v2/739/media/202251/APC_logo_toggle.svg'), null);
 assert.equal(sanitizeExtractedPair('![Image 1](https://example.com/product.png)', 'Product image'), null);

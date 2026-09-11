@@ -114,6 +114,15 @@ const ENGINEERING_VALUE = /[<>≤≥+\-±]?\s*\d+(?:[.,]\d+)?\s*(?:%|°?c|°?f|v
 const COMPOSITE_ENGINEERING_VALUE = /\b\d+\s*(?:DI|DO|AI|AO|I\/O|I-O)\b[\s\S]*?\b\d+(?:[.,]\d+)?\s*(?:v|mv|kv|a|ma|hz|khz|mhz|w|kw|mm|cm|bar|kpa|mpa)\b/i;
 const RANGE_ENGINEERING_VALUE = /\b(?:dc|ac)?\s*\d+(?:[.,]\d+)?\s*(?:-\.\.|\.\.|-|to|a)\s*\+?\d+(?:[.,]\d+)?\s*(?:v|mv|kv|a|ma|hz|khz|mhz|w|kw|mm|cm|bar|kpa|mpa|°?c)\b/i;
 
+// Atributos cualitativos demostrados por fichas técnicas industriales. No se
+// aceptan por el texto del valor: la etiqueta exacta es la autoridad.
+const DEMONSTRATED_QUALITATIVE_TECHNICAL_ATTRIBUTES = new Set([
+  'valve function', 'actuation type', 'reset method', 'exhaust air function',
+  'sealing principle', 'manual override', 'type of control', 'control type',
+  'lap', 'operating medium', 'vibration resistance', 'shock resistance',
+  'seals material', 'housing material'
+]);
+
 export function isTechnicalSpecification(attribute, value) {
   const a = normalized(attribute);
   const v = String(value || '').trim();
@@ -134,6 +143,9 @@ export function isTechnicalSpecification(attribute, value) {
   }
   if (a.length > 100 || a.split(/[ ]+/).length > 8) return { ok: false, role: 'UNKNOWN', reason: 'attribute_too_long' };
   const WEB_TECHNICAL_ATTRIBUTE = /\b(?:digital|analog|discrete|input|output|i\/o|memory|cpu|power supply|supply|voltage|current|frequency|communication|ethernet|profinet|profibus|dimensions?|temperature|operating|storage|protection|degree|rating|mounting|connector|interface|module|expansion|capacity|load|range|accuracy|resolution|material|connection|thread|port|flow|pressure|speed|torque|power)\b/i;
+  if (DEMONSTRATED_QUALITATIVE_TECHNICAL_ATTRIBUTES.has(a)) {
+    return { ok: true, role: 'TECHNICAL_SPECIFICATION', reason: 'demonstrated_qualitative_technical_attribute' };
+  }
   if ((GENERIC_TECHNICAL_ATTRIBUTE.test(a) || WEB_TECHNICAL_ATTRIBUTE.test(a)) && (ENGINEERING_VALUE.test(v) || COMPOSITE_ENGINEERING_VALUE.test(v) || RANGE_ENGINEERING_VALUE.test(v))) {
     return { ok: true, role: 'TECHNICAL_SPECIFICATION', reason: 'technical_attribute_and_engineering_value' };
   }

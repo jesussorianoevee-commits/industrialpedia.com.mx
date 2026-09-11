@@ -29,6 +29,16 @@
     "evidence_id": {
       "type": "string"
     },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "model",
+        "configuration_group",
+        "series",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
     "validation_state": {
       "type": "string",
       "enum": [

@@ -15,8 +15,9 @@
     "classification:scale": "node base44/tests/classificationScaleGate.mjs",
     "cross-reference:gate": "node base44/tests/crossReferenceGate.mjs",
     "family-governance:gate": "node base44/tests/familyGovernanceGate.mjs",
+    "identity-evidence:shadow": "node base44/tests/identityEvidenceContractShadow.mjs",
     "governance:gate": "node base44/tests/governanceGate.mjs",
-    "quality:gate": "npm run regression:gate && npm run classification:quality && npm run classification:scale && npm run cross-reference:gate && npm run family-governance:gate && npm run governance:gate && npm run typecheck && npm run lint && npm run build",
+    "quality:gate": "npm run regression:gate && npm run classification:quality && npm run classification:scale && npm run cross-reference:gate && npm run family-governance:gate && npm run identity-evidence:shadow && npm run governance:gate && npm run typecheck && npm run lint && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {

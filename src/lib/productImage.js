@@ -38,6 +38,7 @@ export async function resolveProductImage({ partNumber, manufacturer = '', sourc
   if (!exactPartNumber) return { image_url: '', status: 'not_found', verified: false };
 
   const key = cacheKey(exactPartNumber, expectedManufacturer);
+  const normalizedSourceUrl = normalizeImageUrl(sourceUrl);
   try {
     const cached = sessionStorage.getItem(key);
     if (cached) {
@@ -45,14 +46,19 @@ export async function resolveProductImage({ partNumber, manufacturer = '', sourc
       const age = Date.now() - Number(parsed?.cached_at || 0);
       const normalizedCachedUrl = normalizeImageUrl(parsed?.image_url);
       if (normalizedCachedUrl && age < 24 * 60 * 60 * 1000) return { ...parsed, image_url: normalizedCachedUrl };
-      // Un fallo temporal no debe dejar una referencia sin imagen durante toda la sesión.
-      if (parsed?.status && age < 5 * 60 * 1000) return parsed;
+
+      // Un resultado negativo solo es reutilizable si fue obtenido con la misma
+      // evidencia de origen. Antes una búsqueda sin sourceUrl podía guardar
+      // "not_found" y bloquear la búsqueda posterior con la URL oficial exacta.
+      const cachedSourceUrl = normalizeImageUrl(parsed?.source_url);
+      const sameSourceEvidence = cachedSourceUrl === normalizedSourceUrl;
+      if (parsed?.status && sameSourceEvidence && age < 5 * 60 * 1000) return parsed;
     }
   } catch {}
 
   // Adquisición de imágenes (AdquirirImagenAPI) desconectada de Base44; reemplazo
   // real en Supabase pendiente para la sesión de ingesta. Por ahora no hay lookup.
-  const failed = { image_url: '', status: 'lookup_failed', verified: false };
+  const failed = { image_url: '', status: 'lookup_failed', verified: false, source_url: normalizedSourceUrl };
   try { sessionStorage.setItem(key, JSON.stringify({ ...failed, cached_at: Date.now() })); } catch {}
   return failed;
 }

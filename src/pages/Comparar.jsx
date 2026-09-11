@@ -6,6 +6,7 @@ import { normalizeTechnicalNotation, canonicalTechnicalAttribute } from '../../b
 import { useLanguage, localizeSpecAttributeStrict } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
+import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] ip-compare-match', icon: ShieldCheck },
@@ -114,6 +115,11 @@ export default function Comparar() {
   const [expandedComparisonTable, setExpandedComparisonTable] = useState(false);
   const [expandedMobileComparisonTable, setExpandedMobileComparisonTable] = useState({});
   const [expandedBaseSpecs, setExpandedBaseSpecs] = useState(false);
+  // El catálogo ya resuelve imágenes faltantes mediante el resolver determinístico.
+  // El comparador debe usar exactamente la misma ruta para no depender de que el
+  // RPC de comparación traiga image_url materializado.
+  const [resolvedImages, setResolvedImages] = useState({});
+  const [imageRecoveryAttempted, setImageRecoveryAttempted] = useState({});
   const { language, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
@@ -125,6 +131,69 @@ export default function Comparar() {
       } catch (e) { setError(e?.message || 'No se pudo ejecutar el comparador.'); }
     })();
   }, [id, partNumberHint, language]);
+
+  useEffect(() => {
+    if (!data?.base) return;
+    let cancelled = false;
+    const parts = [data.base, ...(data.alternatives || [])];
+    const keyFor = (part) => String(part?.id || part?.part_number || '').trim();
+
+    // Primero normalizamos cualquier URL que ya venga del Knowledge Core.
+    const initial = {};
+    parts.forEach((part) => {
+      const key = keyFor(part);
+      if (key) initial[key] = normalizeImageUrl(part?.image_url);
+    });
+    setResolvedImages(initial);
+    setImageRecoveryAttempted({});
+
+    (async () => {
+      await Promise.all(parts.map(async (part) => {
+        const key = keyFor(part);
+        if (!key || normalizeImageUrl(part?.image_url) || !part?.part_number) return;
+        try {
+          const resolved = await resolveProductImage({
+            partNumber: part.part_number,
+            manufacturer: part.manufacturer_name || '',
+            sourceUrl: part?.source?.url || '',
+            existingUrl: ''
+          });
+          if (!cancelled && resolved?.image_url) {
+            setResolvedImages((current) => ({ ...current, [key]: resolved.image_url }));
+          }
+        } catch {
+          // No inventamos imágenes: si el resolver determinístico no encuentra
+          // una, el comparador conserva explícitamente el estado "sin imagen".
+        }
+      }));
+    })();
+
+    return () => { cancelled = true; };
+  }, [data]);
+
+  const imageFor = (part) => resolvedImages[String(part?.id || part?.part_number || '').trim()] || normalizeImageUrl(part?.image_url);
+
+  const recoverImage = async (part) => {
+    const key = String(part?.id || part?.part_number || '').trim();
+    if (!key || !part?.part_number) return;
+    if (imageRecoveryAttempted[key]) {
+      setResolvedImages((current) => ({ ...current, [key]: '' }));
+      return;
+    }
+    setImageRecoveryAttempted((current) => ({ ...current, [key]: true }));
+    clearProductImageCache(part.part_number, part.manufacturer_name || '');
+    setResolvedImages((current) => ({ ...current, [key]: '' }));
+    try {
+      const resolved = await resolveProductImage({
+        partNumber: part.part_number,
+        manufacturer: part.manufacturer_name || '',
+        sourceUrl: part?.source?.url || '',
+        existingUrl: '',
+        forceLookup: true
+      });
+      if (resolved?.image_url) setResolvedImages((current) => ({ ...current, [key]: resolved.image_url }));
+    } catch {}
+  };
 
   const returnToFicha = () => {
     // Do not rely on browser history: the comparator can be opened directly,
@@ -192,7 +261,7 @@ export default function Comparar() {
       <section className="ip-card mb-5 overflow-hidden">
         <div className="grid gap-5 p-5 md:grid-cols-[150px_1fr_1fr] md:items-center">
           <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-[#091016]">
-            {base.image_url ? <img src={base.image_url} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" /> : <div className="text-[10px] text-white/25">{t.noImage}</div>}
+            {imageFor(base) ? <img src={imageFor(base)} alt="" className="h-full w-full object-contain p-3" referrerPolicy="no-referrer" onError={() => recoverImage(base)} /> : <div className="text-[10px] text-white/25">{t.noImage}</div>}
           </div>
           <div>
             <StatusBadge component={base} base t={t} />
@@ -227,7 +296,7 @@ export default function Comparar() {
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-[#16c79a]/30 bg-[#16c79a]/[0.04] p-3 lg:sticky lg:top-4 lg:self-start">
-              {base.image_url && <img src={base.image_url} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" />}
+              {imageFor(base) && <img src={imageFor(base)} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" onError={() => recoverImage(base)} />}
               <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider ip-compare-match">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
             <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
@@ -242,7 +311,7 @@ export default function Comparar() {
               <div className="mt-2 text-sm font-medium text-white/65">{visualState === 'compatible' ? `${equal} datos coinciden` : visualState === 'not_compatible' ? `${evidence.different.length} diferencias críticas` : `${equal} datos coinciden · ${evidence.different.length} diferentes`}</div>
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
-                  {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
+                  {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
                 </div>
                 <div className="min-w-0">
                   <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
@@ -382,7 +451,7 @@ export default function Comparar() {
               {cols.map((c, i) => <div key={i} className="border-l border-white/[0.08] p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
-                    {c.image_url ? <img src={c.image_url} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}
+                    {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}
                   </div>
                   <div className="min-w-0"><div className="font-mono text-base font-semibold ip-compare-accent break-all">{c.part_number}</div><div className="mt-1 text-sm text-white/60">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/65">{c.product_name || c.description || ''}</div></div>
                 </div>

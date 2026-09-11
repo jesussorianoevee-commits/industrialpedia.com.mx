@@ -8,7 +8,8 @@ import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
-  const [partCount, setPartCount] = useState(0);
+  // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
+  const [partCount, setPartCount] = useState(null);
   const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -35,7 +36,6 @@ export default function Home() {
       const categoryStats = await getIndustrialpediaCategoryStats();
       if (categoryStats && typeof categoryStats === 'object') {
         setCounts(categoryStats);
-        refreshed = true;
       }
     } catch {
       // Conservamos los últimos conteos válidos; nunca reemplazamos datos por ceros.
@@ -46,13 +46,12 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      try {
-        await refreshCount();
-      } catch (e) {
-        // Knowledge Core vacío o no disponible: mostrar estados vacíos honestos
-      } finally {
-        setLoading(false);
+      let refreshed = false;
+      for (let attempt = 0; attempt < 3 && !refreshed; attempt += 1) {
+        refreshed = await refreshCount();
+        if (!refreshed && attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       }
+      setLoading(false);
     })();
   }, []);
 
