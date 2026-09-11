@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
 
 export const LANGUAGES = [
   { code: 'es', label: 'Español', flag: '🇪🇸' },

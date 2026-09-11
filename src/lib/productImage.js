@@ -1,5 +1,3 @@
-import { base44 } from '@/api/base44Client';
-
 export function normalizeImageUrl(value) {
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -52,22 +50,9 @@ export async function resolveProductImage({ partNumber, manufacturer = '', sourc
     }
   } catch {}
 
-  try {
-    const response = await base44.functions.invoke('AdquirirImagenAPI', {
-      part_number: exactPartNumber,
-      manufacturer_hint: expectedManufacturer,
-      source_url: normalizeImageUrl(sourceUrl) ? sourceUrl : ''
-    });
-    const result = response?.data?.result || {};
-    const image_url = normalizeImageUrl(result.image_url);
-    const resolved = image_url
-      ? { image_url, status: result.status || 'candidate', verified: result.status === 'verified_candidate', source: result.source_key || '' }
-      : { image_url: '', status: result.status || 'not_found', verified: false, source: result.source_key || '' };
-    try { sessionStorage.setItem(key, JSON.stringify({ ...resolved, cached_at: Date.now() })); } catch {}
-    return resolved;
-  } catch {
-    const failed = { image_url: '', status: 'lookup_failed', verified: false };
-    try { sessionStorage.setItem(key, JSON.stringify({ ...failed, cached_at: Date.now() })); } catch {}
-    return failed;
-  }
+  // Adquisición de imágenes (AdquirirImagenAPI) desconectada de Base44; reemplazo
+  // real en Supabase pendiente para la sesión de ingesta. Por ahora no hay lookup.
+  const failed = { image_url: '', status: 'lookup_failed', verified: false };
+  try { sessionStorage.setItem(key, JSON.stringify({ ...failed, cached_at: Date.now() })); } catch {}
+  return failed;
 }

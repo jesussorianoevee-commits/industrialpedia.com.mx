@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Search, ArrowLeft, SlidersHorizontal, Loader2, Clock } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
@@ -35,7 +34,6 @@ export default function Buscar() {
 
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const suggestionTimer = useRef(null);
   const searchReqId = useRef(0);
 
   const [ficha, setFicha] = useState(null);
@@ -185,35 +183,11 @@ export default function Buscar() {
     }
   }, [q, area, filters, runSearch, runAreaBrowse]);
 
-  // Autocompletado determinístico: consulta únicamente el Knowledge Core interno
-  // y fabricantes registrados. Nunca mezcla DiscoveryIndex ni Tavily/Google.
+  // Autocompletado desconectado de Base44 (SugerenciasBuscar); reemplazo real
+  // en Supabase pendiente para la sesión de ingesta. Por ahora no sugiere nada.
   useEffect(() => {
-    const term = input.trim();
-    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
-    if (term.length < 2 || term === q.trim()) {
-      setSuggestions([]);
-      setSuggestionsLoading(false);
-      return;
-    }
-    suggestionTimer.current = setTimeout(async () => {
-      setSuggestionsLoading(true);
-      try {
-        const res = await base44.functions.invoke('SugerenciasBuscar', { q: term });
-        const items = (res.data?.suggestions || []).slice(0, 8).map((r) => ({
-          title: r.text || 'Producto',
-          partNumber: r.part_number || '',
-          manufacturer: r.manufacturer || '',
-          image: r.image || '',
-          result: r
-        }));
-        setSuggestions(items);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setSuggestionsLoading(false);
-      }
-    }, 180);
-    return () => suggestionTimer.current && clearTimeout(suggestionTimer.current);
+    setSuggestions([]);
+    setSuggestionsLoading(false);
   }, [input, q]);
 
   const submit = (e) => {

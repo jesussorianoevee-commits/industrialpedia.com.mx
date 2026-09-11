@@ -6,7 +6,7 @@ import { INDUSTRIALPEDIA_ENDPOINTS, SEARCH_FUNCTION_URL, supabaseFunctionUrl } f
 const root = process.cwd();
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((entry) => {
-  const rel = path.join(dir, entry.name);
+  const rel = `${dir}/${entry.name}`;
   if (entry.isDirectory()) return entry.name === 'node_modules' || entry.name === 'dist' ? [] : walk(rel);
   return [rel];
 });

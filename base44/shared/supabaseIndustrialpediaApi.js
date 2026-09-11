@@ -5,7 +5,8 @@ import {
 } from './endpointRegistry.js';
 
 // Publishable/anon key: safe for client applications. Never use the service-role key here.
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY
+  || 'sb_publishable_8K6JjRS7ga1H5jfmVCqQrA_V6ZvT3r_';
 const FUNCTION_URL = SEARCH_FUNCTION_URL;
 import { resolveCrossReference } from './crossReferenceEngine.js';
 

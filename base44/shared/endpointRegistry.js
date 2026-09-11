@@ -2,7 +2,7 @@
 // Regla: los consumidores importan estos contratos; no escriben versiones a mano.
 // Cambiar un endpoint requiere actualizar este registro y ejecutar governance:gate.
 
-export const SUPABASE_URL = 'https://stwwywzuzbkyoecjujeh.supabase.co';
+export const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://stwwywzuzbkyoecjujeh.supabase.co';
 
 export const INDUSTRIALPEDIA_ENDPOINTS = Object.freeze({
   search: Object.freeze({ name: 'industrialpedia-search-v17', status: 'canonical' }),
