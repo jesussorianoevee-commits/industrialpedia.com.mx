@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { Search, ArrowLeft, SlidersHorizontal, Loader2, Clock } from 'lucide-react';
+import { Search, ArrowLeft, ChevronLeft, ChevronRight, SlidersHorizontal, Loader2, Clock } from 'lucide-react';
 import ResultCard from '@/components/search/ResultCard';
 import FichaIndustrialpedia from '@/components/search/FichaIndustrialpedia';
 import FilterPanel from '@/components/search/FilterPanel';
@@ -12,13 +12,16 @@ import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
 
-const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false }; 
+const DEFAULT_FILTERS = { manufacturers: [], categories: [], has_specification: false, only_published: false };
+const AREA_PAGE_SIZE = 20; 
 
 export default function Buscar() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const q = params.get('q') || '';
   const area = params.get('area') || '';
+  const pageParam = Number.parseInt(params.get('page') || '1', 10);
+  const areaPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
   const areaLabel = AREAS.find((a) => (a.statsKey || a.id) === area)?.name || area;
   const [input, setInput] = useState(q);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -69,26 +72,28 @@ export default function Buscar() {
     });
   };
 
-  const runAreaBrowse = useCallback(async (areaKey) => {
+  const runAreaBrowse = useCallback(async (areaKey, page) => {
     const reqId = ++searchReqId.current;
     setKcLoading(true);
     setKcData(null);
     setKcError(null);
     try {
-      let res;
-      try {
-        // La consulta por familia es independiente de BUSCAR. La primera lectura
-        // usa una página moderada; si Supabase devuelve statement_timeout por carga
-        // concurrente, reintentamos con una página menor en vez de mostrar un error
-        // al usuario. No cambiamos la fuente ni la lógica de clasificación.
-        res = await getIndustrialpediaAreaParts(areaKey, 25, 0);
-      } catch (firstError) {
-        const message = String(firstError?.message || firstError || '').toLowerCase();
-        if (!message.includes('statement timeout') && !message.includes('canceling statement')) throw firstError;
-        res = await getIndustrialpediaAreaParts(areaKey, 10, 0);
-      }
+      // Navegación paginada: la API entrega solamente la página solicitada
+      // y un indicador has_more. Ya no se intenta calcular el total completo
+      // antes de mostrar la primera página.
+      const res = await getIndustrialpediaAreaParts(areaKey, AREA_PAGE_SIZE, (page - 1) * AREA_PAGE_SIZE);
       if (searchReqId.current !== reqId) return;
-      setKcData({ knowledge_core_results: res.results, facets: { manufacturers: [], categories: [] }, meta: { mode: 'area', area: areaKey, total: res.total } });
+      setKcData({
+        knowledge_core_results: res.results,
+        facets: { manufacturers: [], categories: [] },
+        meta: {
+          mode: 'area',
+          area: areaKey,
+          page,
+          page_size: res.page_size,
+          has_more: res.has_more
+        }
+      });
     } catch (e) {
       if (searchReqId.current !== reqId) return;
       setKcData(null);
@@ -174,14 +179,14 @@ export default function Buscar() {
   useEffect(() => {
     setInput(q);
     if (area) {
-      runAreaBrowse(area);
+      runAreaBrowse(area, areaPage);
     } else if (q) {
       runSearch(q, filters);
     } else {
       setKcData(null);
       setKcError(null);
     }
-  }, [q, area, filters, runSearch, runAreaBrowse]);
+  }, [q, area, areaPage, filters, runSearch, runAreaBrowse]);
 
   // Autocompletado desconectado de Base44 (SugerenciasBuscar); reemplazo real
   // en Supabase pendiente para la sesión de ingesta. Por ahora no sugiere nada.
@@ -331,7 +336,11 @@ export default function Buscar() {
             {!q && !area ? t.searchParts : (
               <span className="flex items-center gap-2">
                 {kcLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                {kcLoading ? t.loadingParts : `${kcData?.meta?.total ?? kcResults.length} ${t.foundParts}`}
+                {kcLoading
+                  ? t.loadingParts
+                  : area
+                    ? `${kcResults.length} ${t.foundParts} · ${t.page} ${areaPage}`
+                    : `${kcData?.meta?.total ?? kcResults.length} ${t.foundParts}`}
               </span>
             )}
           </div>
@@ -369,6 +378,30 @@ export default function Buscar() {
                 <div className="space-y-3">
                   {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
                 </div>
+
+                {area && !kcLoading && (
+                  <div className="mt-5 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      disabled={areaPage <= 1}
+                      onClick={() => setParams({ area, page: String(Math.max(1, areaPage - 1)) })}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/65 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      {t.back}
+                    </button>
+                    <span className="text-xs text-white/35">{t.page} {areaPage}</span>
+                    <button
+                      type="button"
+                      disabled={!kcData?.meta?.has_more}
+                      onClick={() => setParams({ area, page: String(areaPage + 1) })}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/65 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      {t.more}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </section>
             )}
 
