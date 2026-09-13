@@ -544,8 +544,8 @@ export async function getIndustrialpediaCategoryStats() {
   return snapshot;
 }
 
-export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_parts_v2`, {
+export async function getIndustrialpediaAreaParts(area, limit = 20, offset = 0) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_page_v1`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
@@ -553,14 +553,18 @@ export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) 
       'Content-Type': 'application/json',
       Accept: 'application/json'
     },
-    body: JSON.stringify({ p_area: area, p_limit: Math.min(Number(limit) || 25, 50), p_offset: Math.max(Number(offset) || 0, 0) })
+    body: JSON.stringify({
+      p_area: area,
+      p_limit: Math.min(Number(limit) || 20, 20),
+      p_offset: Math.max(Number(offset) || 0, 0)
+    })
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok || !Array.isArray(data)) {
-    throw new Error(data?.message || data?.error || `Catalog area parts HTTP ${response.status}`);
+  if (!response.ok || !data || typeof data !== 'object' || !Array.isArray(data.results)) {
+    throw new Error(data?.message || data?.error || `Catalog area page HTTP ${response.status}`);
   }
   return {
-    results: data.map((r) => ({
+    results: data.results.map((r) => ({
       id: r.part_id,
       part_number: r.part_number || '',
       manufacturer_name: r.manufacturer || '',
@@ -590,7 +594,11 @@ export async function getIndustrialpediaAreaParts(area, limit = 25, offset = 0) 
       api_match_type: 'category',
       api_score: 0
     })),
-    total: Number(data[0]?.result_count || 0)
+    total: null,
+    has_more: data.has_more === true,
+    page_size: Number(data.page_size || limit || 20),
+    offset: Number(data.offset || 0),
+    area: data.area || area
   };
 }
 
