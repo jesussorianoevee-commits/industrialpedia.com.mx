@@ -15,30 +15,32 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refreshCount = async () => {
+    // Ambas fuentes son independientes: iniciarlas juntas evita que la segunda
+    // espere innecesariamente a la primera. Cada resultado se aplica de forma
+    // independiente, preservando el último dato válido si una consulta falla.
+    const results = await Promise.allSettled([
+      getIndustrialpediaCatalogStats(),
+      getIndustrialpediaCategoryStats(),
+    ]);
+
     let refreshed = false;
 
-    // El total del catálogo y los conteos por área son fuentes independientes.
-    // Si una consulta de taxonomía tarda/falla, nunca debemos convertir un catálogo
-    // válido en "0 refacciones" en la UI.
-    try {
-      const stats = await getIndustrialpediaCatalogStats();
-      const total = Number(stats?.count);
+    const catalogResult = results[0];
+    if (catalogResult.status === 'fulfilled') {
+      const total = Number(catalogResult.value?.count);
       if (Number.isFinite(total)) {
         setPartCount(total);
         setLastUpdated(new Date());
         refreshed = true;
       }
-    } catch {
-      // Conservamos el último total válido.
     }
 
-    try {
-      const categoryStats = await getIndustrialpediaCategoryStats();
+    const categoryResult = results[1];
+    if (categoryResult.status === 'fulfilled') {
+      const categoryStats = categoryResult.value;
       if (categoryStats && typeof categoryStats === 'object') {
         setCounts(categoryStats);
       }
-    } catch {
-      // Conservamos los últimos conteos válidos; nunca reemplazamos datos por ceros.
     }
 
     return refreshed;
