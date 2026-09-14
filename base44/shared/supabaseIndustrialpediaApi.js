@@ -545,7 +545,7 @@ export async function getIndustrialpediaCategoryStats() {
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 20, offset = 0) {
-  const response = await fetch(`${SEARCH_FUNCTION_URL}?mode=browse&family=${encodeURIComponent(String(area || '').trim())}&limit=${Math.min(Number(limit) || 20, 20)}&offset=${Math.max(Number(offset) || 0, 0)}`, {
+  const response = await fetch(`${SEARCH_FUNCTION_URL}?mode=area&area=${encodeURIComponent(String(area || '').trim())}&limit=${Math.min(Number(limit) || 20, 20)}&offset=${Math.max(Number(offset) || 0, 0)}`, {
     method: 'GET',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
