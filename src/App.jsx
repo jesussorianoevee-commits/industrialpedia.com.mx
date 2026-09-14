@@ -6,6 +6,7 @@ import { lazy, Suspense } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import CapuchinaLoader from '@/components/ui/CapuchinaLoader';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Home from '@/pages/Home';
@@ -41,7 +42,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<CapuchinaLoader fullScreen />} >
       <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
