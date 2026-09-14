@@ -8,7 +8,7 @@ import EmptyState from '@/components/search/EmptyState';
 import { AREAS } from '@/lib/taxonomy';
 import { getIndustrialpediaAreaParts, searchIndustrialpedia } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage } from '@/lib/i18n';
-import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
+import CapuchinaLoader from '@/components/ui/CapuchinaLoader';
 import { consumeTrialAction } from '@/lib/trial';
 import { useAuth } from '@/lib/AuthContext';
 
