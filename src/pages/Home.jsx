@@ -2,10 +2,10 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import SiteHeader from '@/components/landing/SiteHeader';
 import Hero from '@/components/landing/Hero';
 
-const CategorySection = lazy(() => import('@/components/landing/CategorySection'));
+import CategorySection from '@/components/landing/CategorySection';
 const UseCasesSection = lazy(() => import('@/components/landing/UseCasesSection'));
-const ForumCard = lazy(() => import('@/components/landing/ForumCard'));
-const WorkflowSteps = lazy(() => import('@/components/landing/WorkflowSteps'));
+import ForumCard from '@/components/landing/ForumCard';
+import WorkflowSteps from '@/components/landing/WorkflowSteps';
 
 export default function Home() {
   // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
