@@ -1,0 +1,15 @@
+[Unit]
+Description=Industrialpedia crawler-server (Deno)
+After=network.target
+
+[Service]
+Type=simple
+User=crawler
+WorkingDirectory=/opt/industrialpedia/crawler-server
+EnvironmentFile=/opt/industrialpedia/crawler-server/.env
+ExecStart=/root/.deno/bin/deno run --allow-net --allow-env --allow-read main.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
