@@ -1,7 +1,6 @@
 import {
   CATALOG_STATS_FUNCTION_URL,
   SEARCH_FUNCTION_URL,
-  CATALOG_BROWSE_FUNCTION_URL,
   SUPABASE_URL
 } from './endpointRegistry.js';
 
@@ -546,82 +545,19 @@ export async function getIndustrialpediaCategoryStats() {
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 20, offset = 0) {
-  const safeLimit = Math.min(Number(limit) || 20, 20);
-  const safeOffset = Math.max(Number(offset) || 0, 0);
-  const params = new URLSearchParams({
-    family: String(area || '').trim(),
-    limit: String(safeLimit),
-    offset: String(safeOffset)
+  const response = await fetch(`${SEARCH_FUNCTION_URL}?mode=browse&family=${encodeURIComponent(String(area || '').trim())}&limit=${Math.min(Number(limit) || 20, 20)}&offset=${Math.max(Number(offset) || 0, 0)}`, {
+    method: 'GET',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      Accept: 'application/json'
+    }
   });
-
-  let response;
-  try {
-    response = await fetch(`${CATALOG_BROWSE_FUNCTION_URL}?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-        Accept: 'application/json'
-      }
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data || typeof data !== 'object' || !Array.isArray(data.results)) {
-      throw new Error(data?.message || data?.error || `Catalog browse HTTP ${response.status}`);
-    }
-    return {
-      results: data.results.map((r) => ({
-        id: r.part_id,
-        part_number: r.part_number || '',
-        manufacturer_name: r.manufacturer || '',
-        category: r.category || '',
-        description: r.description || r.name || '',
-        title: r.name || r.part_number || '',
-        specifications: r.specifications && typeof r.specifications === 'object' ? r.specifications : {},
-        validation_state: r.status === 'verified' ? 'published' : r.status || 'incomplete',
-        match: 'category',
-        has_evidence: Number(r.evidence_count || 0) > 0,
-        evidence_count: Number(r.evidence_count || 0),
-        spec_count: r.specifications ? Object.keys(r.specifications).length : 0,
-        image_url: r.image_url || '',
-        image_verification_status: r.image_verification_status || null,
-        image_source: r.image_source || null,
-        image_is_primary: r.image_is_primary === true,
-        source_ids: Array.isArray(r.source_ids) ? r.source_ids.filter(Boolean) : [],
-        discovery_state: null,
-        source_url: r.source_url || null,
-        document_url: null,
-        top_specs: r.specifications ? Object.entries(r.specifications).slice(0, 6).map(([attribute, value]) => ({
-          attribute,
-          value: typeof value === 'object' && value !== null ? value.value ?? value : value,
-          unit: typeof value === 'object' && value !== null ? value.unit ?? null : null,
-          validated: true
-        })) : [],
-        api_match_type: 'category',
-        api_score: 0
-      })),
-      total: null,
-      has_more: data.has_more === true,
-      page_size: Number(data.page_size || safeLimit),
-      offset: Number(data.offset || safeOffset),
-      area: data.area || area
-    };
-  } catch (error) {
-    console.error('Industrialpedia catalog browse endpoint failed; using legacy page RPC', error);
-    response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/industrialpedia_catalog_area_page_v1`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify({ p_area: area, p_limit: safeLimit, p_offset: safeOffset })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data || typeof data !== 'object' || !Array.isArray(data.results)) {
-      throw new Error(data?.message || data?.error || `Catalog area page HTTP ${response.status}`);
-    }
-    return {
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data || typeof data !== 'object' || !Array.isArray(data.results)) {
+    throw new Error(data?.message || data?.error || `Catalog browse HTTP ${response.status}`);
+  }
+  return {
     results: data.results.map((r) => ({
       id: r.part_id,
       part_number: r.part_number || '',
