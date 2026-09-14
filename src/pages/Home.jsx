@@ -5,7 +5,6 @@ import CategorySection from '@/components/landing/CategorySection';
 const UseCasesSection = lazy(() => import('@/components/landing/UseCasesSection'));
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
-import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
 
 export default function Home() {
   // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
@@ -15,6 +14,11 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refreshCount = async () => {
+    // Cargamos el módulo de estadísticas después del primer render del Home.
+    // Así su código no forma parte del bundle crítico de entrada.
+    const { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } =
+      await import('../../base44/shared/supabaseIndustrialpediaApi.js');
+
     // Ambas fuentes son independientes: iniciarlas juntas evita que la segunda
     // espere innecesariamente a la primera. Cada resultado se aplica de forma
     // independiente, preservando el último dato válido si una consulta falla.
@@ -79,7 +83,9 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1 mx-auto w-full max-w-6xl">
         <Hero partCount={partCount} loading={loading} lastUpdated={lastUpdated} />
-        <UseCasesSection />
+        <Suspense fallback={null}>
+          <UseCasesSection />
+        </Suspense>
         <CategorySection counts={counts} />
         <ForumCard />
         <WorkflowSteps />
