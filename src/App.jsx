@@ -26,10 +26,8 @@ import { ThemeProvider } from '@/lib/theme';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
-  // Industrialpedia branded loader while auth/public settings initialize.
-  if (isLoadingPublicSettings || isLoadingAuth) {
-  return <CapuchinaLoader fullScreen />;
-  }
+  // Diagnostic: do not block the entire application on Supabase Auth during startup.
+  // Authentication continues in AuthContext; public routes must render independently.
 
   // Handle authentication errors
   if (authError) {
