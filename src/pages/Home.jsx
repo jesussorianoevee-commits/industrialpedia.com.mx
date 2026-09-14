@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import SiteHeader from '@/components/landing/SiteHeader';
 import Hero from '@/components/landing/Hero';
 import CategorySection from '@/components/landing/CategorySection';
-import UseCasesSection from '@/components/landing/UseCasesSection';
+const UseCasesSection = lazy(() => import('@/components/landing/UseCasesSection'));
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 import { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } from '../../base44/shared/supabaseIndustrialpediaApi.js';
