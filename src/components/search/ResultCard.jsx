@@ -50,6 +50,11 @@ export default function ResultCard({ result }) {
     };
 
     const resolveImage = async () => {
+      // En listados paginados, la imagen no debe provocar una consulta por tarjeta.
+      // La ruta de área ya hace una resolución colectiva; si viene marcada como
+      // diferida, mantenemos el placeholder y dejamos la ficha para la resolución.
+      if (result.defer_image_lookup) return;
+
       // 1) La búsqueda canónica de Industrialpedia es la fuente principal.
       // Volvemos a leer la ficha exacta para evitar que un payload resumido
       // de resultados oculte una imagen que sí existe en el Knowledge Core.
@@ -102,7 +107,7 @@ export default function ResultCard({ result }) {
 
     if (!initialUrl) resolveImage();
     return () => { cancelled = true; };
-  }, [result.id, result.part_number, result.image_url, result.image_verification_status, result.manufacturer_name, result.source_url, result.document_url, imageRetry]);
+  }, [result.defer_image_lookup, result.id, result.part_number, result.image_url, result.image_verification_status, result.manufacturer_name, result.source_url, result.document_url, imageRetry]);
   const [compareLoading, setCompareLoading] = useState(false);
   const [alternativesLoading, setAlternativesLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
