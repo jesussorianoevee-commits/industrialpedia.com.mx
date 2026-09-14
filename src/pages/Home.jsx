@@ -77,8 +77,11 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    let timerId = null;
+    let idleId = null;
 
-    (async () => {
+    const startRefresh = async () => {
+      if (cancelled) return;
       let refreshed = false;
       for (let attempt = 0; attempt < 3 && !refreshed && !cancelled; attempt += 1) {
         refreshed = await refreshCount();
@@ -87,10 +90,20 @@ export default function Home() {
         }
       }
       if (!cancelled) setLoading(false);
-    })();
+    };
+
+    // Las estadísticas son secundarias. No deben competir con la primera
+    // navegación del usuario ni con la carga de /buscar en una conexión móvil.
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(startRefresh, { timeout: 1800 });
+    } else {
+      timerId = window.setTimeout(startRefresh, 1200);
+    }
 
     return () => {
       cancelled = true;
+      if (idleId !== null && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      if (timerId !== null) window.clearTimeout(timerId);
     };
   }, []);
 
