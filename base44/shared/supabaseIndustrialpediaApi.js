@@ -509,7 +509,7 @@ async function getIndustrialpediaCanonicalAreaStats() {
   return Object.fromEntries((Array.isArray(rows) ? rows : []).map((row) => [row.area, Number(row.count)]));
 }
 
-async function refreshIndustrialpediaCategoryStats() {
+export async function refreshIndustrialpediaCategoryStats() {
   // Un solo RPC canónico calcula todos los conteos con exactamente la misma
   // versión del clasificador que usa industrialpedia_catalog_area_parts_v2.
   const canonical = await getIndustrialpediaCanonicalAreaStats();
