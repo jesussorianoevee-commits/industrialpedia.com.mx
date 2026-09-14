@@ -18,7 +18,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import OAuthConsent from '@/pages/OAuthConsent';
-import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
+import CapuchinaLoader from '@/components/ui/CapuchinaLoader';
 import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
