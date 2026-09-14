@@ -524,24 +524,14 @@ async function refreshIndustrialpediaCategoryStats() {
 }
 
 export async function getIndustrialpediaCategoryStats() {
-  const now = Date.now();
-  const snapshot = categoryStatsCache.value || { ...EMPTY_CATEGORY_STATS };
-
-  if (!categoryStatsCache.refreshPromise && categoryStatsCache.expiresAt <= now) {
-    categoryStatsCache.refreshPromise = refreshIndustrialpediaCategoryStats()
-      .catch(() => snapshot)
-      .finally(() => { categoryStatsCache.refreshPromise = null; });
-  }
-
-  // En un arranque sin snapshot no mostramos conteos inventados ni ceros
-  // transitorios: esperamos la primera respuesta canónica. Con snapshot válido,
-  // la UI permanece inmediata y la revalidación sigue en segundo plano.
+  // Los conteos por área no forman parte del camino crítico de navegación.
+  // No ejecutamos desde el cliente el RPC que clasifica todo `parts`, porque
+  // una consulta cosmética de Home no debe competir con Buscar/área.
+  // Sólo devolvemos el snapshot ya disponible; otra rutina explícita puede
+  // actualizarlo cuando corresponda.
+  const snapshot = categoryStatsCache.value || {};
   const hasAnyCount = Object.values(snapshot).some((value) => Number(value) > 0);
-  if (!hasAnyCount && categoryStatsCache.refreshPromise) {
-    return categoryStatsCache.refreshPromise;
-  }
-
-  return snapshot;
+  return hasAnyCount ? snapshot : {};
 }
 
 export async function getIndustrialpediaAreaParts(area, limit = 20, offset = 0) {
