@@ -10,10 +10,6 @@ class StartupBoundary extends React.Component {
     return { hasError: true };
   }
 
-  componentDidMount() {
-    document.getElementById('ip-boot')?.remove();
-  }
-
   componentDidCatch(error, info) {
     console.error('Industrialpedia startup error', error, info);
   }
