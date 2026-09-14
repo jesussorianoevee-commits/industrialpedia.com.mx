@@ -586,7 +586,8 @@ export async function getIndustrialpediaAreaParts(area, limit = 20, offset = 0) 
         validated: true
       })) : [],
       api_match_type: 'category',
-      api_score: 0
+      api_score: 0,
+      defer_image_lookup: r.defer_image_lookup === true
     })),
     total: null,
     has_more: data.has_more === true,
