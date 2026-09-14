@@ -39,33 +39,22 @@ export default function Home() {
 
     if (!api) return false;
 
-    const { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } = api;
+    const { getIndustrialpediaCatalogStats } = api;
 
     // Cada fuente tiene su propio límite. Antes se envolvía Promise.allSettled
     // completo con un timeout: una sola llamada lenta retenía el resultado de
     // la otra y prolongaba artificialmente el estado "Cargando refacciones".
-    const results = await Promise.allSettled([
+    const catalogResult = await Promise.allSettled([
       withTimeout(getIndustrialpediaCatalogStats(), STATS_LOAD_TIMEOUT_MS),
-      withTimeout(getIndustrialpediaCategoryStats(), STATS_LOAD_TIMEOUT_MS),
-    ]);
+    ]).then(([result]) => result);
 
     let refreshed = false;
-
-    const catalogResult = results[0];
     if (catalogResult.status === 'fulfilled' && catalogResult.value) {
       const total = Number(catalogResult.value?.count);
       if (Number.isFinite(total)) {
         setPartCount(total);
         setLastUpdated(new Date());
         refreshed = true;
-      }
-    }
-
-    const categoryResult = results[1];
-    if (categoryResult.status === 'fulfilled' && categoryResult.value) {
-      const categoryStats = categoryResult.value;
-      if (categoryStats && typeof categoryStats === 'object') {
-        setCounts(categoryStats);
       }
     }
 
@@ -108,12 +97,12 @@ export default function Home() {
     };
     // Revalidación de bajo impacto; 30 segundos generaba tráfico y trabajo
     // innecesario incluso cuando el usuario no hacía nada.
-    const interval = setInterval(refreshCount, 5 * 60 * 1000);
+    const interval = null;
     const handleFocus = () => refreshCount();
     window.addEventListener('industrialpedia:category-stats-updated', handleCategoryStatsUpdated);
     window.addEventListener('focus', handleFocus);
     return () => {
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('industrialpedia:category-stats-updated', handleCategoryStatsUpdated);
       window.removeEventListener('focus', handleFocus);
     };
