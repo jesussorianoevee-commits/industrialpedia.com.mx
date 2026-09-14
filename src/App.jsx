@@ -28,7 +28,7 @@ const AuthenticatedApp = () => {
 
   // Industrialpedia branded loader while auth/public settings initialize.
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return <IndustrialpediaLoader fullScreen />;
+  return <CapuchinaLoader fullScreen />;
   }
 
   // Handle authentication errors
