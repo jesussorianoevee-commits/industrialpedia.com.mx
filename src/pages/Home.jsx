@@ -7,6 +7,16 @@ const UseCasesSection = lazy(() => import('@/components/landing/UseCasesSection'
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 
+const STATS_MODULE = '../../base44/shared/supabaseIndustrialpediaApi.js';
+const STATS_LOAD_TIMEOUT_MS = 8000;
+
+function withTimeout(promise, timeoutMs) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
+  ]);
+}
+
 export default function Home() {
   // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
   const [partCount, setPartCount] = useState(null);
@@ -15,18 +25,32 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refreshCount = async () => {
-    // Cargamos el módulo de estadísticas después del primer render del Home.
-    // Así su código no forma parte del bundle crítico de entrada.
-    const { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } =
-      await import('../../base44/shared/supabaseIndustrialpediaApi.js');
+    let api;
+    try {
+      // Cargamos el módulo de estadísticas después del primer render del Home.
+      // Si el chunk no llega, no bloqueamos la pantalla y el intento se rehará.
+      api = await withTimeout(import(STATS_MODULE), STATS_LOAD_TIMEOUT_MS);
+    } catch (error) {
+      console.error('Industrialpedia home stats module load failed', error);
+      return false;
+    }
+
+    if (!api) return false;
+
+    const { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } = api;
 
     // Ambas fuentes son independientes: iniciarlas juntas evita que la segunda
     // espere innecesariamente a la primera. Cada resultado se aplica de forma
     // independiente, preservando el último dato válido si una consulta falla.
-    const results = await Promise.allSettled([
-      getIndustrialpediaCatalogStats(),
-      getIndustrialpediaCategoryStats(),
-    ]);
+    const results = await withTimeout(
+      Promise.allSettled([
+        getIndustrialpediaCatalogStats(),
+        getIndustrialpediaCategoryStats(),
+      ]),
+      STATS_LOAD_TIMEOUT_MS,
+    );
+
+    if (!Array.isArray(results)) return false;
 
     let refreshed = false;
 
@@ -52,14 +76,22 @@ export default function Home() {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
       let refreshed = false;
-      for (let attempt = 0; attempt < 3 && !refreshed; attempt += 1) {
+      for (let attempt = 0; attempt < 3 && !refreshed && !cancelled; attempt += 1) {
         refreshed = await refreshCount();
-        if (!refreshed && attempt < 2) await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+        if (!refreshed && attempt < 2 && !cancelled) {
+          await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+        }
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
