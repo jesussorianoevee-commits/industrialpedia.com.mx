@@ -41,6 +41,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <Suspense fallback={null}>
       <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
       <Route path="/decidir" element={<TrialRoute><Decidir /></TrialRoute>} />
       <Route path="*" element={<PageNotFound />} />
       </Routes>
+    </Suspense>
   );
 };
 
