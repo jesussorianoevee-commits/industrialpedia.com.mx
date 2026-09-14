@@ -1,5 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { supabase } from '@/api/supabaseClient';
+
+let supabasePromise;
+const getSupabase = () => {
+  if (!supabasePromise) {
+    supabasePromise = import('@/api/supabaseClient').then(({ supabase }) => supabase);
+  }
+  return supabasePromise;
+};
 
 const AuthContext = createContext(undefined);
 
@@ -13,6 +20,7 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = useCallback(async () => {
     setIsLoadingAuth(true);
     try {
+      const supabase = await getSupabase();
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
       setUser(data.user ?? null);
@@ -29,17 +37,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    checkUserAuth();
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsAuthenticated(Boolean(session?.user));
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    });
-    return () => listener.subscription.unsubscribe();
+    let active = true;
+    let listener;
+
+    (async () => {
+      const supabase = await getSupabase();
+      if (!active) return;
+
+      checkUserAuth();
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!active) return;
+        setUser(session?.user ?? null);
+        setIsAuthenticated(Boolean(session?.user));
+        setIsLoadingAuth(false);
+        setAuthChecked(true);
+      });
+      listener = data?.subscription;
+    })();
+
+    return () => {
+      active = false;
+      listener?.unsubscribe();
+    };
   }, [checkUserAuth]);
 
   const logout = async () => {
+    const supabase = await getSupabase();
     await supabase.auth.signOut();
     setUser(null);
     setIsAuthenticated(false);
