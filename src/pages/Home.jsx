@@ -39,16 +39,27 @@ export default function Home() {
 
     if (!api) return false;
 
-    const { getIndustrialpediaCatalogStats } = api;
+    const {
+      getIndustrialpediaCatalogStats,
+      getIndustrialpediaCategoryStats,
+      refreshIndustrialpediaCategoryStats,
+    } = api;
 
-    // Cada fuente tiene su propio límite. Antes se envolvía Promise.allSettled
-    // completo con un timeout: una sola llamada lenta retenía el resultado de
-    // la otra y prolongaba artificialmente el estado "Cargando refacciones".
-    const catalogResult = await Promise.allSettled([
+    // Total y conteos por área son independientes. Un fallo no puede ocultar
+    // el otro. Primero mostramos un snapshot local válido y después intentamos
+    // actualizarlo desde la fuente canónica.
+    const cachedCounts = await getIndustrialpediaCategoryStats();
+    if (cachedCounts && Object.keys(cachedCounts).length > 0) {
+      setCounts(cachedCounts);
+    }
+
+    const [catalogResult, categoryResult] = await Promise.allSettled([
       withTimeout(getIndustrialpediaCatalogStats(), STATS_LOAD_TIMEOUT_MS),
-    ]).then(([result]) => result);
+      withTimeout(refreshIndustrialpediaCategoryStats(), STATS_LOAD_TIMEOUT_MS),
+    ]);
 
     let refreshed = false;
+
     if (catalogResult.status === 'fulfilled' && catalogResult.value) {
       const total = Number(catalogResult.value?.count);
       if (Number.isFinite(total)) {
@@ -56,6 +67,11 @@ export default function Home() {
         setLastUpdated(new Date());
         refreshed = true;
       }
+    }
+
+    if (categoryResult.status === 'fulfilled' && categoryResult.value) {
+      setCounts(categoryResult.value);
+      refreshed = true;
     }
 
     return refreshed;
