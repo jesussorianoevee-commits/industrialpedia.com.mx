@@ -20,8 +20,10 @@ function withTimeout(promise, timeoutMs) {
 export default function Home() {
   // null significa que todavía no hay un total confirmado. Nunca usamos 0 como valor provisional.
   const [partCount, setPartCount] = useState(null);
-  const [counts, setCounts] = useState({});
-  const [loading, setLoading] = useState(true);
+  // Las estadísticas son secundarias: la pantalla no debe quedar en estado de
+  // carga mientras se consulta el catálogo.
+  const [counts, setCounts] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refreshCount = async () => {
@@ -39,23 +41,18 @@ export default function Home() {
 
     const { getIndustrialpediaCatalogStats, getIndustrialpediaCategoryStats } = api;
 
-    // Ambas fuentes son independientes: iniciarlas juntas evita que la segunda
-    // espere innecesariamente a la primera. Cada resultado se aplica de forma
-    // independiente, preservando el último dato válido si una consulta falla.
-    const results = await withTimeout(
-      Promise.allSettled([
-        getIndustrialpediaCatalogStats(),
-        getIndustrialpediaCategoryStats(),
-      ]),
-      STATS_LOAD_TIMEOUT_MS,
-    );
-
-    if (!Array.isArray(results)) return false;
+    // Cada fuente tiene su propio límite. Antes se envolvía Promise.allSettled
+    // completo con un timeout: una sola llamada lenta retenía el resultado de
+    // la otra y prolongaba artificialmente el estado "Cargando refacciones".
+    const results = await Promise.allSettled([
+      withTimeout(getIndustrialpediaCatalogStats(), STATS_LOAD_TIMEOUT_MS),
+      withTimeout(getIndustrialpediaCategoryStats(), STATS_LOAD_TIMEOUT_MS),
+    ]);
 
     let refreshed = false;
 
     const catalogResult = results[0];
-    if (catalogResult.status === 'fulfilled') {
+    if (catalogResult.status === 'fulfilled' && catalogResult.value) {
       const total = Number(catalogResult.value?.count);
       if (Number.isFinite(total)) {
         setPartCount(total);
@@ -65,7 +62,7 @@ export default function Home() {
     }
 
     const categoryResult = results[1];
-    if (categoryResult.status === 'fulfilled') {
+    if (categoryResult.status === 'fulfilled' && categoryResult.value) {
       const categoryStats = categoryResult.value;
       if (categoryStats && typeof categoryStats === 'object') {
         setCounts(categoryStats);
@@ -82,13 +79,9 @@ export default function Home() {
 
     const startRefresh = async () => {
       if (cancelled) return;
-      let refreshed = false;
-      for (let attempt = 0; attempt < 3 && !refreshed && !cancelled; attempt += 1) {
-        refreshed = await refreshCount();
-        if (!refreshed && attempt < 2 && !cancelled) {
-          await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
-        }
-      }
+      // Una consulta fallida no debe convertir la Home en una pantalla de
+      // espera. La siguiente revalidación periódica volverá a intentarlo.
+      await refreshCount();
       if (!cancelled) setLoading(false);
     };
 
@@ -113,7 +106,9 @@ export default function Home() {
         setCounts(event.detail);
       }
     };
-    const interval = setInterval(refreshCount, 30000);
+    // Revalidación de bajo impacto; 30 segundos generaba tráfico y trabajo
+    // innecesario incluso cuando el usuario no hacía nada.
+    const interval = setInterval(refreshCount, 5 * 60 * 1000);
     const handleFocus = () => refreshCount();
     window.addEventListener('industrialpedia:category-stats-updated', handleCategoryStatsUpdated);
     window.addEventListener('focus', handleFocus);
