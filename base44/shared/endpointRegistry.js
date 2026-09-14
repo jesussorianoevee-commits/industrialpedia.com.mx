@@ -7,7 +7,6 @@ export const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://stwwy
 export const INDUSTRIALPEDIA_ENDPOINTS = Object.freeze({
   search: Object.freeze({ name: 'industrialpedia-search-v17', status: 'canonical' }),
   catalogStats: Object.freeze({ name: 'industrialpedia-catalog-stats', status: 'canonical' }),
-  catalogBrowse: Object.freeze({ name: 'industrialpedia-catalog-browse-v1', status: 'canonical' }),
   structuredAcquisition: Object.freeze({ name: 'industrialpedia-structured-acquisition-v1', status: 'canonical' })
 });
 
@@ -20,5 +19,4 @@ export function supabaseFunctionUrl(key) {
 export const SEARCH_FUNCTION_NAME = INDUSTRIALPEDIA_ENDPOINTS.search.name;
 export const SEARCH_FUNCTION_URL = supabaseFunctionUrl('search');
 export const CATALOG_STATS_FUNCTION_URL = supabaseFunctionUrl('catalogStats');
-export const CATALOG_BROWSE_FUNCTION_URL = supabaseFunctionUrl('catalogBrowse');
 export const STRUCTURED_ACQUISITION_FUNCTION_URL = supabaseFunctionUrl('structuredAcquisition');
