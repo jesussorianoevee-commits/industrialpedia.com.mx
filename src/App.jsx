@@ -2,23 +2,23 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Home from '@/pages/Home';
-import Buscar from '@/pages/Buscar';
-import Parte from '@/pages/Parte';
-import Comparar from '@/pages/Comparar';
-import CompararReferencia from '@/pages/CompararReferencia';
-import Decidir from '@/pages/Decidir';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import OAuthConsent from '@/pages/OAuthConsent';
-import CapuchinaLoader from '@/components/ui/CapuchinaLoader';
+const Buscar = lazy(() => import('@/pages/Buscar'));
+const Parte = lazy(() => import('@/pages/Parte'));
+const Comparar = lazy(() => import('@/pages/Comparar'));
+const CompararReferencia = lazy(() => import('@/pages/CompararReferencia'));
+const Decidir = lazy(() => import('@/pages/Decidir'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const OAuthConsent = lazy(() => import('@/pages/OAuthConsent'));
 import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
