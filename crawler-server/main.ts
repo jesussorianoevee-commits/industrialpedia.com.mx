@@ -16,6 +16,7 @@ import { runSmcAutoPublish } from "./manufacturers/smc_auto_publish.ts";
 import { runMouserDispatch } from "./manufacturers/mouser_dispatch.ts";
 import { runFestoCatalogExpander } from "./manufacturers/festo_catalog_expander.ts";
 import { runFestoIdentityBatch } from "./manufacturers/festo_identity_resolver.ts";
+import { syncFanucRobotPages, runFanucRobotAutoPublish } from "./manufacturers/fanuc.ts";
 
 const PORT = Number(Deno.env.get("PORT") || 8787);
 const SHARED_TOKEN = Deno.env.get("CRAWLER_SHARED_TOKEN") || "";
@@ -116,6 +117,17 @@ Deno.serve({ port: PORT }, async (req) => {
     if (url.pathname === "/manufacturer/smc/auto-publish" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const out = await runSmcAutoPublish(sb, body.batch_size, body.publish_real === true);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/manufacturer/fanuc/sync" && req.method === "POST") {
+      const out = await syncFanucRobotPages(sb);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/manufacturer/fanuc/auto-publish" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runFanucRobotAutoPublish(sb, body.batch_size, body.publish_real === true);
       return Response.json(out, { headers: H });
     }
 
