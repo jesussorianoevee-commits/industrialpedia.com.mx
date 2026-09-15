@@ -1,0 +1,3 @@
+crawler.industrialpedia.com.mx {
+	reverse_proxy localhost:8787
+}
