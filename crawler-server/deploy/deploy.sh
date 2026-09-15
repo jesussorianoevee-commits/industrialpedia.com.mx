@@ -53,9 +53,18 @@ ufw status | grep -q "^22" || { ufw allow 22/tcp comment SSH; ufw allow 80/tcp c
 
 cp "$SRV_DIR/deploy/industrialpedia-crawler.service" /etc/systemd/system/industrialpedia-crawler.service
 cp "$SRV_DIR/deploy/Caddyfile" /etc/caddy/Caddyfile
+chmod +x "$SRV_DIR/deploy/ingestion-tick.sh"
+
+# Automated feeding (Mouser + Festo) scheduled locally on this VPS via a systemd timer --
+# deliberately not a Supabase pg_cron job, so it never depends on pg_net's HTTPS-only egress.
+cp "$SRV_DIR/deploy/industrialpedia-ingestion-tick.service" /etc/systemd/system/industrialpedia-ingestion-tick.service
+cp "$SRV_DIR/deploy/industrialpedia-ingestion-tick.timer" /etc/systemd/system/industrialpedia-ingestion-tick.timer
+
 systemctl daemon-reload
 systemctl enable industrialpedia-crawler
 systemctl restart industrialpedia-crawler
+systemctl enable --now industrialpedia-ingestion-tick.timer
 systemctl reload caddy || systemctl restart caddy
 systemctl --no-pager status industrialpedia-crawler
 systemctl --no-pager status caddy
+systemctl --no-pager status industrialpedia-ingestion-tick.timer

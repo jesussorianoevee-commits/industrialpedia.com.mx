@@ -1,0 +1,9 @@
+[Unit]
+Description=Industrialpedia automated ingestion tick (Mouser + Festo)
+After=industrialpedia-crawler.service
+Wants=industrialpedia-crawler.service
+
+[Service]
+Type=oneshot
+User=crawler
+ExecStart=/usr/bin/bash /opt/industrialpedia/crawler-server/deploy/ingestion-tick.sh
