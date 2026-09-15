@@ -39,8 +39,31 @@ domain, never the bare IP/port.
   today only Festo uses it, but it's source-agnostic.
 - `POST /images/bearing-backfill` — ported from `industrialpedia-bearing-image-backfill-v6`.
   No body. Finds and verifies one official product-page image per bearing part per call.
+- `POST /mouser/dispatch` — ported from `industrialpedia-mouser-enrichment-worker-v1`.
+  Body: `{ batch_size?: number (max 50), publish_real?: boolean }`. Batch-claims Mouser
+  candidates (`claim_deterministic_queue_row_v1`, requires `family_code` non-null) and
+  routes each to Schneider / Siemens (`manufacturers/siemens.ts`, new) / generic
+  structured-acquisition (`manufacturers/structured_acquisition.ts`, new — extracts only,
+  this endpoint publishes) with a linear PDF fallback (`manufacturers/mouser_linear.ts`,
+  new — Mouser-hosted PDFs go through the existing Cloudflare Worker proxy).
+- `POST /manufacturer/festo/expand` — ported from `industrialpedia-festo-autodiscovery-v1`.
+  Body: `{ pdf_url?: string }` (omit to pull the next matching item from the queue).
+  Reads a whole-family Festo catalog PDF's ordering table and queues one candidate per
+  individual part, with the exact single-part datasheet URL `/manufacturer/festo` needs.
+- `POST /manufacturer/festo/batch` — new (not a port). Body:
+  `{ batch_size?: number (max 20), publish_real?: boolean }`. Most of the raw Festo
+  backlog turned out to already be single-part datasheets named by part number
+  (`DataSheet/EN_US/{number}.pdf`) rather than whole catalogs — this reads the identity
+  (type code, family) straight off the datasheet's own first page, fills in the queue
+  row, then calls `/manufacturer/festo` on it (`manufacturers/festo_identity_resolver.ts`).
 
 All of the above require header `X-Crawler-Token: <CRAWLER_SHARED_TOKEN>`.
+
+**Automated feeding runs from this VPS, not Supabase pg_cron**: a systemd timer
+(`industrialpedia-ingestion-tick.timer`, every 2 min) calls `/mouser/dispatch`,
+`/manufacturer/festo/batch`, and `/manufacturer/festo/expand` over localhost
+(`deploy/ingestion-tick.sh`) — no dependency on the pg_net/HTTPS constraint at all since
+nothing calls out from Supabase to trigger it.
 
 Both manufacturer workers share `manufacturer_worker.ts` (queue claim, alias lookup,
 `publish_part_v1` + status finalize) and `robots.ts` (real `Disallow`/`User-agent`

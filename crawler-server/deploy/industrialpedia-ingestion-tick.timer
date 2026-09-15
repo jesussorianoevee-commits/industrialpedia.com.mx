@@ -3,7 +3,7 @@ Description=Run the Industrialpedia ingestion tick every 2 minutes
 
 [Timer]
 OnBootSec=1min
-OnUnitActiveSec=2min
+OnUnitActiveSec=5min
 AccuracySec=10s
 
 [Install]
