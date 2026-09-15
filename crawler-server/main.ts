@@ -6,6 +6,10 @@ import { runExtractor } from "./extractor.ts";
 import { runSmcVqzPipeline } from "./smc_vqz_pipeline.ts";
 import { runFestoWorker } from "./manufacturers/festo.ts";
 import { runSchneiderWorker } from "./manufacturers/schneider.ts";
+import { runBearingEnrichment } from "./bearings.ts";
+import { runNtnDiscovery } from "./discovery/ntn.ts";
+import { runCrawlerDiscover } from "./discovery/crawler_discover.ts";
+import { runBearingImageBackfill } from "./images/bearing_image_backfill.ts";
 
 const PORT = Number(Deno.env.get("PORT") || 8787);
 const SHARED_TOKEN = Deno.env.get("CRAWLER_SHARED_TOKEN") || "";
@@ -54,6 +58,29 @@ Deno.serve({ port: PORT }, async (req) => {
       const body = await req.json().catch(() => ({}));
       if (!body.queue_id) return Response.json({ error: "queue_id_required" }, { status: 400, headers: H });
       const out = await runSchneiderWorker(sb, body.queue_id, body.publish_real === true);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/bearings/enrich" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runBearingEnrichment(sb, Number(body.batch_size) || 1, body.dry_run !== false);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/discovery/ntn" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runNtnDiscovery(sb, Number(body.target) || 3);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/discovery/crawl" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runCrawlerDiscover(sb, body);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/images/bearing-backfill" && req.method === "POST") {
+      const out = await runBearingImageBackfill(sb);
       return Response.json(out, { headers: H });
     }
 
