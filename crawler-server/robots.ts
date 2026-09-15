@@ -22,7 +22,11 @@ export async function isAllowed(url: string): Promise<{ allowed: boolean; status
     return { allowed: false, status: "network_error" };
   }
 
-  const robots = robotsParser(robotsUrl, text);
+  // robots-parser@3.0.1 ships a malformed .d.ts (an empty `declare module` shadows its
+  // own `export default`), so TypeScript sees no call signature even though the actual
+  // runtime export is a plain function. Cast at the call site rather than fight a
+  // third-party package's broken types.
+  const robots = (robotsParser as unknown as (u: string, t: string) => { isAllowed(url: string, ua?: string): boolean | undefined })(robotsUrl, text);
   const allowed = robots.isAllowed(url, USER_AGENT) !== false;
   return { allowed, status: allowed ? "fetched_allowed" : "fetched_disallowed" };
 }
