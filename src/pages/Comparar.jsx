@@ -33,7 +33,14 @@ function propertyLabelFromSpec(spec, language = 'es') {
   return propertyLabel(spec?.attribute_name || spec?.attribute || '', language);
 }
 function val(s, language = 'es') { const raw = s?.original_value ?? s?.raw_value ?? ''; const original = `${raw}${s?.original_unit ? ` ${s.original_unit}` : ''}`.trim(); const normalized = s?.normalized_value; const unit = s?.normalized_unit || ''; const rendered = normalized !== null && normalized !== undefined && normalized !== '' && String(normalized) !== String(raw) ? `${original || raw || '—'} → ${normalized}${unit ? ` ${unit}` : ''}` : (original || (normalized !== null && normalized !== undefined ? `${normalized}${unit ? ` ${unit}` : ''}` : '') || '—'); return normalizeTechnicalNotation(rendered, { language }); }
-function canonical(s) { return canonicalTechnicalAttribute(s?.attribute_canonical || s?.attribute_name || s?.attribute || ''); }
+// Matching key MUST be the raw property code (attribute_name), never
+// attribute_canonical: for a property with a formal display label (e.g.
+// bore_diameter -> "Diámetro interior"), attribute_canonical holds that
+// human label on base/candidate specs but differences[] rows always carry
+// the raw code -- matching on the label caused every labeled property to
+// silently miss and render as "not_comparable" (red, no coincide) even
+// when the underlying matrix already computed "equal".
+function canonical(s) { return canonicalTechnicalAttribute(s?.attribute_name || s?.attribute_canonical || s?.attribute || ''); }
 function comparisonFor(base, alt) { const differences = Array.isArray(alt?.comparison?.differences) ? alt.comparison.differences : []; return differences.find((d) => canonical(d) === canonical(base)) || null; }
 function stateFor(base, alt) { const hit = comparisonFor(base, alt); if (hit?.state) return hit.state; return (alt?.specs || []).some((s) => canonical(s) === canonical(base)) ? 'not_comparable' : 'base_only'; }
 function valueFor(base, alt) { const hit = comparisonFor(base, alt); if (hit && hit.candidate !== null && hit.candidate !== undefined && hit.candidate !== '') return hit.candidate; return (alt?.specs || []).find((s) => canonical(s) === canonical(base)); }
@@ -210,8 +217,9 @@ export default function Comparar() {
   };
 
   if (!data && !error) return (
-    <div className="min-h-screen bg-[#080d12]">
-      <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Buscando alternativas compatibles' : 'Searching compatible alternatives'} />
+    <div className="relative min-h-screen overflow-hidden bg-[#080d12] grid-bg">
+      <div className="ip-scan-sweep" aria-hidden="true" />
+      <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Analizando especificaciones técnicas' : 'Analyzing technical specifications'} />
     </div>
   );
   if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={returnToFicha} className="ip-compare-accent">← Volver a ficha</button></div>;
@@ -219,7 +227,10 @@ export default function Comparar() {
   const base = data.base;
   const alternatives = data.alternatives || [];
   const notEvaluable = data.compatibility_evaluable === false || data.decision?.state === 'not_evaluable';
-  const cols = [...alternatives, base];
+  // La referencia va primero: con scroll horizontal y columna fija, el
+  // componente base debe quedar pegado junto a la columna de specs, no
+  // perderse al final de la fila.
+  const cols = [base, ...alternatives];
   const specRows = [...(base.specs || [])];
   const seenProperties = new Set(specRows.map((s) => canonical(s)));
   for (const alt of alternatives) {
@@ -454,19 +465,23 @@ export default function Comparar() {
         <div className="hidden md:block ip-scroll-x ip-card overflow-hidden shadow-xl shadow-black/15">
           <div className="min-w-[820px]">
             <div className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="p-4 text-[10px] uppercase tracking-wider text-white/30">{t.technicalSpecs}</div>
-              {cols.map((c, i) => <div key={i} className="border-l border-white/[0.08] p-4">
+              <div className="ip-sticky-col p-4 text-[10px] uppercase tracking-wider text-white/30" style={{ left: 0 }}>{t.technicalSpecs}</div>
+              {cols.map((c, i) => {
+                const isBaseColumn = c.id === base.id;
+                return <div key={i} className={`border-l p-4 ${isBaseColumn ? 'ip-sticky-col border-white/[0.08]' : 'border-white/[0.08]'}`} style={isBaseColumn ? { left: 170 } : undefined}>
+                {isBaseColumn && <div className="mb-2 inline-flex items-center gap-1 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3 w-3" /> {t.baseComponent}</div>}
                 <div className="flex items-start gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+                  <div className="ip-thumb-frame flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
                     {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}
                   </div>
                   <div className="min-w-0"><div className="font-mono text-base font-semibold ip-compare-accent break-all">{c.part_number}</div><div className="mt-1 text-sm text-white/60">{c.manufacturer_name || t.manufacturerNotIndicated}</div><div className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/65">{c.product_name || c.description || ''}</div></div>
                 </div>
-              </div>)}
+              </div>;
+              })}
             </div>
 
             {specRows.slice(0, expandedComparisonTable ? specRows.length : 6).map((s, idx) => <div key={`${s.attribute_name}-${idx}`} className="grid" style={{gridTemplateColumns:`170px repeat(${cols.length}, minmax(210px, 1fr))`}}>
-              <div className="border-t border-white/[0.06] p-3 text-xs text-white/55">{propertyLabelFromSpec(s, language) }</div>
+              <div className="ip-sticky-col border-t border-white/[0.06] p-3 text-xs text-white/55" style={{ left: 0 }}>{propertyLabelFromSpec(s, language) }</div>
               {cols.map((c, ci) => {
                 const isBaseColumn = c.id === base.id;
                 const candidate = isBaseColumn ? s : valueFor(s, c);
@@ -477,7 +492,7 @@ export default function Comparar() {
                 const display = hasCandidateValue ? (typeof candidate === 'object' ? val(candidate, language) : normalizeTechnicalNotation(candidate, { language })) : '—';
                 const stateClass = st === 'equal' ? 'ip-compare-match' : st === 'different' ? 'ip-compare-warning' : st === 'not_comparable' ? 'ip-compare-danger' : 'text-white/35';
                 const stateBg = st === 'equal' ? 'bg-[#16c79a]/[0.06]' : st === 'different' ? 'bg-amber-400/[0.06]' : st === 'not_comparable' ? 'bg-red-400/[0.06]' : '';
-                return <div key={ci} className={`flex min-w-0 items-center justify-between gap-2 overflow-hidden border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg}`}>
+                return <div key={ci} className={`flex min-w-0 items-center justify-between gap-2 overflow-hidden border-l border-t border-white/[0.06] p-3 text-xs ${stateClass} ${stateBg} ${st === 'different' ? 'ip-diff-alert' : ''} ${isBaseColumn ? 'ip-sticky-col' : ''}`} style={isBaseColumn ? { left: 170 } : undefined}>
                   <div className="min-w-0"><div className="font-mono text-sm leading-relaxed whitespace-normal break-words [overflow-wrap:anywhere]">{display}</div>{normalizedDisplay && <div className="mt-1 text-xs font-mono text-white/50 whitespace-normal break-words [overflow-wrap:anywhere]">{language === 'es' ? 'Normalizado' : language === 'de' ? 'Normalisiert' : language === 'fr' ? 'Normalisé' : language === 'zh' ? '标准化' : 'Normalized'}: {normalizedDisplay}</div>}</div>
                   {!isBaseColumn && (st === 'equal' ? <CheckCircle2 className="h-4 w-4 shrink-0 ip-compare-match" /> : st === 'different' ? <AlertTriangle className="h-4 w-4 shrink-0 ip-compare-warning" /> : st === 'not_comparable' ? <XCircle className="h-4 w-4 shrink-0 ip-compare-danger" /> : <span className="text-white/20">—</span>)}
                 </div>;

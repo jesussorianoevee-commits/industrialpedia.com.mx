@@ -171,6 +171,24 @@
 .ip-thumb-frame::before { left: -1px; top: -1px; border-left: 1.5px solid hsl(var(--primary)); border-top: 1.5px solid hsl(var(--primary)); }
 .ip-thumb-frame::after { right: -1px; bottom: -1px; border-right: 1.5px solid hsl(var(--primary)); border-bottom: 1.5px solid hsl(var(--primary)); }
 .ip-card:hover .ip-thumb-frame::before, .ip-card:hover .ip-thumb-frame::after { opacity: 1; }
+
+/* Sticky spec-label and reference columns in the desktop comparison matrix:
+   context (which property, which base part) survives horizontal scroll. */
+.ip-sticky-col { position: sticky; z-index: 5; background: hsl(var(--card)); box-shadow: 1px 0 0 hsl(var(--border)); }
+
+/* Technical scan sweep — a laser-line pass top-to-bottom while the
+   comparator fetches its result, reading as active data analysis rather
+   than a generic spinner-wait. Purely decorative (aria-hidden), sits behind
+   the existing loader. */
+.ip-scan-sweep { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ip-scan-sweep::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; top: -2px; background: linear-gradient(90deg, transparent, hsl(var(--primary) / .85), transparent); box-shadow: 0 0 18px 2px hsl(var(--primary) / .45); animation: ip-scan-sweep-move 2.4s linear infinite; }
+@keyframes ip-scan-sweep-move { 0% { top: -2px; } 100% { top: 100%; } }
+
+/* One-time attention pulse on a differing spec cell, so a mismatched value
+   (e.g. NPT vs G thread, 24V vs 220V) reads as "look here" the moment the
+   matrix renders, then settles into the resting amber tint. */
+@keyframes ip-diff-alert { 0%, 100% { background-color: hsl(38 92% 50% / 0.06); } 50% { background-color: hsl(38 92% 50% / 0.24); } }
+.ip-diff-alert { animation: ip-diff-alert 1s ease-in-out 2; }
 .ip-button-primary, .ip-button-secondary, .ip-button-tertiary { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease; }
 .ip-button-primary { min-height: 40px; border-radius: 9px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0 16px; font-size: 12px; font-weight: 650; }
 .ip-button-primary:hover { background: hsl(var(--primary) / 0.92); }
