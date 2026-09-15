@@ -198,6 +198,101 @@ async function classifyDocument(path: string) {
   return { pageCount, classification, modeloPage: modeloPage >= 0 ? modeloPage : null, totalChars, garbledRatio: Number(ratio.toFixed(3)) };
 }
 
+// Structured extraction for the "simple_datasheet" pattern (Modelo
+// selection table + Especificaciones shared-spec block on the same short
+// document) -- mechanizes exactly what was done by hand for AK-DPY-MX.pdf
+// (2 SKUs, Rc3/8 vs Rc1/2, shared pressure/fluid specs). Produces
+// structured candidate data only and NEVER publishes: a human still picks
+// the family_code and maps each label to a property_code (see module doc
+// for why that step can't be automated safely) -- this only removes the
+// "read the grid output by eye and hand-type it" part.
+export async function extractSimpleDatasheetStructure(path: string) {
+  const bytes = await Deno.readFile(path);
+  const doc = await getDocumentProxy(bytes);
+  const pageCount = doc.numPages;
+  const capPages = Math.min(pageCount, MAX_PAGES_SCANNED);
+
+  const pageBands = new Map<number, Frag[][]>();
+  let modeloPage = 0;
+  let especPage = 0;
+  for (let p = 1; p <= capPages; p++) {
+    const fs = await fragsForPage(doc, p);
+    const bands = grid(fs);
+    pageBands.set(p, bands);
+    for (const band of bands) {
+      const bandText = band.map((f) => f.text).join("").trim();
+      if (bandText === "Modelo" && !modeloPage) modeloPage = p;
+      if (bandText === "Especificaciones" && !especPage) especPage = p;
+    }
+  }
+  if (!modeloPage) return { ok: false, reason: "no_modelo_table_found", pageCount };
+
+  const bands = pageBands.get(modeloPage) || [];
+  const modeloBandIdxs = bands
+    .map((b, i) => ({ i, text: b.map((f) => f.text).join("").trim() }))
+    .filter((b) => b.text === "Modelo")
+    .map((b) => b.i);
+
+  // The relevant "Modelo" occurrence is the one acting as a table header:
+  // immediately followed by a row of short option codes (no spaces, no long
+  // prose words) rather than more section-label text.
+  let headerBandIdx = -1;
+  for (const idx of modeloBandIdxs) {
+    const next = bands[idx + 1];
+    if (!next?.length) continue;
+    const cellTexts = next.map((c) => c.text.trim()).filter(Boolean);
+    if (cellTexts.length >= 1 && cellTexts.every((t) => t.length <= 12 && !/\s/.test(t))) {
+      headerBandIdx = idx;
+      break;
+    }
+  }
+  if (headerBandIdx < 0) return { ok: false, reason: "no_option_header_row_found", pageCount };
+
+  const optionHeaderCells = bands[headerBandIdx + 1].filter((c) => c.text.trim());
+  const optionLabels = optionHeaderCells.map((c) => c.text.trim());
+
+  // SKU rows: consecutive bands right after the header whose first cell
+  // looks like a real identifier (letters+digits/hyphens, no spaces).
+  // Selected-option cells are matched to a header column by nearest X
+  // position (cell spacing isn't pixel-identical row to row) rather than
+  // raw array index, since a "—"/blank cell in one column can shift what
+  // would otherwise be a naive positional match.
+  const skus: Array<{ part_number: string; selections: Record<string, string> }> = [];
+  for (let i = headerBandIdx + 2; i < bands.length; i++) {
+    const row = bands[i];
+    if (!row.length) continue;
+    const first = row[0].text.trim();
+    if (!/^[A-Z][A-Z0-9-]{3,}$/.test(first)) break; // first row that doesn't look like a SKU ends the table
+    const selections: Record<string, string> = {};
+    for (const cell of row.slice(1)) {
+      const text = cell.text.trim();
+      if (!text || text === "—" || text === "-") continue;
+      let nearest = 0;
+      for (let c = 1; c < optionHeaderCells.length; c++) {
+        if (Math.abs(optionHeaderCells[c].x - cell.x) < Math.abs(optionHeaderCells[nearest].x - cell.x)) nearest = c;
+      }
+      selections[optionLabels[nearest]] = text;
+    }
+    skus.push({ part_number: first, selections });
+  }
+  if (!skus.length) return { ok: false, reason: "no_sku_rows_found", pageCount, modeloPage };
+
+  // Especificaciones block: label + value row pairs following the section
+  // header, on whichever page it was found on (often the same page).
+  const especBands = pageBands.get(especPage || modeloPage) || [];
+  const especStartIdx = especBands.findIndex((b) => b.map((f) => f.text).join("").trim() === "Especificaciones");
+  const sharedSpecs: Array<{ label: string; value: string }> = [];
+  if (especStartIdx >= 0) {
+    for (let i = especStartIdx + 1; i < especBands.length; i++) {
+      const cells = especBands[i].map((c) => c.text.trim()).filter(Boolean);
+      if (cells.length < 2) continue;
+      sharedSpecs.push({ label: cells[0], value: cells.slice(1).join(" ") });
+    }
+  }
+
+  return { ok: true, pageCount, modeloPage, especPage: especPage || modeloPage, optionLabels, skus, sharedSpecs };
+}
+
 // Registers any PDF present in the local folder but not yet in the queue,
 // classifying it as it's registered. Idempotent: re-running only picks up
 // genuinely new filenames (the sync script never overwrites/renames existing

@@ -11,7 +11,7 @@ import { runNtnDiscovery } from "./discovery/ntn.ts";
 import { runCrawlerDiscover } from "./discovery/crawler_discover.ts";
 import { runBearingImageBackfill } from "./images/bearing_image_backfill.ts";
 import { runMouserImageVerification } from "./images/mouser_image_verifier.ts";
-import { scanAndClassifySmcCatalogs } from "./manufacturers/smc_catalog_pipeline.ts";
+import { scanAndClassifySmcCatalogs, extractSimpleDatasheetStructure } from "./manufacturers/smc_catalog_pipeline.ts";
 import { runMouserDispatch } from "./manufacturers/mouser_dispatch.ts";
 import { runFestoCatalogExpander } from "./manufacturers/festo_catalog_expander.ts";
 import { runFestoIdentityBatch } from "./manufacturers/festo_identity_resolver.ts";
@@ -98,6 +98,17 @@ Deno.serve({ port: PORT }, async (req) => {
     if (url.pathname === "/manufacturer/smc/scan" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const out = await scanAndClassifySmcCatalogs(sb, Array.isArray(body.reclassify_statuses) ? body.reclassify_statuses : undefined);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/manufacturer/smc/extract-datasheet" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const filename = String(body.filename || "").trim();
+      if (!filename) return Response.json({ error: "filename_required" }, { status: 400, headers: H });
+      const out = await extractSimpleDatasheetStructure(`/opt/industrialpedia/smc-catalogs/${filename}`);
+      if (body.save_to_queue === true) {
+        await sb.from("smc_document_ingestion_queue").update({ extraction_result: out, updated_at: new Date().toISOString() }).eq("filename", filename);
+      }
       return Response.json(out, { headers: H });
     }
 
