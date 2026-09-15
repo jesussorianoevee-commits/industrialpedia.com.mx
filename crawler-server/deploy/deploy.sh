@@ -19,6 +19,7 @@ fi
 mkdir -p "$APP_DIR/.deno-cache"
 
 mkdir -p "$APP_DIR"
+git config --global --add safe.directory "$APP_DIR"
 if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" pull --ff-only
 else
