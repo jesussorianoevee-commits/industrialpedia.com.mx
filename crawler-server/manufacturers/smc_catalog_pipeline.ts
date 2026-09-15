@@ -12,10 +12,31 @@
 //     same X/Y grid reconstruction used elsewhere, not a substring match on
 //     flattened text -- a flattened-text check produced a false positive on
 //     a services brochure that merely used both words in prose).
-//   - "unclassified_review": neither signal found -- most of these are
+//   - "text_extraction_failed": pdf.js could not produce usable text for
+//     this document at all -- either zero characters extracted (scanned/
+//     image-only PDF, no text layer) or the extracted text fails a common-
+//     word readability check (see isReadableText). Confirmed on real SMC
+//     files with a broken/missing ToUnicode CMap: the glyph-to-character
+//     mapping is scrambled, so pdf.js emits *normal printable ASCII* --
+//     just the wrong letters (e.g. "!"#$%&'%'(')*+" instead of real words)
+//     -- which a naive control-character ratio check does not catch. These
+//     need OCR or a different extraction path, not more keyword tuning.
+//   - "possible_product_catalog": readable text, no exact ordering-page or
+//     Modelo+Especificaciones table match, but a meaningfully high density
+//     of engineering tokens (numeric values with units, SMC-style product
+//     codes) -- a real product catalog whose table shape the strict
+//     patterns above don't recognize (found on real files this way:
+//     ProductoStandar_SMC.pdf, actuadores-y-Controladores.pdf,
+//     VacioSMC_.pdf). Lower confidence than the two exact-match classes
+//     above by design -- always queued for a human to characterize the
+//     actual table shape before any extraction is attempted, same as a new
+//     configurator series would be.
+//   - "unclassified_review": none of the above signals. Most of these are
 //     genuinely not per-part catalogs (training guides, safety brochures,
-//     vertical-industry flyers) and are expected to stay here permanently,
-//     not a classifier failure to chase down for every file.
+//     vertical-industry flyers) -- but this is a "not yet matched by any
+//     current pattern" bucket, not a verified-empty one; a low-confidence
+//     bucket by construction, worth an occasional manual spot-check as new
+//     documents accumulate rather than being treated as a closed case.
 //
 // This only classifies; it does not publish anything. See
 // extractSimpleDatasheet for the (dry-run-only) extraction step.
@@ -65,6 +86,46 @@ function garbledRatio(text: string): number {
   return bad / text.length;
 }
 
+// Catches the other, harder-to-spot corruption: a scrambled glyph map that
+// still emits *normal printable ASCII* (so garbledRatio sees nothing wrong)
+// but the wrong letters entirely -- real content reads as gibberish like
+// "!"#$%&'%'(')*+$,-(,.(/". Real Spanish/English catalog prose, even dense
+// technical prose, reliably contains a meaningful fraction of very common
+// short function words; scrambled text does not, because the substitution
+// is essentially random relative to word boundaries.
+const COMMON_WORDS = new Set([
+  "de", "la", "el", "en", "que", "y", "a", "los", "las", "para", "con",
+  "un", "una", "por", "su", "se", "es", "no", "más", "como", "o", "del",
+  "al", "the", "and", "for", "with", "of", "is", "are", "to", "in", "on",
+]);
+function isReadableText(text: string): boolean {
+  const tokens = text.toLowerCase().match(/[a-záéíóúñ]{1,12}/g) || [];
+  if (tokens.length < 20) return true; // too little text to judge either way -- don't false-flag short pages
+  const commonHits = tokens.filter((t) => COMMON_WORDS.has(t)).length;
+  return commonHits / tokens.length >= 0.03; // real prose easily clears this; scrambled text lands near 0
+}
+
+// Weaker, precision-traded-for-recall signal for "this is probably a real
+// product catalog" when neither exact pattern (ordering page, Modelo+
+// Especificaciones table) matched: density of engineering-value tokens
+// (number+unit, e.g. "20 mm", "15 MPa") and SMC-style product codes
+// (uppercase, letters+digits, e.g. "AWD-A", "LEFS", "ZP3C"). A pure
+// marketing/services brochure runs far lower on both than an actual spec
+// table or product index, even one my strict patterns don't recognize the
+// shape of -- confirmed against ProductoStandar_SMC.pdf (a series index),
+// actuadores-y-Controladores.pdf and VacioSMC_.pdf (real product content),
+// none of which happened to contain "Forma de pedido" or an exact
+// "Modelo"/"Especificaciones" table pair.
+const UNIT_VALUE_RE = /\b\d+([.,]\d+)?\s*(mm|cm|m|kg|g|mg|n|kn|bar|kpa|mpa|psi|v|a|w|hz|°c|%|l|ml)\b/gi;
+const PRODUCT_CODE_RE = /\b[A-Z]{2,6}[0-9][A-Z0-9-]{0,8}\b/g;
+function productSignalDensity(text: string): number {
+  const words = (text.match(/\S+/g) || []).length;
+  if (words < 30) return 0;
+  const unitHits = (text.match(UNIT_VALUE_RE) || []).length;
+  const codeHits = (text.match(PRODUCT_CODE_RE) || []).length;
+  return (unitHits + codeHits) / words;
+}
+
 async function classifyDocument(path: string) {
   const bytes = await Deno.readFile(path);
   const doc = await getDocumentProxy(bytes);
@@ -76,12 +137,18 @@ async function classifyDocument(path: string) {
   let modeloPage = -1;
   let totalChars = 0;
   let totalGarbled = 0;
+  let allText = "";
+  let readablePages = 0;
+  let judgedPages = 0;
 
   for (let p = 1; p <= capPages; p++) {
     const fs = await fragsForPage(doc, p);
     const fullText = fs.map((f) => f.text).join(" ");
     totalChars += fullText.length;
     totalGarbled += garbledRatio(fullText) * fullText.length;
+    allText += " " + fullText;
+    const tokenCount = (fullText.match(/[a-záéíóúñ]{1,12}/gi) || []).length;
+    if (tokenCount >= 20) { judgedPages++; if (isReadableText(fullText)) readablePages++; }
     if (/Forma de pedido|C[oó]mo realizar el pedido|C[oó]digo de pedido/i.test(fullText)) hasOrderingPage = true;
     for (const band of grid(fs)) {
       const bandText = band.map((f) => f.text).join("").trim();
@@ -91,11 +158,18 @@ async function classifyDocument(path: string) {
   }
 
   const ratio = totalChars > 0 ? totalGarbled / totalChars : 0;
+  // Require a majority of judged pages to look unreadable before flagging --
+  // a single dense diagram/legend page can legitimately score low without
+  // the whole document being corrupted.
+  const looksUnreadable = judgedPages > 0 && (readablePages / judgedPages) < 0.5;
+  const density = productSignalDensity(allText);
+
   let classification: string;
   if (totalChars === 0) classification = "text_extraction_failed";
-  else if (ratio > 0.03) classification = "text_extraction_failed";
+  else if (ratio > 0.03 || looksUnreadable) classification = "text_extraction_failed";
   else if (hasOrderingPage) classification = "configurator";
   else if (pageCount <= 6 && hasExactModeloCell && hasExactEspecCell) classification = "simple_datasheet";
+  else if (density >= 0.015) classification = "possible_product_catalog";
   else classification = "unclassified_review";
 
   return { pageCount, classification, modeloPage: modeloPage >= 0 ? modeloPage : null, totalChars, garbledRatio: Number(ratio.toFixed(3)) };
@@ -136,10 +210,12 @@ export async function scanAndClassifySmcCatalogs(sb: SupabaseClient, reclassifyS
       const statusForClass: Record<string, string> = {
         unclassified_review: "unclassified_review",
         text_extraction_failed: "text_extraction_failed",
+        possible_product_catalog: "needs_manual_review",
       };
       const notesParts = [
         modeloPage ? `Modelo/Especificaciones table found on page ${modeloPage}` : null,
         classification === "text_extraction_failed" ? `chars=${totalChars} garbled_ratio=${ratio} -- likely broken font encoding or scanned/image-only PDF; needs OCR, not text extraction` : null,
+        classification === "possible_product_catalog" ? "engineering-token density above threshold but no exact ordering-page or Modelo/Especificaciones table match -- likely real product content in an unrecognized table shape, needs a human look before extraction" : null,
       ].filter(Boolean);
       const { error: upsertErr } = await sb.from("smc_document_ingestion_queue").upsert({
         filename: name,
