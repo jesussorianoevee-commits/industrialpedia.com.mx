@@ -66,6 +66,26 @@ domain, never the bare IP/port.
   a services brochure), or `unclassified_review` (neither signal — most of these are
   genuinely not per-part catalogs and are expected to stay here). No body. Classification
   only; nothing gets published from this route.
+- `POST /manufacturer/smc/extract-datasheet` — new (`manufacturers/smc_catalog_pipeline.ts`,
+  `extractSimpleDatasheetStructure`). Body: `{ filename: string, save_to_queue?: boolean }`.
+  Reconstructs the "Modelo"/"Especificaciones" table of a `simple_datasheet`-classified PDF
+  into structured JSON (SKUs + their selected option per column, shared spec label/value
+  pairs) via the same X/Y grid technique as `extractor.ts`. Read-only unless
+  `save_to_queue: true`, which writes the result into that row's `extraction_result` column
+  — never publishes.
+- `POST /manufacturer/smc/auto-publish` — new (`manufacturers/smc_auto_publish.ts`). Body:
+  `{ batch_size?: number (max 10), publish_real?: boolean }`. The step that turns a
+  `simple_datasheet` row's `extraction_result` into real `parts`/`part_evidence` rows,
+  closing the scan→classify→extract→publish pipeline end to end. A row only auto-publishes
+  once a human has set two fields on it ONCE — `family_code` (which `technical_families`
+  this document belongs to) and `option_column_property_code` (what the Modelo table's
+  option columns mean, e.g. `thread`) — both plain `UPDATE`s on
+  `smc_document_ingestion_queue`, never guessed by this route. Each spec label resolves to a
+  `property_code` via `spec_attribute_aliases` (same fuzzy match already used by
+  `schneider.ts`/`siemens.ts`); an unresolved label is skipped rather than blocking
+  publication of the SKU's other specs. Calls `publish_part_v1` per SKU, dry-run first then
+  real with the pipeline token. Cron: `industrialpedia-smc-auto-publish` (jobid 84, every 20
+  min).
 - `POST /mouser/dispatch` — ported from `industrialpedia-mouser-enrichment-worker-v1`.
   Body: `{ batch_size?: number (max 50), publish_real?: boolean }`. Batch-claims Mouser
   candidates (`claim_deterministic_queue_row_v1`, requires `family_code` non-null) and
