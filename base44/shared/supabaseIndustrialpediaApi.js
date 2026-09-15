@@ -327,6 +327,10 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     status: a.status,
     source: { url: a.source_url || '', domain: a.source_url || '' },
     specs: specsToArray(a.specifications),
+    // Conservados para el motor de cross-reference (ver enrichedAlternatives más abajo).
+    // No se usan para la tabla de specs visible -- eso sigue viniendo de la matriz batch.
+    evidence: Array.isArray(a.evidence) ? a.evidence : [],
+    relations: Array.isArray(a.relations) ? a.relations : [],
     comparison: a.comparison || { state: 'insufficient', equal: 0, different: 0, missing: 0, not_comparable: 0 }
   }));
 
@@ -378,15 +382,33 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
       else if (row.comparison === 'not_comparable') acc.not_comparable++;
       return acc;
     }, { equal: 0, different: 0, missing: 0, candidate_only: 0, not_comparable: 0 });
+    // El motor de cross-reference (reglas critical/required) debe comparar valores
+    // en la MISMA unidad. Antes se le pasaban las specifications crudas del
+    // candidato, pero ese objeto nunca se propagaba hasta aquí (siempre quedaba
+    // {}), así que cualquier familia con una regla critical marcaba
+    // NOT_SUBSTITUTABLE sin importar los datos reales -- y aun corregido eso,
+    // comparar valores crudos sin unidad (ej. "5 bar" vs "72.5 psi") habría sido
+    // incorrecto. En vez de mantener un segundo camino de normalización, se
+    // reusa normalized_a/normalized_b de la misma matriz que ya alimenta la
+    // tabla de specs visible -- una sola fuente de verdad, ya en la misma unidad.
+    const normalizedSpecsA = {};
+    const normalizedSpecsB = {};
+    for (const row of rows) {
+      if (!row.property) continue;
+      if (row.normalized_a !== null && row.normalized_a !== undefined) normalizedSpecsA[row.property] = row.normalized_a;
+      if (row.normalized_b !== null && row.normalized_b !== undefined) normalizedSpecsB[row.property] = row.normalized_b;
+    }
     const technicalBase = {
       part_number: baseRaw.part_number,
       family_code: baseRaw.category,
-      specifications: baseRaw.specifications || {}
+      specifications: normalizedSpecsA
     };
     const technicalCandidate = {
       part_number: alt.part_number,
       family_code: baseRaw.category,
-      specifications: alt.specifications || {}
+      specifications: normalizedSpecsB,
+      evidence: alt.evidence || [],
+      relations: alt.relations || []
     };
     const crossReference = (crossReferenceRules.length || crossReferenceGovernance)
       ? resolveCrossReference(technicalBase, technicalCandidate, crossReferenceRules, crossReferenceGovernance)
