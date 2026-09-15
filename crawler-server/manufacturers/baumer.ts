@@ -77,9 +77,18 @@ function extractSpecs(desc: string): Spec[] {
 
   const force = desc.match(/[Rr]ango de fuerza de\s*([\d.,]+)\s*\.\.\.\s*([\d.,]+)\s*(kN|N)\b/);
   if (force) {
-    // publish_part_v1 auto-splits an "X ... Y unit" original_value into
-    // <property_code>_min/_max -- pre-registered as force_range_min/_max.
-    specs.push({ property_code: "force_range", attribute_name: "rango de fuerza", original_value: `${force[1]} ... ${force[2]} ${force[3]}`, numeric_value: null, unit: force[3] });
+    // force_range_min/_max are registered as their own property_codes (canonical
+    // unit N) -- publish_part_v1's public wrapper validates property_code against
+    // spec_property_definitions BEFORE its "X ... Y unit" auto-split runs, so a
+    // bare "force_range" code is rejected as unmapped. Emit both bounds directly.
+    const toN = (v: string) => {
+      const n = Number(v.replace(",", "."));
+      return force[3] === "kN" ? n * 1000 : n;
+    };
+    const minN = toN(force[1]);
+    const maxN = toN(force[2]);
+    specs.push({ property_code: "force_range_min", attribute_name: "rango de fuerza mínimo", original_value: `${force[1]} ${force[3]}`, numeric_value: String(minN), unit: "N" });
+    specs.push({ property_code: "force_range_max", attribute_name: "rango de fuerza máximo", original_value: `${force[2]} ${force[3]}`, numeric_value: String(maxN), unit: "N" });
   }
 
   const thread = desc.match(/\bHilo\s+(M\d+(?:[.,]\d+)?)\b/);
