@@ -106,20 +106,52 @@ async function getRobots(root: string) {
   if (r.error) return { status: "unavailable", disallow: [], allow: [], crawlDelayMs: null, httpStatus: null, error: r.error };
   return { status: "fetched", ...robotsParse(r.text), httpStatus: r.status, error: null };
 }
-async function getSitemaps(root: string, limit: number, rr: { disallow: string[]; allow: string[] }) {
+async function getSitemaps(root: string, limit: number, rr: { disallow: string[]; allow: string[] }, maxDepth: number) {
   const queue = [`${new URL(root).origin}/sitemap.xml`], seen = new Set<string>(), urls: string[] = [], hits: string[] = [], errors: any[] = [];
-  while (queue.length && seen.size < 25 && urls.length < limit) {
+  // Raise the sub-sitemap fetch cap: a sitemap INDEX (common on larger sites,
+  // e.g. FANUC's 23 per-section sub-sitemaps -- accessories/articles/
+  // caseStudies/.../products/robotAndGo/series/...) needs every section
+  // fetched to find the relevant one(s), not just the alphabetically first
+  // few.
+  let first = true;
+  while (queue.length && seen.size < 60 && urls.length < limit) {
     const s = queue.shift()!;
     if (seen.has(s)) continue;
     seen.add(s);
     hits.push(s);
-    const r = await fetchText(s, 12000);
+    // Real incident (FANUC, 2026-09-15): firing every sub-sitemap fetch
+    // back-to-back with zero delay got the crawler rate-limited (HTTP 429)
+    // by FANUC's server after ~4 requests -- every sitemap after that
+    // failed, not because of anything wrong in the URLs themselves. A site
+    // with 20+ per-section sub-sitemaps needs the same between-request
+    // courtesy delay the frontier crawl below already applies.
+    if (!first) await sleep(400);
+    first = false;
+    let r = await fetchText(s, 12000);
+    if (r.status === 429) { await sleep(2000); r = await fetchText(s, 12000); }
     if (r.error) { errors.push({ url: s, error: r.error }); continue; }
-    if (!r.ok) continue;
+    if (!r.ok) { errors.push({ url: s, error: `http_${r.status}` }); continue; }
     const p = sitemapRefs(r.text);
     for (const raw of p.urls) {
       const u = norm(raw);
-      if (u && scope(u, root, true) && !skip(u) && robotsOk(u, rr)) urls.push(u);
+      // Real incident (FANUC, 2026-09-15): a flat `limit` budget shared
+      // across ALL sitemap sections let irrelevant, alphabetically-earlier
+      // sections (articles, locations, generic pages -- easily hundreds of
+      // URLs each) exhaust the whole budget before the crawler ever reached
+      // the "products" section 16 sections in, even though the seed/scope
+      // filter downstream would have rejected those URLs anyway. Applying
+      // the same relativeDepth relevance check HERE, before it counts
+      // against the budget, means the budget is only ever spent on URLs
+      // that could actually survive the caller's filter.
+      // PDFs are exempt from the path-prefix/depth check: manufacturer sites
+      // conventionally serve datasheet PDFs from a totally different path
+      // (e.g. FANUC's /uploads/files/data-sheets/...) than the product
+      // catalog pages that link them (/products/...) -- confirmed on FANUC's
+      // own "products" section sitemap, which interleaves each model page
+      // with its datasheet PDF, the PDF never sharing the model page's path
+      // prefix. On-domain + robots-allowed is relevance enough for a PDF.
+      const d = u ? relativeDepth(u, root) : -1;
+      if (u && (isPdf(u) || (d >= 0 && d <= maxDepth)) && scope(u, root, true) && !skip(u) && robotsOk(u, rr)) urls.push(u);
       if (urls.length >= limit) break;
     }
     for (const raw of p.maps) { const u = norm(raw, s); if (u && !seen.has(u)) queue.push(u); }
@@ -183,7 +215,7 @@ export async function runCrawlerDiscover(sb: SupabaseClient, b: CrawlerDiscoverI
     };
     add(seed, seed, "seed");
 
-    const sitemapUsed = await getSitemaps(seed, limit, rr);
+    const sitemapUsed = await getSitemaps(seed, limit, rr, maxDepth);
     for (const u of sitemapUsed.urls) { if (map.size >= limit) break; add(u, seed, "sitemap"); }
 
     let requests = 0;
