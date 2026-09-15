@@ -4,22 +4,36 @@
 
 @layer base {
   :root {
-    --background: 215 39% 5%;
+    --background: 200 45% 4%;
     --foreground: 210 40% 96%;
-    --card: 211 35% 8%;
+    --card: 205 40% 7%;
     --card-foreground: 210 40% 96%;
-    --primary: 208 77% 54%;
+    /* Primary is deliberately NOT blue/cyan — violet reads as analytical/
+       decisive without the generic-SaaS-blue association, and stays clear of
+       the comparator's own state colors (green=match, amber=different,
+       red=incompatible). */
+    --primary: 263 69% 46%;
     --primary-foreground: 0 0% 100%;
     --secondary: 208 36% 10%;
     --secondary-foreground: 210 40% 96%;
     --muted: 207 30% 10%;
     --muted-foreground: 215 20% 65%;
-    --accent: 208 77% 54%;
+    --accent: 263 69% 46%;
     --accent-foreground: 0 0% 100%;
+    /* Second signal color — copper/orange, opposite violet on the wheel, so
+       "base part" vs "alternative/candidate" reads at a glance in the
+       comparator, the way a dual-channel scope trace does. Distinct hue from
+       the "different" state's pale amber so the two are never confused. */
+    --accent-2: 20 90% 50%;
+    --accent-2-foreground: 0 0% 100%;
     --border: 207 25% 20%;
     --input: 208 30% 11%;
-    --ring: 207 89% 68%;
+    --ring: 262 83% 70%;
     --radius: 0.75rem;
+    --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-heading: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-display: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 
   .theme-light {
@@ -27,28 +41,77 @@
     --foreground: 220 25% 10%;
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
-    --primary: 210 76% 48%;
+    --primary: 263 69% 38%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 18% 94%;
     --secondary-foreground: 220 25% 10%;
     --muted: 210 18% 94%;
     --muted-foreground: 220 10% 42%;
-    --accent: 210 76% 48%;
+    --accent: 263 69% 38%;
     --accent-foreground: 0 0% 100%;
+    --accent-2: 20 85% 42%;
+    --accent-2-foreground: 0 0% 100%;
     --border: 210 16% 86%;
     --input: 210 16% 94%;
-    --ring: 210 76% 48%;
+    --ring: 263 69% 38%;
   }
 }
 
 @layer base {
   * { @apply border-border outline-ring/50; }
   html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  body { @apply bg-background text-foreground; margin: 0; min-width: 320px; overflow-x: hidden; }
+  body { @apply bg-background text-foreground; margin: 0; min-width: 320px; overflow-x: hidden; font-family: var(--font-body); }
+  h1, h2, h3, .ip-brand, .ip-data-mono { font-family: var(--font-heading); }
   button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   button, a { touch-action: manipulation; }
   input, select, textarea { font-size: 16px; }
 }
+
+/* Motion: every animation/transition on the site is gated through these two
+   rules so a single query (prefers-reduced-motion) turns all of it off,
+   rather than hunting down each keyframe. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes ip-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Applied per-item with an inline --ip-delay custom property (see ResultCard)
+   so a list stagger-reveals without JS orchestrating each item. Capped delay
+   keeps a 50-result page from taking seconds to finish appearing. */
+.ip-stagger-in {
+  animation: ip-fade-up 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--ip-delay, 0) * 1ms);
+}
+
+.ip-fade-in-up {
+  animation: ip-fade-up 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* "Live" pulse for the counter's status dot — motion here means something
+   specific (data updates in real time), not decoration. */
+@keyframes ip-pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5); }
+  50% { box-shadow: 0 0 0 4px hsl(var(--primary) / 0); }
+}
+.ip-pulse-dot { animation: ip-pulse-dot 2.2s ease-out infinite; }
+
+/* Signal flow between the base part and its alternatives in the comparator —
+   color travels violet -> copper -> violet, echoing the two-channel accent
+   system instead of a generic fade. Meant for the small connecting arrow. */
+@keyframes ip-signal-flow {
+  0%, 100% { color: hsl(var(--primary)); text-shadow: 0 0 6px hsl(var(--primary) / 0.5); }
+  50% { color: hsl(var(--accent-2)); text-shadow: 0 0 6px hsl(var(--accent-2) / 0.5); }
+}
+.ip-signal-flow { animation: ip-signal-flow 2.4s ease-in-out infinite; }
 
 @layer utilities {
   .ip-mobile-safe-top { padding-top: env(safe-area-inset-top); }
@@ -60,15 +123,20 @@
 
 
 @layer utilities {
+  /* Circuit-board grid: traces (lines) + vias (dots at intersections), instead
+     of a generic uniform dashboard grid — reinforces "electronics" at a glance
+     without competing with foreground content (kept very low-opacity). */
   .grid-bg {
     background-image:
-      linear-gradient(to right, hsl(var(--foreground) / 0.025) 1px, transparent 1px),
-      linear-gradient(to bottom, hsl(var(--foreground) / 0.025) 1px, transparent 1px);
-    background-size: 28px 28px;
+      radial-gradient(hsl(var(--primary) / 0.09) 1px, transparent 1px),
+      linear-gradient(to right, hsl(var(--foreground) / 0.028) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.028) 1px, transparent 1px);
+    background-size: 28px 28px, 28px 28px, 28px 28px;
   }
 
   .theme-light .grid-bg {
     background-image:
+      radial-gradient(hsl(var(--primary) / 0.14) 1px, transparent 1px),
       linear-gradient(to right, hsl(var(--foreground) / 0.045) 1px, transparent 1px),
       linear-gradient(to bottom, hsl(var(--foreground) / 0.045) 1px, transparent 1px);
   }
@@ -81,12 +149,16 @@
 .ip-header-inner { min-height: 56px; display: flex; align-items: center; gap: 16px; }
 .ip-brand { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; letter-spacing: .16em; font-weight: 600; white-space: nowrap; }
 .ip-nav { display: flex; align-items: center; gap: 6px; }
-.ip-nav-item { border-radius: 8px; padding: 7px 10px; color: hsl(var(--muted-foreground)); font-size: 12px; }
+.ip-nav-item { border-radius: 8px; padding: 7px 10px; color: hsl(var(--muted-foreground)); font-size: 12px; transition: background-color 160ms ease, color 160ms ease; }
 .ip-nav-item-active { background: hsl(var(--primary) / 0.10); color: hsl(var(--primary)); }
-.ip-card { border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); }
+.ip-card { border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease; }
+.ip-button-primary, .ip-button-secondary, .ip-button-tertiary { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease; }
 .ip-button-primary { min-height: 40px; border-radius: 9px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0 16px; font-size: 12px; font-weight: 650; }
+.ip-button-primary:hover { background: hsl(var(--primary) / 0.92); }
 .ip-button-secondary { min-height: 40px; border-radius: 9px; border: 1px solid hsl(var(--border)); background: hsl(var(--secondary)); color: hsl(var(--foreground)); padding: 0 16px; font-size: 12px; font-weight: 600; }
+.ip-button-secondary:hover { border-color: hsl(var(--primary) / 0.4); }
 .ip-button-tertiary { min-height: 40px; border-radius: 9px; color: hsl(var(--primary)); padding: 0 10px; font-size: 12px; font-weight: 600; }
+.ip-button-primary:active:not(:disabled), .ip-button-secondary:active:not(:disabled), .ip-button-tertiary:active:not(:disabled) { transform: scale(0.97); }
 .ip-section-title { font-size: 16px; line-height: 1.25; font-weight: 650; letter-spacing: -.01em; }
 .ip-section-label { color: hsl(var(--muted-foreground)); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
 .ip-data-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
@@ -256,7 +328,7 @@
 /* Comparison contrast system: keep the technical meaning of each state while
    guaranteeing readable text in both themes. These classes replace palette-
    dependent literal Tailwind text colors inside the comparator. */
-.ip-compare-accent { color: #65b5f6; }
+.ip-compare-accent { color: #8b5cf6; }
 .ip-compare-match { color: #20c997; }
 .ip-compare-warning { color: #f2b84b; }
 .ip-compare-danger { color: #f05d67; }
@@ -271,7 +343,7 @@
 .ip-state-warning { background: rgb(242 184 75 / 0.055); }
 .ip-state-danger { background: rgb(240 93 103 / 0.055); }
 
-.theme-light .ip-compare-accent { color: hsl(207 78% 36%) !important; }
+.theme-light .ip-compare-accent { color: hsl(263 69% 38%) !important; }
 .theme-light .ip-compare-match { color: hsl(158 68% 28%) !important; }
 .theme-light .ip-compare-warning { color: hsl(36 92% 28%) !important; }
 .theme-light .ip-compare-danger { color: hsl(0 68% 38%) !important; }
@@ -303,7 +375,7 @@
 .theme-light .ip-comparison [class*="bg-[#16c79a]"] { background-color: hsl(158 68% 32% / 0.08) !important; }
 .theme-light .ip-comparison [class*="bg-amber-400"] { background-color: hsl(36 92% 32% / 0.08) !important; }
 .theme-light .ip-comparison [class*="bg-red-400"] { background-color: hsl(0 68% 40% / 0.07) !important; }
-.theme-light .ip-comparison [class*="bg-[#65a9e6]"] { background-color: hsl(207 78% 40% / 0.055) !important; }
+.theme-light .ip-comparison [class*="bg-[#8b5cf6]"] { background-color: hsl(263 69% 40% / 0.055) !important; }
 
 .theme-light .ip-comparison [class*="border-[#16c79a]"],
 .theme-light .ip-comparison [class*="border-amber-400"],

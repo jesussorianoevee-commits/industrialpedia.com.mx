@@ -86,7 +86,7 @@ export default function UseCasesSection() {
                     <p className="ip-muted text-xs py-4 text-center">Sin piezas publicadas todavía para esta categoría.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
-                      {results[uc.use_case_code].map((r) => <ResultCard key={r.id} result={r} />)}
+                      {results[uc.use_case_code].map((r, i) => <ResultCard key={r.id} result={r} index={i} />)}
                     </div>
                   )}
                 </div>

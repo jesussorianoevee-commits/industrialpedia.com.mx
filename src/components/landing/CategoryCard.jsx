@@ -3,30 +3,31 @@ import { useNavigate } from 'react-router-dom';
 
 import { useLanguage, localizedCount } from '@/lib/i18n';
 
-export default function CategoryCard({ area, count, compact = false }) {
+export default function CategoryCard({ area, count, compact = false, tone = 'primary' }) {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const Icon = area.icon;
   const hasCount = Number.isFinite(count);
   const countLabel = hasCount ? localizedCount(count, t.reference, t.references, language) : `— ${t.references}`;
+  const isAlt = tone === 'accent-2';
 
   if (compact) {
     return (
       <button
         type="button"
         onClick={() => navigate(`/buscar?area=${encodeURIComponent(area.statsKey || area.id)}`)}
-        className="min-h-[126px] w-full text-left ip-surface border border-border/80 rounded-2xl p-3.5 sm:p-4 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-24px_hsl(var(--primary)/.6)] transition-all group cursor-pointer"
+        className={`min-h-[126px] w-full text-left ip-surface border border-border/80 rounded-2xl p-3.5 sm:p-4 hover:-translate-y-0.5 transition-all group cursor-pointer ${isAlt ? 'hover:border-accent-2/50 hover:shadow-[0_14px_30px_-24px_hsl(var(--accent-2)/.6)]' : 'hover:border-primary/50 hover:shadow-[0_14px_30px_-24px_hsl(var(--primary)/.6)]'}`}
         aria-label={`${t.viewComponent}: ${hasCount ? count.toLocaleString() : 'sin conteo disponible'} ${t.foundParts} · ${area.name}`}
       >
         <div className="flex items-start justify-between gap-2 h-full">
           <div className="min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center mb-3 group-hover:bg-primary/15 transition-colors">
-              <Icon className="w-5 h-5 ip-accent" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center mb-3 transition-colors ${isAlt ? 'bg-accent-2/10 border-accent-2/15 group-hover:bg-accent-2/15' : 'bg-primary/10 border-primary/15 group-hover:bg-primary/15'}`}>
+              <Icon className={`w-5 h-5 ${isAlt ? 'text-accent-2' : 'ip-accent'}`} />
             </div>
             <h3 className="ip-text font-semibold text-sm leading-tight line-clamp-2">{area.name}</h3>
             <span className="ip-muted text-[10px] mt-1.5 block">{countLabel}</span>
           </div>
-          <ArrowRight className="w-4 h-4 ip-muted shrink-0 group-hover:ip-accent group-hover:translate-x-0.5 transition-all" />
+          <ArrowRight className={`w-4 h-4 ip-muted shrink-0 group-hover:translate-x-0.5 transition-all ${isAlt ? 'group-hover:text-accent-2' : 'group-hover:ip-accent'}`} />
         </div>
       </button>
     );

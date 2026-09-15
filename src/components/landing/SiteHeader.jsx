@@ -26,8 +26,8 @@ export default function SiteHeader() {
     <header className="ip-header">
       <div className="ip-container ip-header-inner py-2.5">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <span className="w-9 h-9 rounded-xl border border-[#5a9cd9]/40 bg-[#5a9cd9]/10 flex items-center justify-center shadow-[0_0_24px_-10px_rgba(90,156,217,.7)]">
-            <span className="w-2 h-2 rounded-full bg-[#5a9cd9] shadow-[0_0_12px_rgba(90,156,217,.8)]" />
+          <span className="w-9 h-9 rounded-xl border border-[#8b5cf6]/40 bg-[#8b5cf6]/10 flex items-center justify-center shadow-[0_0_24px_-10px_rgba(90,156,217,.7)]">
+            <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shadow-[0_0_12px_rgba(90,156,217,.8)]" />
           </span>
           <span className="ip-brand group-hover:text-primary transition-colors">INDUSTRIALPEDIA</span>
         </Link>
@@ -50,7 +50,7 @@ export default function SiteHeader() {
           </button>
           <div className="relative">
             <button type="button" onClick={() => setLanguageOpen((v) => !v)} aria-label={t.language} title={t.language} className="ip-button-tertiary flex items-center gap-1.5 h-9 px-2.5 sm:px-3 border border-white/10 bg-white/[0.03] hover:bg-primary/10">
-              <Globe className="w-4 h-4 text-[#5a9cd9]" /> <span className="font-semibold">{language.toUpperCase()}</span><span className="text-white/30">▾</span>
+              <Globe className="w-4 h-4 text-[#8b5cf6]" /> <span className="font-semibold">{language.toUpperCase()}</span><span className="text-white/30">▾</span>
             </button>
             {languageOpen && <div className="absolute right-0 top-[calc(100%+8px)] z-50 min-w-40 ip-card p-1.5 shadow-2xl">
               {languages.map((item) => <button key={item.code} type="button" onClick={() => { setLanguage(item.code); setLanguageOpen(false); }} className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 text-left text-xs ${item.code === language ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}>

@@ -16,7 +16,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 text-white/80 text-sm font-medium">
           <Filter className="w-4 h-4" /> {t.filters}
-          {active > 0 && <span className="text-[10px] bg-[#5a9cd9] text-[#0a0e12] px-1.5 rounded-full font-semibold">{active}</span>}
+          {active > 0 && <span className="text-[10px] bg-[#8b5cf6] text-[#0a0e12] px-1.5 rounded-full font-semibold">{active}</span>}
         </div>
         {active > 0 && (
           <button onClick={onReset} className="flex items-center gap-1 text-white/40 hover:text-white text-[11px]">
@@ -30,7 +30,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
           type="checkbox"
           checked={filters.only_published !== false}
           onChange={(e) => onChange({ ...filters, only_published: e.target.checked })}
-          className="accent-[#5a9cd9]"
+          className="accent-[#8b5cf6]"
         />
         <span className="text-white/70 text-xs">{t.publishedKnowledge}</span>
       </label>
@@ -40,7 +40,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
           type="checkbox"
           checked={!!filters.has_specification}
           onChange={(e) => onChange({ ...filters, has_specification: e.target.checked })}
-          className="accent-[#5a9cd9]"
+          className="accent-[#8b5cf6]"
         />
         <span className="text-white/70 text-xs">{t.technicalSpecification}</span>
       </label>
@@ -56,7 +56,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
                     type="checkbox"
                     checked={(filters.manufacturers || []).includes(m.name)}
                     onChange={() => toggle('manufacturers', m.name)}
-                    className="accent-[#5a9cd9]"
+                    className="accent-[#8b5cf6]"
                   />
                   {m.name}
                 </span>
@@ -78,7 +78,7 @@ export default function FilterPanel({ facets, filters, onChange, onReset }) {
                     type="checkbox"
                     checked={(filters.categories || []).includes(c.name)}
                     onChange={() => toggle('categories', c.name)}
-                    className="accent-[#5a9cd9]"
+                    className="accent-[#8b5cf6]"
                   />
                   {c.name}
                 </span>

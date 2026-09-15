@@ -228,11 +228,11 @@ export default function Buscar() {
   return (
     <div className="ip-shell grid-bg">
       <header className="ip-header px-3 sm:px-5 py-3 ip-mobile-safe-top">
-        <form onSubmit={submit} className="relative mx-auto max-w-[1120px] flex items-center gap-2 ip-card pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#5a9cd9]/60 focus-within:ring-4 focus-within:ring-[#5a9cd9]/10 transition-all">
+        <form onSubmit={submit} className="relative mx-auto max-w-[1120px] flex items-center gap-2 ip-card pl-2.5 sm:pl-3 pr-1.5 py-1.5 shadow-[0_16px_40px_-30px_rgba(0,0,0,.9)] focus-within:border-[#8b5cf6]/60 focus-within:ring-4 focus-within:ring-[#8b5cf6]/10 transition-all">
           <Link to="/" className="text-white/50 hover:text-white">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <span className="w-8 h-8 rounded-xl bg-[#5a9cd9]/10 border border-[#5a9cd9]/10 flex items-center justify-center shrink-0"><Search className="w-4 h-4 text-[#5a9cd9]" /></span>
+          <span className="w-8 h-8 rounded-xl bg-[#8b5cf6]/10 border border-[#8b5cf6]/10 flex items-center justify-center shrink-0"><Search className="w-4 h-4 text-[#8b5cf6]" /></span>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -240,7 +240,7 @@ export default function Buscar() {
             placeholder={t.searchPlaceholder}
             className="bg-transparent flex-1 text-sm text-white placeholder:text-white/30 outline-none py-2.5 min-w-0"
           />
-          <button type="submit" className="bg-[#5a9cd9] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2.5 rounded-xl transition-colors shrink-0">
+          <button type="submit" className="bg-[#8b5cf6] hover:bg-[#4f8fc7] text-[#0a0e12] text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2.5 rounded-xl transition-colors shrink-0">
             {t.search}
           </button>
 
@@ -319,13 +319,13 @@ export default function Buscar() {
           )}
         </form>
         {trialNotice === 'last' && (
-          <div className="mx-auto mt-2 max-w-2xl px-2 text-center text-xs text-[#65a9e6]">Te queda 1 prueba gratuita.</div>
+          <div className="mx-auto mt-2 max-w-2xl px-2 text-center text-xs text-[#8b5cf6]">Te queda 1 prueba gratuita.</div>
         )}
         {trialNotice === 'limit' && (
           <div className="ip-card mx-auto mt-3 max-w-md p-4 text-center shadow-xl">
             <div className="font-semibold text-white">¿Deseas probar más?</div>
             <div className="mt-1 text-sm text-white/50">Regístrate :)</div>
-            <button type="button" onClick={() => navigate(`/login?returnTo=${encodeURIComponent('/buscar')}`)} className="mt-4 w-full rounded-lg bg-[#65a9e6] px-4 py-2.5 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
+            <button type="button" onClick={() => navigate(`/login?returnTo=${encodeURIComponent('/buscar')}`)} className="mt-4 w-full rounded-lg bg-[#8b5cf6] px-4 py-2.5 text-sm font-semibold text-[#080d12]">Registrarme gratis</button>
           </div>
         )}
       </header>
@@ -346,7 +346,7 @@ export default function Buscar() {
           </div>
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white hover:border-[#5a9cd9]/35 hover:bg-white/[0.025] text-xs border border-white/10 rounded-xl px-3 py-2 transition-colors"
+            className="flex items-center gap-1.5 text-white/60 hover:text-white hover:border-[#8b5cf6]/35 hover:bg-white/[0.025] text-xs border border-white/10 rounded-xl px-3 py-2 transition-colors"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" /> {t.filters}
           </button>
@@ -365,7 +365,7 @@ export default function Buscar() {
         ) : kcError ? (
           <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-5 sm:p-6 text-center">
             <p className="text-sm text-amber-200/80">{kcError}</p>
-            <button onClick={onReset} className="mt-3 text-xs text-[#5a9cd9] hover:underline">{t.retry}</button>
+            <button onClick={onReset} className="mt-3 text-xs text-[#8b5cf6] hover:underline">{t.retry}</button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -376,7 +376,7 @@ export default function Buscar() {
               <section>
                 <div className="text-[10px] uppercase tracking-wider text-[#47bcb6] mb-2">{area ? `${t.foundPartsLabel} · ${areaLabel}` : t.foundPartsLabel}</div>
                 <div className="space-y-3">
-                  {kcResults.map((r) => <ResultCard key={r.id} result={r} />)}
+                  {kcResults.map((r, i) => <ResultCard key={r.id} result={r} index={i} />)}
                 </div>
 
                 {area && !kcLoading && (

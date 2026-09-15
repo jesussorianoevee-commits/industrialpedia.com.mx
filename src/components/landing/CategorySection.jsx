@@ -20,13 +20,14 @@ export default function CategorySection({ counts }) {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {visibleAreas.map((a) => (
+        {visibleAreas.map((a, i) => (
           <CategoryCard
             key={a.id}
             area={getLocalizedArea(a, language)}
             count={counts && Object.prototype.hasOwnProperty.call(counts, a.statsKey || a.id)
               ? counts[a.statsKey || a.id]
               : null}
+            tone={i % 3 === 1 ? 'accent-2' : 'primary'}
             compact
           />
         ))}

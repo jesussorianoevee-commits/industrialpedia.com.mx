@@ -241,7 +241,7 @@ export default function Comparar() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#65a9e6]/60"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#8b5cf6]/60"
             aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
             title={theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}
           >
@@ -277,7 +277,7 @@ export default function Comparar() {
               <button
                 type="button"
                 onClick={() => setExpandedBaseSpecs((value) => !value)}
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/[0.08] transition-colors"
                 aria-expanded={expandedBaseSpecs}
               >
                 {expandedBaseSpecs ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -299,7 +299,7 @@ export default function Comparar() {
               {imageFor(base) && <img src={imageFor(base)} alt="" className="h-14 w-14 shrink-0 rounded-md object-contain bg-white p-1" referrerPolicy="no-referrer" onError={() => recoverImage(base)} />}
               <div className="min-w-0"><div className="text-[9px] font-bold uppercase tracking-wider ip-compare-match">{t.baseComponent}</div><div className="mt-1 truncate font-mono text-xs font-semibold text-white">{base.part_number}</div><div className="mt-1 truncate text-sm text-white/60">{base.manufacturer_name || t.manufacturerNotIndicated}</div></div>
             </div>
-            <div className="hidden items-center justify-center lg:flex text-white/20">→</div>
+            <div className="hidden items-center justify-center lg:flex text-lg font-bold ip-signal-flow">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-2 2xl:grid-cols-3">
               {alternatives.map((c, i) => {
             const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
@@ -314,7 +314,7 @@ export default function Comparar() {
                   {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[9px] font-bold uppercase tracking-wider text-white/35">{t.alternatives || 'Alternativa'}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-accent-2">{t.alternatives || 'Alternativa'}</div>
                   <div className="mt-1 font-mono text-sm font-semibold text-white">{c.part_number}</div>
                   <div className="mt-0.5 truncate text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
                 </div>
@@ -338,7 +338,7 @@ export default function Comparar() {
                           <div className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/45" title={`Comparativa · ${c.part_number}`}>Comparativa · {c.part_number}</div>
                           <div className={`mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed ${valueTone}`}>{val(s, language)}</div>
                         </div>
-                        <div className="min-w-0 rounded border border-white/[0.06] bg-[#65a9e6]/[0.035] px-2 py-1.5">
+                        <div className="min-w-0 rounded border border-white/[0.06] bg-[#8b5cf6]/[0.035] px-2 py-1.5">
                           <div className="truncate text-[9px] font-semibold uppercase tracking-wider text-white/40" title={`Original · ${base.part_number}`}>Original · {base.part_number}</div>
                           <div className="mt-0.5 break-words font-mono text-[13px] font-semibold leading-relaxed text-white/85">{baseValueForCard}</div>
                         </div>
@@ -347,7 +347,7 @@ export default function Comparar() {
                   })}
                 </div>
                 {c.specs.length > 6 && <div className="mt-2 flex justify-center border-t border-white/[0.06] pt-2">
-                  <button type="button" onClick={() => setExpandedSpecs((current) => ({ ...current, [c.id || i]: !current[c.id || i] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={!!expandedSpecs[c.id || i]}>
+                  <button type="button" onClick={() => setExpandedSpecs((current) => ({ ...current, [c.id || i]: !current[c.id || i] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/[0.08] transition-colors" aria-expanded={!!expandedSpecs[c.id || i]}>
                     {expandedSpecs[c.id || i] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     {expandedSpecs[c.id || i] ? 'Ver menos' : `Ver más · ${c.specs.length - 6} datos`}
                   </button>
@@ -365,7 +365,7 @@ export default function Comparar() {
 
         <section className="ip-card mb-4 p-4 sm:p-5">
           <div className="flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-[#65a9e6]" />
+            <div className="h-2 w-2 rounded-full bg-[#8b5cf6]" />
             <div><h2 className="text-base font-semibold text-white/95">Fichas técnicas comparadas</h2><p className="mt-1 text-sm leading-relaxed text-white/65">Aquí se ve exactamente qué dato de la ficha de cada fabricante coincide, difiere o falta.</p></div>
           </div>
         </section>
@@ -391,7 +391,7 @@ export default function Comparar() {
               <section key={c.id || ci} className="ip-card overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
                   <div className="min-w-0">
-                    <div className="text-[9px] uppercase tracking-wider text-white/30">{t.alternatives || 'Alternativa'}</div>
+                    <div className="text-[9px] uppercase tracking-wider text-accent-2">{t.alternatives || 'Alternativa'}</div>
                     <div className="mt-1 font-mono text-sm font-semibold ip-compare-accent break-all">{c.part_number}</div>
                     <div className="mt-0.5 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
                   </div>
@@ -421,7 +421,7 @@ export default function Comparar() {
                               <div className="text-[8px] uppercase tracking-wider text-white/45">Comparativa · {c.part_number}</div>
                               <div className={`mt-0.5 break-words font-mono text-[10px] font-semibold ${valueClass}`}>{candidateValue}</div>
                             </div>
-                            <div className="min-w-0 rounded-md bg-[#65a9e6]/[0.035] px-2 py-1.5">
+                            <div className="min-w-0 rounded-md bg-[#8b5cf6]/[0.035] px-2 py-1.5">
                               <div className="text-[8px] uppercase tracking-wider text-white/40">Original · {base.part_number}</div>
                               <div className="mt-0.5 break-words font-mono text-[10px] text-white/85">{originalValue}</div>
                             </div>
@@ -433,7 +433,7 @@ export default function Comparar() {
                   })}
                 </div>
                 {mobileRows.length > 6 && <div className="flex justify-center border-t border-white/[0.06] py-2">
-                  <button type="button" onClick={() => setExpandedMobileComparisonTable((current) => ({ ...current, [mobileKey]: !current[mobileKey] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#65a9e6] hover:bg-[#65a9e6]/[0.08] transition-colors" aria-expanded={!!expandedMobileComparisonTable[mobileKey]}>
+                  <button type="button" onClick={() => setExpandedMobileComparisonTable((current) => ({ ...current, [mobileKey]: !current[mobileKey] }))} className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/[0.08] transition-colors" aria-expanded={!!expandedMobileComparisonTable[mobileKey]}>
                     {expandedMobileComparisonTable[mobileKey] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     {expandedMobileComparisonTable[mobileKey] ? 'Ver menos' : `Ver más · ${mobileRows.length - 6} datos`}
                   </button>
@@ -498,7 +498,7 @@ export default function Comparar() {
                   setLoadingMore(false);
                 }
               }}
-              className="mt-1 rounded-lg border border-[#65a9e6]/35 bg-[#65a9e6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider ip-compare-accent hover:bg-[#65a9e6]/[0.14] disabled:opacity-50"
+              className="mt-1 rounded-lg border border-[#8b5cf6]/35 bg-[#8b5cf6]/[0.08] px-4 py-2 text-[10px] font-semibold uppercase tracking-wider ip-compare-accent hover:bg-[#8b5cf6]/[0.14] disabled:opacity-50"
             >{t.moreAlternatives}</button>
           </div>
         )}
