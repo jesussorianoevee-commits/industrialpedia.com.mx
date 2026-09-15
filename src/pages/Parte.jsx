@@ -14,7 +14,7 @@ import InteractivePartImage from '@/components/part/InteractivePartImage';
 
 const STATE_LABELS = {
   published: { label: 'Publicado', cls: 'text-[#47bcb6] bg-[#47bcb6]/10' },
-  validated: { label: 'Validado', cls: 'text-[#ea580c] bg-[#ea580c]/10' },
+  validated: { label: 'Validado', cls: 'text-[#2563eb] bg-[#2563eb]/10' },
   incomplete: { label: 'Incompleto', cls: 'text-[#e68a00] bg-[#e68a00]/10' },
   rejected: { label: 'Rechazado', cls: 'text-red-400 bg-red-400/10' },
   processed: { label: 'Procesado', cls: 'text-white/50 bg-white/10' },
@@ -187,7 +187,7 @@ export default function Parte() {
     return (
       <div className="ip-shell grid-bg flex flex-col items-center justify-center gap-3">
         <p className="text-white/50 text-sm">{t.partNotFound}</p>
-        <Link to="/buscar" className="text-[#ea580c] text-sm hover:underline">← {t.backToSearch}</Link>
+        <Link to="/buscar" className="text-[#2563eb] text-sm hover:underline">← {t.backToSearch}</Link>
       </div>
     );
   }
@@ -323,7 +323,7 @@ export default function Parte() {
               {partEvidence.slice(0, expandedPartEvidence ? partEvidence.length : 2).map((ev) => (
                 <div key={ev.id} className="text-[11px] text-white/55 leading-relaxed">
                   <div>{ev.evidence}</div>
-                  {ev.source?.url && <a href={ev.source.url} target="_blank" rel="noreferrer" className="text-[#ea580c] hover:underline mt-1 inline-block">{ev.source.name || ev.source.url}</a>}
+                  {ev.source?.url && <a href={ev.source.url} target="_blank" rel="noreferrer" className="text-[#2563eb] hover:underline mt-1 inline-block">{ev.source.name || ev.source.url}</a>}
                 </div>
               ))}
               {partEvidence.length > 2 && (
@@ -331,7 +331,7 @@ export default function Parte() {
                   <button
                     type="button"
                     onClick={() => setExpandedPartEvidence((value) => !value)}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#ea580c] hover:bg-[#ea580c]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#ea580c]/60"
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#2563eb] hover:bg-[#2563eb]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#2563eb]/60"
                     aria-expanded={expandedPartEvidence}
                   >
                     {expandedPartEvidence ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -356,7 +356,7 @@ export default function Parte() {
               {docs.map((d) => (
                 <a key={d.id} href={d.file_url} target="_blank" rel="noreferrer" className="ip-card block p-3 hover:border-white/20">
                   <div className="text-white/70 text-xs truncate">{d.title || d.file_url}</div>
-                  {d.file_url && <div className="text-[#ea580c] text-[11px] mt-0.5 truncate">{d.file_url}</div>}
+                  {d.file_url && <div className="text-[#2563eb] text-[11px] mt-0.5 truncate">{d.file_url}</div>}
                   <div className="text-white/30 text-[10px] mt-1">{d.document_type || 'datasheet'} · {d.status}</div>
                 </a>
               ))}
@@ -376,13 +376,13 @@ export default function Parte() {
                 <div className="text-white/70 text-xs font-semibold mb-2">{t.distributor}</div>
                 <div className="space-y-2">
                   {supplierSources.slice(0, expandedSupplierSources ? supplierSources.length : 3).map((s) => (
-                    <a key={s.id || s.url} href={s.product_url || s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-[#ea580c]/25 bg-[#ea580c]/5 p-3 hover:border-[#ea580c]/50">
+                    <a key={s.id || s.url} href={s.product_url || s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-[#2563eb]/25 bg-[#2563eb]/5 p-3 hover:border-[#2563eb]/50">
                       <div className="text-white/80 text-xs font-medium">{s.provider_name || t.distributor}</div>
-                      <div className="text-[#ea580c] text-[11px] mt-1 truncate">{s.product_url || s.url}</div>
+                      <div className="text-[#2563eb] text-[11px] mt-1 truncate">{s.product_url || s.url}</div>
                       {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
                     </a>
                   ))}
-                  {supplierSources.length > 3 && <button type="button" onClick={() => setExpandedSupplierSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#ea580c] hover:bg-[#ea580c]/[0.08] transition-colors" aria-expanded={expandedSupplierSources}>{expandedSupplierSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedSupplierSources ? 'Ver menos' : `Ver más · ${supplierSources.length - 3} enlaces`}</button>}
+                  {supplierSources.length > 3 && <button type="button" onClick={() => setExpandedSupplierSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#2563eb] hover:bg-[#2563eb]/[0.08] transition-colors" aria-expanded={expandedSupplierSources}>{expandedSupplierSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedSupplierSources ? 'Ver menos' : `Ver más · ${supplierSources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}
@@ -394,11 +394,11 @@ export default function Parte() {
                   {technicalSources.slice(0, expandedTechnicalSources ? technicalSources.length : 3).map((s) => (
                     <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 hover:border-white/20">
                       <div className="text-white/70 text-xs">{s.provider_name || t.officialManufacturer}</div>
-                      <div className="text-[#ea580c] text-[11px] mt-1 truncate">{s.url}</div>
+                      <div className="text-[#2563eb] text-[11px] mt-1 truncate">{s.url}</div>
                       {s.retrieved_at && <div className="text-white/30 text-[10px] mt-1">{s.retrieved_at}</div>}
                     </a>
                   ))}
-                  {technicalSources.length > 3 && <button type="button" onClick={() => setExpandedTechnicalSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#ea580c] hover:bg-[#ea580c]/[0.08] transition-colors" aria-expanded={expandedTechnicalSources}>{expandedTechnicalSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedTechnicalSources ? 'Ver menos' : `Ver más · ${technicalSources.length - 3} enlaces`}</button>}
+                  {technicalSources.length > 3 && <button type="button" onClick={() => setExpandedTechnicalSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#2563eb] hover:bg-[#2563eb]/[0.08] transition-colors" aria-expanded={expandedTechnicalSources}>{expandedTechnicalSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedTechnicalSources ? 'Ver menos' : `Ver más · ${technicalSources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}
@@ -410,7 +410,7 @@ export default function Parte() {
                   {sources.slice(0, expandedGeneralSources ? sources.length : 3).map((s) => (
                     <a key={s.id || s.url} href={s.url} target="_blank" rel="noreferrer" className="block rounded-lg border border-white/10 p-3 text-white/60 text-xs hover:border-white/20">{s.url}</a>
                   ))}
-                  {sources.length > 3 && <button type="button" onClick={() => setExpandedGeneralSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#ea580c] hover:bg-[#ea580c]/[0.08] transition-colors" aria-expanded={expandedGeneralSources}>{expandedGeneralSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedGeneralSources ? 'Ver menos' : `Ver más · ${sources.length - 3} enlaces`}</button>}
+                  {sources.length > 3 && <button type="button" onClick={() => setExpandedGeneralSources((value) => !value)} className="mt-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[10px] font-semibold text-[#2563eb] hover:bg-[#2563eb]/[0.08] transition-colors" aria-expanded={expandedGeneralSources}>{expandedGeneralSources ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}{expandedGeneralSources ? 'Ver menos' : `Ver más · ${sources.length - 3} enlaces`}</button>}
                 </div>
               </div>
             )}

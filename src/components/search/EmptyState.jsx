@@ -22,7 +22,7 @@ export default function EmptyState({ q, onReset }) {
       </p>
       <button
         onClick={onReset}
-        className="text-[#ea580c] text-xs font-medium hover:underline"
+        className="text-[#2563eb] text-xs font-medium hover:underline"
       >
         {action}
       </button>

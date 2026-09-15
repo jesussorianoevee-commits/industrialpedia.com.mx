@@ -94,9 +94,9 @@ export default function CompatibilityCommunity({ part }) {
       </div>
 
       {!isAuthenticated ? (
-        <div className="mt-4 rounded-lg border border-[#ea580c]/20 bg-[#ea580c]/[0.05] p-3">
+        <div className="mt-4 rounded-lg border border-[#2563eb]/20 bg-[#2563eb]/[0.05] p-3">
           <div className="text-xs text-white/70">{t.accountRequiredCompatibility}</div>
-          <Link to={`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#ea580c] px-3 py-2 text-xs font-semibold text-[#080d12] hover:bg-[#a78bfa]"><LogIn className="h-3.5 w-3.5" /> {t.signInToParticipate}</Link>
+          <Link to={`/login?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-3 py-2 text-xs font-semibold text-[#080d12] hover:bg-[#a78bfa]"><LogIn className="h-3.5 w-3.5" /> {t.signInToParticipate}</Link>
         </div>
       ) : (
         <form onSubmit={submit} className="mt-4 space-y-3">

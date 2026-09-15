@@ -8,29 +8,33 @@
     --foreground: 210 40% 96%;
     --card: 205 40% 7%;
     --card-foreground: 210 40% 96%;
-    /* Primary is deliberately NOT blue/cyan/violet (all rejected in earlier
-       passes as generic or clashing) — safety orange is a real industrial
-       identity color (machinery, hazard marking), reads as warm/decisive on
-       the near-black background, and stays clear of the comparator's own
-       state colors (green=match, amber=different, red=incompatible). It is
-       a fully different hue from the amber "different" state (20° vs 45°). */
-    --primary: 20 90% 48%;
+    /* Primary reverted to blue 2026-09-15 at explicit user direction, matching
+       a reference mockup (SICK/OMRON-style comparison UI) -- supersedes the
+       earlier decision to avoid blue as "generic SaaS": user confirmed they
+       want brand blue here, not just the mockup's layout. A clean, saturated
+       blue distinct from the state colors (green=match, amber=review/
+       partial, red=no-match) so brand chrome never gets confused with a
+       comparison verdict. */
+    /* hsl(221 83% 53%) == #2563eb exactly -- kept in lockstep with the
+       hardcoded hex literals bulk-replaced across components (many pages
+       still use literal Tailwind arbitrary-hex classes instead of the
+       token), so the var and the hex never drift apart. */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
     --secondary: 208 36% 10%;
     --secondary-foreground: 210 40% 96%;
     --muted: 207 30% 10%;
     --muted-foreground: 215 20% 65%;
-    --accent: 20 90% 48%;
+    --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
-    /* Second signal color — industrial pink/magenta, opposite orange on the
-       wheel, so "base part" vs "alternative/candidate" reads at a glance in
-       the comparator, the way a dual-channel scope trace does. Well clear of
-       blue/cyan/violet and of the semantic state colors. */
-    --accent-2: 333 71% 51%;
+    /* Second signal color -- kept in the same blue family (a lighter sky
+       tone) rather than reintroducing magenta, matching the reference's
+       monochromatic-blue brand chrome. */
+    --accent-2: 199 89% 48%;
     --accent-2-foreground: 0 0% 100%;
     --border: 207 25% 20%;
     --input: 208 30% 11%;
-    --ring: 20 90% 62%;
+    --ring: 221 83% 63%;
     --radius: 0.75rem;
     /* Referenced by shadcn primitives (button/badge/dialog/dropdown variants)
        but never defined -- a "destructive" or popover-based component
@@ -60,19 +64,19 @@
     --foreground: 220 25% 10%;
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
-    --primary: 20 85% 40%;
+    --primary: 224 76% 48%;
     --primary-foreground: 0 0% 100%;
     --secondary: 210 18% 94%;
     --secondary-foreground: 220 25% 10%;
     --muted: 210 18% 94%;
     --muted-foreground: 220 10% 42%;
-    --accent: 20 85% 40%;
+    --accent: 224 76% 48%;
     --accent-foreground: 0 0% 100%;
-    --accent-2: 336 76% 40%;
+    --accent-2: 199 85% 38%;
     --accent-2-foreground: 0 0% 100%;
     --border: 210 16% 86%;
     --input: 210 16% 94%;
-    --ring: 20 85% 40%;
+    --ring: 224 76% 48%;
     --destructive: 0 68% 42%;
     --destructive-foreground: 0 0% 100%;
     --popover: 0 0% 100%;
@@ -401,7 +405,7 @@
 /* Comparison contrast system: keep the technical meaning of each state while
    guaranteeing readable text in both themes. These classes replace palette-
    dependent literal Tailwind text colors inside the comparator. */
-.ip-compare-accent { color: #ea580c; }
+.ip-compare-accent { color: #2563eb; }
 .ip-compare-match { color: #20c997; }
 .ip-compare-warning { color: #f2b84b; }
 .ip-compare-danger { color: #f05d67; }
@@ -416,7 +420,7 @@
 .ip-state-warning { background: rgb(242 184 75 / 0.055); }
 .ip-state-danger { background: rgb(240 93 103 / 0.055); }
 
-.theme-light .ip-compare-accent { color: hsl(20 85% 40%) !important; }
+.theme-light .ip-compare-accent { color: hsl(224 76% 48%) !important; }
 .theme-light .ip-compare-match { color: hsl(158 68% 28%) !important; }
 .theme-light .ip-compare-warning { color: hsl(36 92% 28%) !important; }
 .theme-light .ip-compare-danger { color: hsl(0 68% 38%) !important; }
@@ -478,7 +482,7 @@
 .theme-light .ip-comparison [class*="bg-[#16c79a]"] { background-color: hsl(158 68% 32% / 0.08) !important; }
 .theme-light .ip-comparison [class*="bg-amber-400"] { background-color: hsl(36 92% 32% / 0.08) !important; }
 .theme-light .ip-comparison [class*="bg-red-400"] { background-color: hsl(0 68% 40% / 0.07) !important; }
-.theme-light .ip-comparison [class*="bg-[#ea580c]"] { background-color: hsl(20 85% 40% / 0.055) !important; }
+.theme-light .ip-comparison [class*="bg-[#2563eb]"] { background-color: hsl(224 76% 48% / 0.055) !important; }
 
 .theme-light .ip-comparison [class*="border-[#16c79a]"],
 .theme-light .ip-comparison [class*="border-amber-400"],

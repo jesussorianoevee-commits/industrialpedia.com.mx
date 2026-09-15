@@ -165,7 +165,7 @@ export default function ResultCard({ result, index = 0 }) {
         : { label: stateLabel, cls: 'text-white/50 bg-white/10' };
   return (
     <div
-      className="ip-card ip-stagger-in relative overflow-hidden p-4 sm:p-5 hover:border-[#ea580c]/35 hover:bg-[#181d24] hover:-translate-y-0.5 transition-all"
+      className="ip-card ip-stagger-in relative overflow-hidden p-4 sm:p-5 hover:border-[#2563eb]/35 hover:bg-[#181d24] hover:-translate-y-0.5 transition-all"
       style={{ '--ip-delay': Math.min(index, 10) * 40 }}
     >
       <span
@@ -193,7 +193,7 @@ export default function ResultCard({ result, index = 0 }) {
             <button
               type="button"
               onClick={() => setImagePreviewOpen(true)}
-              className="group w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#ea580c] rounded-2xl"
+              className="group w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#2563eb] rounded-2xl"
               aria-label={`Ampliar imagen de ${result.part_number || 'la pieza'}`}
             >
               <img
@@ -210,7 +210,7 @@ export default function ResultCard({ result, index = 0 }) {
               />
             </button>
           ) : imageLookupPending ? (
-            <Loader2 className="w-5 h-5 text-[#ea580c]/60 animate-spin" aria-label="Buscando imagen" />
+            <Loader2 className="w-5 h-5 text-[#2563eb]/60 animate-spin" aria-label="Buscando imagen" />
           ) : (
             <span className="text-[9px] uppercase tracking-wider text-white/20 text-center px-1.5">{t.noVerifiedImage}</span>
           )}
@@ -257,7 +257,7 @@ export default function ResultCard({ result, index = 0 }) {
           </span>
         )}
         {result.source_url && (
-          <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#ea580c] hover:underline">{t.viewSource}</a>
+          <a href={result.source_url} target="_blank" rel="noreferrer" className="text-[#2563eb] hover:underline">{t.viewSource}</a>
         )}
         {result.match && !/^category$/i.test(String(result.match).trim()) && (
           <span className="text-white/30 ml-auto capitalize">{result.match.replace(/_/g, ' ')}</span>
@@ -305,7 +305,7 @@ export default function ResultCard({ result, index = 0 }) {
               type="button"
               disabled={alternativesLoading}
               onClick={openComparator}
-              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#ea580c]/35 bg-[#ea580c]/10 hover:bg-[#ea580c]/15 disabled:opacity-60"
+              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#2563eb]/35 bg-[#2563eb]/10 hover:bg-[#2563eb]/15 disabled:opacity-60"
             >
               <GitCompareArrows className="w-3 h-3" /> {t.compare}
             </button>
@@ -358,7 +358,7 @@ export default function ResultCard({ result, index = 0 }) {
                   setCompareLoading(false);
                 }
               }}
-              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#ea580c]/35 bg-[#ea580c]/10 hover:bg-[#ea580c]/15 disabled:opacity-60"
+              className="ip-button-tertiary inline-flex items-center gap-1 border border-[#2563eb]/35 bg-[#2563eb]/10 hover:bg-[#2563eb]/15 disabled:opacity-60"
             >
               {compareLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> {t.comparing}</> : <><GitCompareArrows className="w-3 h-3" /> {t.compare}</>}
             </button>
