@@ -76,19 +76,35 @@ export async function runFestoIdentityBatch(sb: SupabaseClient, batchSizeRaw: nu
   const { data: src } = await sb.from("ingestion_sources").select("id").eq("source_key", "festo_catalog_v1").single();
   if (!src) return { error: "festo_source_missing" };
 
-  const { data: rows, error } = await sb
-    .from("candidate_enrichment_queue")
-    .select("id, ingestion_records!inner(source_id)")
-    .eq("status", "queued").eq("stage", "deterministic")
-    .eq("ingestion_records.source_id", src.id)
-    .order("created_at", { ascending: true })
-    .limit(batchSize);
-  if (error) return { error: "select_failed", detail: error.message };
-  if (!rows?.length) return { status: "idle", processed: 0, results: [] };
+  // Scan in pages for rows whose payload is a numeric single-part datasheet (the shape
+  // resolveIdentity() can actually work with) rather than always hitting the oldest rows,
+  // which are mostly non-cylinder accessory catalogs the resolver correctly can't handle.
+  const matched: string[] = [];
+  let offset = 0;
+  const pageSize = 300;
+  while (matched.length < batchSize && offset < 6000) {
+    const { data: page, error } = await sb
+      .from("candidate_enrichment_queue")
+      .select("id, ingestion_records!inner(source_id, payload)")
+      .eq("status", "queued").eq("stage", "deterministic")
+      .eq("ingestion_records.source_id", src.id)
+      .order("created_at", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) return { error: "select_failed", detail: error.message };
+    const batch = page || [];
+    for (const row of batch as any[]) {
+      const u = String(row.ingestion_records?.payload?.pdf_url || "");
+      if (DATASHEET_RE.test(u)) matched.push(row.id);
+      if (matched.length >= batchSize) break;
+    }
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  if (!matched.length) return { status: "idle", processed: 0, results: [] };
 
   const results: any[] = [];
-  for (const row of rows as any[]) {
-    results.push(await runFestoIdentityResolverAndExtract(sb, row.id, publishReal));
+  for (const queueId of matched) {
+    results.push(await runFestoIdentityResolverAndExtract(sb, queueId, publishReal));
   }
   return { status: "completed", processed: results.length, results };
 }
