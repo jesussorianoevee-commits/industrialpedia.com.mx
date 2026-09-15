@@ -33,12 +33,16 @@ deploy script refuses to run without it, and never generates or commits it).
 
 `POST /pipeline/smc-vqz` with `dry_run:true` against the live VPS returned all 29 VQZ
 parts as `already_exists` with `part_id`s matching exactly what's already published —
-confirms the port behaves identically to the original Edge Function.
+confirms the port behaves identically to the original Edge Function. Re-validated after
+wiring `smc_vqz_pipeline.ts` to call `runExtractor()` in-process (`VQZ_CONFIG`,
+reconstructed from `industrialpedia-vqz-structural-extractor-v2`'s own hardcoded values,
+PASS 8/8, all 29 cv_1_4_2/weight values matching `part_evidence` exactly) — same 29/29
+match, now with zero calls out to Supabase during extraction. Supabase is database-only
+for this pipeline.
 
 ## Known follow-up (not done yet)
 
-`smc_vqz_pipeline.ts` still calls the OLD Supabase-hosted extractor
-(`industrialpedia-vqz-structural-extractor-v2`) via `LEGACY_EXTRACTOR_URL`, not the
-`/extract` route in this same server — the VQZ-specific config for the generic extractor
-was never captured in this repo, and guessing it would risk changing what gets published.
-Recover/rebuild that config before wiring it to call `/extract` locally instead.
+The original Supabase Edge Functions (`industrialpedia-structural-extractor-v1`,
+`industrialpedia-smc-vqz-pipeline-v1`, `industrialpedia-vqz-structural-extractor-v2`) are
+still deployed and untouched — left running in parallel on purpose during validation.
+Retire them via `docs/REGISTRO-ENDPOINTS.md`'s protocol once confidence is established.
