@@ -48,12 +48,21 @@ const MAX_PAGES_SCANNED = 15;
 
 type Frag = { text: string; x: number; y: number };
 
+const SPEC_SECTION_END_RE = /^(Dise[nñ]o\s*\/\s*Dimensiones|Lista de componentes|Forma de pedido)$/i;
+
 function grid(fs: Frag[]): Frag[][] {
   const bands: Frag[][] = [];
   let last: number | null = null;
-  for (const f of [...fs].sort((a, b) => b.y - a.y || a.x - b.x)) {
+  // Sort by y only: `b.y - a.y || a.x - b.x` looked like a Y-then-X sort but
+  // the `||` short-circuits on ANY nonzero y difference, so same-row glyphs
+  // whose y values differ by PDF baseline jitter (e.g. 697.51 vs 697.48)
+  // never reach the x tiebreaker and can land in arbitrary X order. X
+  // ordering is restored explicitly per band below, after the ±1pt
+  // y-tolerance has already grouped fragments into visual rows.
+  for (const f of [...fs].sort((a, b) => b.y - a.y)) {
     if (last === null || Math.abs(last - f.y) > 1) { bands.push([f]); last = f.y; } else bands[bands.length - 1].push(f);
   }
+  for (const band of bands) band.sort((a, b) => a.x - b.x);
   return bands;
 }
 
@@ -278,13 +287,19 @@ export async function extractSimpleDatasheetStructure(path: string) {
   if (!skus.length) return { ok: false, reason: "no_sku_rows_found", pageCount, modeloPage };
 
   // Especificaciones block: label + value row pairs following the section
-  // header, on whichever page it was found on (often the same page).
+  // header, on whichever page it was found on (often the same page). Some
+  // genuine spec rows split into stray single-cell bands (e.g. a label and
+  // its value land >1pt apart in y and miss the banding tolerance), so a
+  // lone cell alone can't end the block -- only a named section title that
+  // follows Especificaciones on the page (diagram/parts-list/ordering
+  // sections) does.
   const especBands = pageBands.get(especPage || modeloPage) || [];
   const especStartIdx = especBands.findIndex((b) => b.map((f) => f.text).join("").trim() === "Especificaciones");
   const sharedSpecs: Array<{ label: string; value: string }> = [];
   if (especStartIdx >= 0) {
     for (let i = especStartIdx + 1; i < especBands.length; i++) {
       const cells = especBands[i].map((c) => c.text.trim()).filter(Boolean);
+      if (cells.length === 1 && SPEC_SECTION_END_RE.test(cells[0])) break;
       if (cells.length < 2) continue;
       sharedSpecs.push({ label: cells[0], value: cells.slice(1).join(" ") });
     }
