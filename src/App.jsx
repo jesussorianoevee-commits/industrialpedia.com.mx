@@ -13,6 +13,7 @@ import Home from '@/pages/Home';
 const Buscar = lazy(() => import('@/pages/Buscar'));
 const Parte = lazy(() => import('@/pages/Parte'));
 const Comparar = lazy(() => import('@/pages/Comparar'));
+const CompararSeleccion = lazy(() => import('@/pages/CompararSeleccion'));
 const CompararReferencia = lazy(() => import('@/pages/CompararReferencia'));
 const Decidir = lazy(() => import('@/pages/Decidir'));
 const Login = lazy(() => import('@/pages/Login'));
@@ -23,6 +24,8 @@ const OAuthConsent = lazy(() => import('@/pages/OAuthConsent'));
 import TrialRoute from '@/components/TrialRoute';
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
+import { ComparisonSelectionProvider } from '@/lib/comparisonSelection';
+import ComparisonDock from '@/components/comparison/ComparisonDock';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -54,6 +57,7 @@ const AuthenticatedApp = () => {
       <Route path="/buscar" element={<TrialRoute><Buscar /></TrialRoute>} />
       <Route path="/parte/:id" element={<TrialRoute><Parte /></TrialRoute>} />
       <Route path="/comparar/:id" element={<TrialRoute><Comparar /></TrialRoute>} />
+      <Route path="/comparar-seleccion" element={<TrialRoute><CompararSeleccion /></TrialRoute>} />
       <Route path="/comparar-referencia" element={<TrialRoute><CompararReferencia /></TrialRoute>} />
       <Route path="/decidir" element={<TrialRoute><Decidir /></TrialRoute>} />
       <Route path="*" element={<PageNotFound />} />
@@ -70,10 +74,13 @@ function App() {
       <LanguageProvider>
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
+        <ComparisonSelectionProvider>
         <Router>
           <ScrollToTop />
           <AuthenticatedApp />
+          <ComparisonDock />
         </Router>
+        </ComparisonSelectionProvider>
           <Toaster />
         </QueryClientProvider>
       </AuthProvider>

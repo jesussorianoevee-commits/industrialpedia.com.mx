@@ -194,6 +194,143 @@ function mapCrossReferenceState(state) {
   }
 }
 
+function specsToArrayWithLabels(specifications, displayNameMap) {
+  if (!specifications || typeof specifications !== 'object' || Array.isArray(specifications)) return [];
+  return Object.entries(specifications).map(([attribute_name, raw]) => {
+    const objectValue = raw && typeof raw === 'object' && !Array.isArray(raw);
+    const formalLabel = (displayNameMap || {})[attribute_name] || null;
+    return {
+      id: attribute_name,
+      attribute_name,
+      attribute_canonical: formalLabel || attribute_name,
+      has_formal_label: Boolean(formalLabel),
+      original_value: objectValue ? (raw.value ?? null) : raw,
+      original_unit: objectValue ? (raw.unit ?? null) : null,
+      normalized_value: objectValue ? (raw.value ?? null) : raw,
+      normalized_unit: objectValue ? (raw.unit ?? null) : null
+    };
+  }).filter((s) => s.original_value !== null && s.original_value !== undefined && s.original_value !== '');
+}
+
+async function fetchPropertyDisplayNames(specsList) {
+  const allPropertyCodes = new Set();
+  specsList.forEach((specs) => {
+    if (specs && typeof specs === 'object' && !Array.isArray(specs)) Object.keys(specs).forEach((k) => allPropertyCodes.add(k));
+  });
+  if (allPropertyCodes.size === 0) return {};
+  try {
+    const codesList = [...allPropertyCodes];
+    const labelsResponse = await fetch(`${SEARCH_FUNCTION_URL}?mode=property_labels&codes=${encodeURIComponent(codesList.join(','))}`, { headers: { apikey: SUPABASE_PUBLISHABLE_KEY } });
+    const labelsData = await labelsResponse.json().catch(() => null);
+    return labelsData?.labels && typeof labelsData.labels === 'object' ? labelsData.labels : {};
+  } catch {
+    return {};
+  }
+}
+
+// Comparación técnica de piezas elegidas a mano por el usuario (bandeja de
+// comparación), a diferencia de compareIndustrialpedia que parte de un
+// componente base y deja que compare_part_candidates_v2 descubra
+// alternativas por familia/categoría. Aquí no hay descubrimiento ni
+// gobernanza de familia que aplicar -- el usuario ya decidió qué comparar --
+// así que se reutiliza directamente compare_parts_batch_public_v1 (la misma
+// matriz técnica propiedad-por-propiedad que alimenta la tabla de Comparar)
+// contra la primera pieza seleccionada como referencia.
+export async function compareSelectedParts(partIds) {
+  const ids = Array.from(new Set((partIds || []).map((id) => String(id || '').trim()).filter(Boolean))).slice(0, 4);
+  if (ids.length < 2) throw new Error('Selecciona al menos 2 refacciones para comparar.');
+
+  const fetched = await Promise.all(ids.map((id) => getPartIndustrialpedia(id).catch(() => null)));
+  const parts = fetched.map((r) => r?.part).filter(Boolean);
+  if (parts.length < 2) throw new Error('No se pudieron cargar las refacciones seleccionadas.');
+
+  const [baseRaw, ...candidateRawList] = parts;
+  const displayNameMap = await fetchPropertyDisplayNames([baseRaw.specifications, ...candidateRawList.map((c) => c.specifications)]);
+  const specsToArray = (specifications) => specsToArrayWithLabels(specifications, displayNameMap);
+
+  const base = {
+    id: baseRaw.id,
+    part_number: baseRaw.part_number,
+    manufacturer_name: baseRaw.manufacturer_name || '',
+    category: baseRaw.category || '',
+    description: baseRaw.description || baseRaw.name || '',
+    source: { url: baseRaw.source_url || baseRaw.source?.url || '', domain: baseRaw.source_url || baseRaw.source?.url || '' },
+    specs: specsToArray(baseRaw.specifications),
+    image_url: baseRaw.image_url || baseRaw.image?.image_url || baseRaw.image?.url || baseRaw.primary_image_url || ''
+  };
+
+  const candidateIds = candidateRawList.map((c) => c.id).filter(Boolean);
+  const batchResponse = candidateIds.length ? await fetch(`${SUPABASE_URL}/rest/v1/rpc/compare_parts_batch_public_v1`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ p_part_a: base.id, p_part_b_ids: candidateIds })
+  }) : null;
+  const batchData = batchResponse ? await batchResponse.json().catch(() => null) : { comparisons: {} };
+  if (batchResponse && (!batchResponse.ok || batchData?.status === 'error')) {
+    throw new Error(batchData?.message || batchData?.error || `Knowledge Core batch comparison HTTP ${batchResponse.status}`);
+  }
+  const matrices = batchData?.comparisons || {};
+
+  const alternatives = candidateRawList.map((a) => {
+    const matrix = matrices[String(a.id)] || null;
+    const rows = matrix && matrix.status !== 'error' && Array.isArray(matrix.comparisons) ? matrix.comparisons : [];
+    const differences = rows.map((row) => ({
+      attribute_name: row.property,
+      attribute_canonical: row.property,
+      base: row.part_a ?? null,
+      candidate: row.part_b ?? null,
+      state: row.comparison,
+      reason: row.reason,
+      comparable: row.comparable,
+      normalized_a: row.normalized_a ?? null,
+      normalized_b: row.normalized_b ?? null,
+      normalized_unit: row.normalized_unit ?? null
+    }));
+    const counts = rows.reduce((acc, row) => {
+      if (row.comparison === 'equal') acc.equal++;
+      else if (row.comparison === 'different') acc.different++;
+      else if (row.comparison === 'base_only') acc.missing++;
+      else if (row.comparison === 'candidate_only') acc.candidate_only++;
+      else if (row.comparison === 'not_comparable') acc.not_comparable++;
+      return acc;
+    }, { equal: 0, different: 0, missing: 0, candidate_only: 0, not_comparable: 0 });
+    // Sin reglas de familia (critical/required) que aplicar aquí -- el estado
+    // se deriva directamente de la matriz técnica: cualquier discrepancia
+    // real manda a revisión, nunca se declara "compatible" solo por default.
+    const state = counts.different > 0
+      ? 'review'
+      : (rows.length > 0 && counts.equal > 0 && counts.not_comparable === 0 && counts.missing === 0)
+        ? 'compatible'
+        : rows.length > 0 ? 'review' : 'insufficient';
+    return {
+      id: a.id,
+      part_number: a.part_number,
+      manufacturer_name: a.manufacturer_name || '',
+      product_name: a.name || a.description || a.part_number,
+      category: a.category || '',
+      description: a.description || '',
+      image_url: a.image_url || a.image?.image_url || a.image?.url || a.primary_image_url || '',
+      status: a.status,
+      source: { url: a.source_url || '', domain: a.source_url || '' },
+      specs: specsToArray(a.specifications),
+      comparison: { state, ...counts, compared: rows.length, differences, matrix_status: matrix?.status || null, comparison_mode: matrix?.comparison_mode || 'technical_matrix' }
+    };
+  });
+
+  return {
+    base,
+    candidates_found: alternatives.length,
+    candidates_considered: alternatives.length,
+    alternatives,
+    compatibility_evaluable: true,
+    decision: {
+      state: alternatives.some((a) => a.comparison.state === 'compatible') ? 'compatible_found' : 'review_required',
+      message: ''
+    },
+    source: 'Knowledge Core / selección manual'
+  };
+}
+
 export async function compareIndustrialpedia(partId, partNumber = '', limit = 3) {
   // El comparador consume el Knowledge Core directamente. Base44 no debe ser
   // un proxy de una operación que ya está disponible en Supabase; además esto
@@ -269,23 +406,7 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     }
   }
 
-  const specsToArray = (specifications) => {
-    if (!specifications || typeof specifications !== 'object' || Array.isArray(specifications)) return [];
-    return Object.entries(specifications).map(([attribute_name, raw]) => {
-      const objectValue = raw && typeof raw === 'object' && !Array.isArray(raw);
-      const formalLabel = displayNameMap[attribute_name] || null;
-      return {
-        id: attribute_name,
-        attribute_name,
-        attribute_canonical: formalLabel || attribute_name,
-        has_formal_label: Boolean(formalLabel),
-        original_value: objectValue ? (raw.value ?? null) : raw,
-        original_unit: objectValue ? (raw.unit ?? null) : null,
-        normalized_value: objectValue ? (raw.value ?? null) : raw,
-        normalized_unit: objectValue ? (raw.unit ?? null) : null
-      };
-    }).filter((s) => s.original_value !== null && s.original_value !== undefined && s.original_value !== '');
-  };
+  const specsToArray = (specifications) => specsToArrayWithLabels(specifications, displayNameMap);
 
   const baseRaw = data.base || {};
   const base = {

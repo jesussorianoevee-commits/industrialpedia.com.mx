@@ -172,6 +172,12 @@
 .ip-thumb-frame::after { right: -1px; bottom: -1px; border-right: 1.5px solid hsl(var(--primary)); border-bottom: 1.5px solid hsl(var(--primary)); }
 .ip-card:hover .ip-thumb-frame::before, .ip-card:hover .ip-thumb-frame::after { opacity: 1; }
 
+/* Comparison dock: slides up with a slight overshoot (spring-like easing)
+   instead of a linear slide, so it reads as a physical tray snapping into
+   place rather than a generic toast. */
+@keyframes ip-dock-in { 0% { transform: translateY(100%); opacity: 0; } 60% { transform: translateY(-6px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+.ip-dock-enter { animation: ip-dock-in 0.5s cubic-bezier(.34,1.56,.64,1) both; }
+
 /* Sticky spec-label and reference columns in the desktop comparison matrix:
    context (which property, which base part) survives horizontal scroll. */
 .ip-sticky-col { position: sticky; z-index: 5; background: hsl(var(--card)); box-shadow: 1px 0 0 hsl(var(--border)); }

@@ -2,10 +2,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getPartIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
-import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2 } from 'lucide-react';
+import { ShieldCheck, AlertCircle, ArrowRight, FileText, GitCompareArrows, Loader2, Layers, Check } from 'lucide-react';
 import { compareReferenceIndustrialpedia } from '../../../base44/shared/supabaseIndustrialpediaApi.js';
 import { useLanguage, localizeProductName, localizeSpecAttribute, localizeSpecValue, localizeTechnicalTerm, localizeTechnicalText, localizedCount } from '@/lib/i18n';
 import { getDisplayPartReference } from '@/lib/partIdentity';
+import { useComparisonSelection } from '@/lib/comparisonSelection';
 
 function isUsableImageUrl(value) {
   if (!value || typeof value !== 'string') return false;
@@ -112,6 +113,7 @@ export default function ResultCard({ result, index = 0 }) {
   const [alternativesLoading, setAlternativesLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
   const { language, t } = useLanguage();
+  const { isSelected, toggle, isFull } = useComparisonSelection();
   const isVerified = imageVerified || result.discovery_state === 'verified' ||
     (['published', 'validated'].includes(result.validation_state) && Boolean(result.has_evidence));
   const inferReferenceCategory = () => {
@@ -364,6 +366,21 @@ export default function ResultCard({ result, index = 0 }) {
         ) : (
           <button type="button" onClick={() => setCompareError('Esta referencia todavía no tiene una identidad técnica suficiente para buscar alternativas.')} className="ip-button-tertiary border border-white/10 hover:bg-white/[0.05]">{t.findAlternatives}</button>
         )}
+        {result.id && (() => {
+          const selected = isSelected(result.id);
+          const disabled = !selected && isFull;
+          return (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => toggle({ id: result.id, part_number: result.part_number, manufacturer_name: result.manufacturer_name, image_url: imageSrc })}
+              title={disabled ? 'Bandeja de comparación llena (máx. 4)' : selected ? 'Quitar de la bandeja de comparación' : 'Añadir a la bandeja de comparación'}
+              className={`ip-button-tertiary ml-auto inline-flex items-center gap-1 border disabled:opacity-40 ${selected ? 'border-primary/50 bg-primary/15 text-primary' : 'border-white/10 hover:bg-white/[0.05]'}`}
+            >
+              {selected ? <><Check className="w-3 h-3" /> En comparación</> : <><Layers className="w-3 h-3" /> Añadir a comparar</>}
+            </button>
+          );
+        })()}
       </div>
 
       {imagePreviewOpen && isUsableImageUrl(imageSrc) && (
