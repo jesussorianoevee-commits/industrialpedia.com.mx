@@ -7,7 +7,6 @@ const UseCasesSection = lazy(() => import('@/components/landing/UseCasesSection'
 import ForumCard from '@/components/landing/ForumCard';
 import WorkflowSteps from '@/components/landing/WorkflowSteps';
 
-const STATS_MODULE = '../../base44/shared/supabaseIndustrialpediaApi.js';
 const STATS_LOAD_TIMEOUT_MS = 8000;
 
 function withTimeout(promise, timeoutMs) {
@@ -31,7 +30,7 @@ export default function Home() {
     try {
       // Cargamos el módulo de estadísticas después del primer render del Home.
       // Si el chunk no llega, no bloqueamos la pantalla y el intento se rehará.
-      api = await withTimeout(import(STATS_MODULE), STATS_LOAD_TIMEOUT_MS);
+      api = await withTimeout(import('../../base44/shared/supabaseIndustrialpediaApi.js'), STATS_LOAD_TIMEOUT_MS);
     } catch (error) {
       console.error('Industrialpedia home stats module load failed', error);
       return false;
@@ -61,7 +60,8 @@ export default function Home() {
     let refreshed = false;
 
     if (catalogResult.status === 'fulfilled' && catalogResult.value) {
-      const total = Number(catalogResult.value?.count);
+      const rawCount = catalogResult.value?.count;
+      const total = rawCount === null || rawCount === undefined ? NaN : Number(rawCount);
       if (Number.isFinite(total)) {
         setPartCount(total);
         setLastUpdated(new Date());
