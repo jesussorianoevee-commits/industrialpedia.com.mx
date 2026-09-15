@@ -54,6 +54,18 @@ domain, never the bare IP/port.
   numbers (XB5KSB, XB5KSG) shared the exact same stored image. Body: `{ batch_size?: number
   (max 20) }`. Needs the `mouser_search_api_key` vault secret (already present, fetched via
   `get_secret_v1`, granted to `service_role`/`industrialpedia_worker` only — not public).
+- `POST /manufacturer/smc/scan` — new (`manufacturers/smc_catalog_pipeline.ts`), not a port.
+  Lists `/opt/industrialpedia/smc-catalogs` (filled by a Windows Scheduled Task on the
+  user's machine, outside this repo, that auto-uploads new PDFs dropped into a local
+  folder), classifies any filename not already in `smc_document_ingestion_queue`:
+  `configurator` (has a "Forma de pedido" ordering page — SMC's combinatorial
+  build-your-own-part-number catalogs, e.g. ZP3C; queued for manual per-series handling,
+  column layouts differ too much between series to safely generalize), `simple_datasheet`
+  (≤6 pages, real "Modelo"+"Especificaciones" table cells confirmed via X/Y grid
+  reconstruction, not a flattened-text substring match — that produced a false positive on
+  a services brochure), or `unclassified_review` (neither signal — most of these are
+  genuinely not per-part catalogs and are expected to stay here). No body. Classification
+  only; nothing gets published from this route.
 - `POST /mouser/dispatch` — ported from `industrialpedia-mouser-enrichment-worker-v1`.
   Body: `{ batch_size?: number (max 50), publish_real?: boolean }`. Batch-claims Mouser
   candidates (`claim_deterministic_queue_row_v1`, requires `family_code` non-null) and
