@@ -1,5 +1,5 @@
 [Unit]
-Description=Run the Industrialpedia ingestion tick every 2 minutes
+Description=Run the Industrialpedia ingestion tick every 5 minutes
 
 [Timer]
 OnBootSec=1min
