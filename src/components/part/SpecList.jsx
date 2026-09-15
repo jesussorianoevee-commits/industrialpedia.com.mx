@@ -67,7 +67,7 @@ export default function SpecList({ specs, evidenceBySpec, provenanceBySpec }) {
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#8b5cf6] hover:bg-[#8b5cf6]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#8b5cf6]/60"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-semibold text-[#ea580c] hover:bg-[#ea580c]/[0.08] transition-colors focus:outline-none focus:ring-1 focus:ring-[#ea580c]/60"
             aria-expanded={expanded}
           >
             {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}

@@ -391,12 +391,32 @@ export async function compareIndustrialpedia(partId, partNumber = '', limit = 3)
     // incorrecto. En vez de mantener un segundo camino de normalización, se
     // reusa normalized_a/normalized_b de la misma matriz que ya alimenta la
     // tabla de specs visible -- una sola fuente de verdad, ya en la misma unidad.
+    // row.normalized_a/normalized_b son arrays de "niveles" (uno por rango
+    // min/max) tal como los produce compare_parts_v1, no un valor escalar --
+    // pasar el array tal cual a evaluateRule() (crossReferenceEngine.js) hacía
+    // que numeric()/valuesEqual() no reconocieran ningún valor, así que TODA
+    // regla critical/required de una familia con dimensiones (bore_diameter,
+    // outside_diameter, width, etc.) caía en not_comparable y el candidato
+    // quedaba en "Datos insuficientes" aunque la ficha técnica mostrara los
+    // mismos valores como coincidentes. Se extrae aquí el valor normalizado
+    // escalar (magnitud + unidad canónica) antes de entregarlo al motor.
+    const scalarFromLevels = (levels) => {
+      if (!Array.isArray(levels) || levels.length === 0) return null;
+      const level = levels.find((l) => l?.normalization_status === 'normalized' && l?.normalized_value !== null && l?.normalized_value !== undefined)
+        || levels.find((l) => l?.parsed_value !== null && l?.parsed_value !== undefined);
+      if (!level) return null;
+      const value = level.normalized_value ?? level.parsed_value;
+      const unit = level.normalized_unit || level.parsed_unit || '';
+      return unit ? `${value} ${unit}` : String(value);
+    };
     const normalizedSpecsA = {};
     const normalizedSpecsB = {};
     for (const row of rows) {
       if (!row.property) continue;
-      if (row.normalized_a !== null && row.normalized_a !== undefined) normalizedSpecsA[row.property] = row.normalized_a;
-      if (row.normalized_b !== null && row.normalized_b !== undefined) normalizedSpecsB[row.property] = row.normalized_b;
+      const scalarA = scalarFromLevels(row.normalized_a);
+      const scalarB = scalarFromLevels(row.normalized_b);
+      if (scalarA !== null) normalizedSpecsA[row.property] = scalarA;
+      if (scalarB !== null) normalizedSpecsB[row.property] = scalarB;
     }
     const technicalBase = {
       part_number: baseRaw.part_number,

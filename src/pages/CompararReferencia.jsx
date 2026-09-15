@@ -52,7 +52,7 @@ export default function CompararReferencia() {
 
   if (!data && !error) return <div className="min-h-screen bg-[#080d12] flex items-center justify-center text-white/45 text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" />Buscando alternativas técnicas…</div>;
 
-  if (error) return <div className="min-h-screen bg-[#080d12] text-white flex flex-col items-center justify-center gap-4 px-5"><p className="text-sm text-white/60 text-center">{error}</p><button onClick={() => navigate(-1)} className="text-[#8b5cf6] text-sm">← Volver</button></div>;
+  if (error) return <div className="min-h-screen bg-[#080d12] text-white flex flex-col items-center justify-center gap-4 px-5"><p className="text-sm text-white/60 text-center">{error}</p><button onClick={() => navigate(-1)} className="text-[#ea580c] text-sm">← Volver</button></div>;
 
   const result = data?.result || {};
   const alternatives = Array.isArray(result.alternatives) ? result.alternatives : [];
@@ -75,7 +75,7 @@ export default function CompararReferencia() {
 
       <section className="ip-card p-4 sm:p-5 mb-5">
         <div className="text-[10px] uppercase tracking-wider text-white/30">REFERENCIA</div>
-        <div className="mt-2 font-mono text-lg text-[#8b5cf6]">{reference.partNumber || 'Sin número de parte'}</div>
+        <div className="mt-2 font-mono text-lg text-[#ea580c]">{reference.partNumber || 'Sin número de parte'}</div>
         <div className="mt-1 text-sm text-white/55">{reference.manufacturer || 'Fabricante externo'} · {reference.category}</div>
         <div className="mt-4 grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(reference.specifications || {}).map(([k, v]) => <div key={k} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3"><div className="text-[10px] text-white/30">{localizeSpecAttribute(k, language)}</div><div className="mt-1 text-xs font-mono text-white/75 break-words">{specValue(v)}</div></div>)}
@@ -89,12 +89,12 @@ export default function CompararReferencia() {
           const Icon = state.icon;
           return <article key={a.id} className="ip-card p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0"><div className="font-mono text-sm text-[#8b5cf6] break-all">{a.part_number}</div><div className="mt-1 text-sm text-white/75">{a.name || 'Producto'}</div><div className="mt-1 text-[11px] text-white/35">{a.category || ''} · {a.status || 'candidate'}</div></div>
+              <div className="min-w-0"><div className="font-mono text-sm text-[#ea580c] break-all">{a.part_number}</div><div className="mt-1 text-sm text-white/75">{a.name || 'Producto'}</div><div className="mt-1 text-[11px] text-white/35">{a.category || ''} · {a.status || 'candidate'}</div></div>
               <div className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-semibold shrink-0 ${state.cls}`}><Icon className="h-3.5 w-3.5" />{state.label}</div>
             </div>
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]"><div><span className="text-white/30">Coinciden</span><div className="mt-1 font-mono text-white/75">{a.comparison?.equal_specs ?? a.comparison?.equal ?? 0}</div></div><div><span className="text-white/30">Compartidas</span><div className="mt-1 font-mono text-white/75">{a.comparison?.shared_specs ?? a.comparison?.compared ?? 0}</div></div><div><span className="text-white/30">Diferentes</span><div className="mt-1 font-mono text-amber-200">{a.comparison?.different_specs ?? a.comparison?.different ?? 0}</div></div><div><span className="text-white/30">Similitud</span><div className="mt-1 font-mono text-white/80">{a.comparison?.similarity_pct ?? '—'}%</div></div></div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">{Object.entries(a.specifications || {}).map(([k,v]) => <div key={k} className="rounded bg-white/[0.04] border border-white/10 px-2 py-1.5 text-[10px] text-white/55"><span className="text-white/30">{localizeSpecAttribute(k, language)}:</span> {specValue(v)}</div>)}</div>
-            {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#8b5cf6] hover:underline">{t.compareModelSource} →</a>}
+            {a.source_url && <a href={a.source_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[11px] text-[#ea580c] hover:underline">{t.compareModelSource} →</a>}
             {a.comparison?.state === 'strong_match' && <div className="mt-4 rounded-lg border border-amber-300/20 bg-amber-300/[0.04] px-3 py-2 text-[10px] text-amber-100/70">Coincidencia técnica fuerte, no autorización automática de sustitución. Valida requisitos críticos y documentación del fabricante antes de instalar.</div>}
           </article>;
         })}

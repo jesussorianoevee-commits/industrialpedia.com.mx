@@ -54,7 +54,7 @@ function SpecRow({ label, value, unit, page, verified, sourceUrl }) {
             href={sourceUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 mt-1 text-[10px] text-[#8b5cf6]/75 hover:text-[#8b5cf6]"
+            className="inline-flex items-center gap-1 mt-1 text-[10px] text-[#ea580c]/75 hover:text-[#ea580c]"
           >
             {t.source} <ExternalLink className="w-2.5 h-2.5" />
           </a>
@@ -99,7 +99,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
       >
         <div className="sticky top-0 z-20 flex items-center justify-between px-5 py-3 bg-[#0b1015]/95 backdrop-blur border-b border-white/10">
           <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#8b5cf6]" />
+            <FileText className="w-4 h-4 text-[#ea580c]" />
             <span className="text-sm font-semibold tracking-wide text-white">{t.viewTechnicalSheet}</span>
           </div>
           <button onClick={onClose} className="text-white/45 hover:text-white p-1.5 rounded-lg hover:bg-white/5">
@@ -109,7 +109,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-6 h-6 text-[#8b5cf6] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#ea580c] animate-spin" />
             <p className="text-xs text-white/45">{t.creatingSheet}</p>
           </div>
         ) : error ? (
@@ -136,7 +136,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  {ficha.product_identity?.manufacturer && <div className="text-[11px] text-[#8b5cf6] font-medium uppercase tracking-[0.14em] truncate">{ficha.product_identity.manufacturer}</div>}
+                  {ficha.product_identity?.manufacturer && <div className="text-[11px] text-[#ea580c] font-medium uppercase tracking-[0.14em] truncate">{ficha.product_identity.manufacturer}</div>}
                   <h1 className={`mt-1 text-base sm:text-lg font-semibold leading-snug ${ficha.product_identity?.identified === false ? 'text-white/50' : 'text-white'}`}>{displaySheetName}</h1>
                   {ficha.product_identity?.variants?.length > 1 && (
                     <div className="mt-1 text-[11px] text-amber-400/80">{ficha.product_identity.variants.length} variantes: {ficha.product_identity.variants.join(', ')}</div>
@@ -245,7 +245,7 @@ export default function FichaIndustrialpedia({ ficha, loading, error, onClose })
                   {ficha.source?.is_pdf && <div className="mt-1 text-[10px] text-[#47bcb6]/75">Datasheet PDF</div>}
                 </div>
                 {ficha.source?.url && (
-                  <a href={ficha.source.url} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1.5 text-xs text-[#8b5cf6] hover:underline">
+                  <a href={ficha.source.url} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-1.5 text-xs text-[#ea580c] hover:underline">
                     {t.viewSource} <ExternalLink className="w-3 h-3" />
                   </a>
                 )}

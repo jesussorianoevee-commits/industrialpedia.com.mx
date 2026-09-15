@@ -30,9 +30,9 @@ export default function GlobalLanguageSelector() {
         aria-label={t.language}
         aria-expanded={open}
         title={t.language}
-        className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-[#0a0e12]/95 px-3 text-xs text-white/80 shadow-xl backdrop-blur-xl transition-all hover:border-[#8b5cf6]/60 hover:bg-[#111923] hover:text-white"
+        className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-[#0a0e12]/95 px-3 text-xs text-white/80 shadow-xl backdrop-blur-xl transition-all hover:border-[#ea580c]/60 hover:bg-[#111923] hover:text-white"
       >
-        <Globe className="h-4 w-4 text-[#8b5cf6]" />
+        <Globe className="h-4 w-4 text-[#ea580c]" />
         <span className="font-semibold">{language.toUpperCase()}</span>
         <span className="text-white/30">▾</span>
       </button>
