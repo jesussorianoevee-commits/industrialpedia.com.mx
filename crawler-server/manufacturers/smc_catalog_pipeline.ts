@@ -137,12 +137,23 @@ function looksUnreadableText(text: string): boolean {
 // "Modelo"/"Especificaciones" table pair.
 const UNIT_VALUE_RE = /\b\d+([.,]\d+)?\s*(mm|cm|m|kg|g|mg|n|kn|bar|kpa|mpa|psi|v|a|w|hz|°c|%|l|ml)\b/gi;
 const PRODUCT_CODE_RE = /\b[A-Z]{2,6}[0-9][A-Z0-9-]{0,8}\b/g;
+// SMC series codes aren't always alphanumeric -- confirmed on
+// actuadores-y-Controladores.pdf ("Serie LEF", "Serie LEY/LEYG", "Serie
+// LEHF"...), pure-letter codes that PRODUCT_CODE_RE's digit requirement
+// misses entirely despite this being real product content. "Serie X"
+// itself is a reliable enough anchor precisely because it's a catalog
+// naming convention, not ordinary prose -- unlike a bare series-name
+// mention anywhere in text (that alone falsely matched a services
+// brochure earlier), requiring the literal word "Serie" immediately before
+// it keeps this narrow.
+const SERIE_LABEL_RE = /\bSerie\s+[A-Z][A-Z0-9/-]{1,8}\b/g;
 function productSignalDensity(text: string): number {
   const words = (text.match(/\S+/g) || []).length;
   if (words < 30) return 0;
   const unitHits = (text.match(UNIT_VALUE_RE) || []).length;
   const codeHits = (text.match(PRODUCT_CODE_RE) || []).length;
-  return (unitHits + codeHits) / words;
+  const serieHits = (text.match(SERIE_LABEL_RE) || []).length;
+  return (unitHits + codeHits + serieHits) / words;
 }
 
 async function classifyDocument(path: string) {
