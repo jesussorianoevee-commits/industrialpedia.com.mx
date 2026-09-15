@@ -7,7 +7,8 @@ Type=simple
 User=crawler
 WorkingDirectory=/opt/industrialpedia/crawler-server
 EnvironmentFile=/opt/industrialpedia/crawler-server/.env
-ExecStart=/root/.deno/bin/deno run --allow-net --allow-env --allow-read main.ts
+Environment=DENO_DIR=/opt/industrialpedia/.deno-cache
+ExecStart=/usr/local/bin/deno run --node-modules-dir=none --allow-net --allow-env --allow-read --allow-write=/opt/industrialpedia/.deno-cache main.ts
 Restart=on-failure
 RestartSec=5
 
