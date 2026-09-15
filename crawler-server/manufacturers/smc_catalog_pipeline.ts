@@ -175,7 +175,7 @@ async function classifyDocument(path: string) {
     totalChars += fullText.length;
     totalGarbled += garbledRatio(fullText) * fullText.length;
     allText += " " + fullText;
-    if (/Forma de pedido|C[oó]mo realizar el pedido|C[oó]digo de pedido/i.test(fullText)) hasOrderingPage = true;
+    if (/Forma de pedido|C[oó]mo realizar el pedido|C[oó]digo de pedido|Combinaciones est[aá]ndar/i.test(fullText)) hasOrderingPage = true;
     for (const band of grid(fs)) {
       const bandText = band.map((f) => f.text).join("").trim();
       if (bandText === "Modelo") { hasExactModeloCell = true; if (modeloPage < 0) modeloPage = p; }
