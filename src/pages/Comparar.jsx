@@ -313,11 +313,11 @@ export default function Comparar() {
             const evidence = evidenceSummary(c, language);
             const visualState = decisionVisualState(c);
             const visual = DECISION_VISUAL[visualState];
-            return <div key={i} className={`rounded-xl border p-4 ${meta.cls}`}>
+            return <div key={i} className={`rounded-xl border p-4 shadow-[0_1px_2px_rgba(0,0,0,.3)] hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-26px_rgba(0,0,0,.7)] transition-all duration-200 ${meta.cls}`}>
               <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider`}><span className={`h-2.5 w-2.5 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-xs font-semibold">{equal}/{compared} {t.specsShort}</span></div>
               <div className="mt-2 text-sm font-medium text-white/65">{visualState === 'compatible' ? `${equal} datos coinciden` : visualState === 'not_compatible' ? `${evidence.different.length} diferencias críticas` : `${equal} datos coinciden · ${evidence.different.length} diferentes`}</div>
               <div className="mt-3 flex items-center gap-3">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
+                <div className="ip-thumb-frame flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
                   {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
                 </div>
                 <div className="min-w-0">

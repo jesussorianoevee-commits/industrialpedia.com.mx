@@ -153,7 +153,24 @@
 .ip-nav { display: flex; align-items: center; gap: 6px; }
 .ip-nav-item { border-radius: 8px; padding: 7px 10px; color: hsl(var(--muted-foreground)); font-size: 12px; transition: background-color 160ms ease, color 160ms ease; }
 .ip-nav-item-active { background: hsl(var(--primary) / 0.10); color: hsl(var(--primary)); }
-.ip-card { border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease; }
+/* Every .ip-card gets a resting elevation plus a deeper, primary-tinted
+   elevation on hover from one shared rule, so cards across the whole app
+   (results, categories, comparator alternatives) read as physically raised,
+   inspectable panels instead of flat boxes — without each component having
+   to hand-roll its own shadow. */
+.ip-card { border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); box-shadow: 0 1px 2px rgb(0 0 0 / .3), 0 1px 1px rgb(0 0 0 / .18); transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease, box-shadow 240ms ease; }
+.ip-card:hover { box-shadow: 0 22px 46px -26px rgb(0 0 0 / .68), 0 2px 12px -3px hsl(var(--primary) / .22); }
+.theme-light .ip-card { box-shadow: 0 1px 2px rgb(15 23 42 / .06); }
+.theme-light .ip-card:hover { box-shadow: 0 18px 34px -22px rgb(15 23 42 / .16), 0 2px 10px -3px hsl(var(--primary) / .14); }
+
+/* Technical corner marks — same schematic-bracket language as the part
+   visual explorer (.ip-part-visual-corner-*), reused on card thumbnails so a
+   product image reads as "measured" rather than a plain photo. */
+.ip-thumb-frame { position: relative; }
+.ip-thumb-frame::before, .ip-thumb-frame::after { content: ''; position: absolute; width: 9px; height: 9px; opacity: .6; pointer-events: none; transition: opacity 200ms ease; }
+.ip-thumb-frame::before { left: -1px; top: -1px; border-left: 1.5px solid hsl(var(--primary)); border-top: 1.5px solid hsl(var(--primary)); }
+.ip-thumb-frame::after { right: -1px; bottom: -1px; border-right: 1.5px solid hsl(var(--primary)); border-bottom: 1.5px solid hsl(var(--primary)); }
+.ip-card:hover .ip-thumb-frame::before, .ip-card:hover .ip-thumb-frame::after { opacity: 1; }
 .ip-button-primary, .ip-button-secondary, .ip-button-tertiary { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease; }
 .ip-button-primary { min-height: 40px; border-radius: 9px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); padding: 0 16px; font-size: 12px; font-weight: 650; }
 .ip-button-primary:hover { background: hsl(var(--primary) / 0.92); }

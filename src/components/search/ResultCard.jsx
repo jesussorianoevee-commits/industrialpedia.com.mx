@@ -163,9 +163,13 @@ export default function ResultCard({ result, index = 0 }) {
         : { label: stateLabel, cls: 'text-white/50 bg-white/10' };
   return (
     <div
-      className="ip-card ip-stagger-in p-4 sm:p-5 shadow-[0_16px_38px_-30px_rgba(0,0,0,.9)] hover:border-[#ea580c]/35 hover:bg-[#181d24] hover:-translate-y-0.5 transition-all"
+      className="ip-card ip-stagger-in relative overflow-hidden p-4 sm:p-5 hover:border-[#ea580c]/35 hover:bg-[#181d24] hover:-translate-y-0.5 transition-all"
       style={{ '--ip-delay': Math.min(index, 10) * 40 }}
     >
+      <span
+        aria-hidden="true"
+        className={`absolute inset-y-0 left-0 w-[3px] ${isVerified ? 'bg-[#47bcb6]' : result.discovery_state === 'discovered' || result.discovery_state === 'pending_verification' ? 'bg-[#e68a00]' : 'bg-border'}`}
+      />
       <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-white/[0.06]">
         <div className="min-w-0">
           <div className={`text-sm font-semibold leading-snug line-clamp-2 ${displayProductName ? 'text-white' : 'text-white/50'}`}>
@@ -182,18 +186,18 @@ export default function ResultCard({ result, index = 0 }) {
       </div>
 
       <div className="mb-3 flex gap-3">
-        <div className="w-[72px] h-[72px] sm:w-20 sm:h-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden shadow-inner">
+        <div className="ip-thumb-frame w-[72px] h-[72px] sm:w-20 sm:h-20 shrink-0 rounded-2xl border border-white/10 bg-[#0f1318] flex items-center justify-center overflow-hidden shadow-inner">
           {isUsableImageUrl(imageSrc) ? (
             <button
               type="button"
               onClick={() => setImagePreviewOpen(true)}
-              className="w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#ea580c] rounded-2xl"
+              className="group w-full h-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#ea580c] rounded-2xl"
               aria-label={`Ampliar imagen de ${result.part_number || 'la pieza'}`}
             >
               <img
                 src={imageSrc}
                 alt={result.part_number || ''}
-                className="w-full h-full object-contain p-1.5"
+                className="w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-110"
                 loading="lazy"
                 referrerPolicy="no-referrer"
                 onError={() => {
