@@ -98,11 +98,30 @@ const COMMON_WORDS = new Set([
   "un", "una", "por", "su", "se", "es", "no", "más", "como", "o", "del",
   "al", "the", "and", "for", "with", "of", "is", "are", "to", "in", "on",
 ]);
-function isReadableText(text: string): boolean {
-  const tokens = text.toLowerCase().match(/[a-záéíóúñ]{1,12}/g) || [];
-  if (tokens.length < 20) return true; // too little text to judge either way -- don't false-flag short pages
+// Whole-document check, not per-page: a scrambled glyph map found in
+// practice (IBV-A-MX.pdf, JSB-A-MX.pdf) mangles letters into *symbol*
+// codepoints, not just other letters -- so a naive "need >=N letter tokens
+// before judging" gate silently skips exactly the pages most corrupted
+// (they produce almost no a-z runs at all, not "too few to be sure", but
+// zero because there's nothing left that reads as a letter). Judging the
+// full extracted text at once, and treating a low letter-token share of
+// total characters as corruption evidence in its own right (not just a low
+// common-word ratio among whatever few tokens exist), catches both.
+function readabilitySignals(text: string) {
+  const totalChars = text.length;
+  const tokens = text.toLowerCase().match(/[a-záéíóúñ]{2,12}/g) || [];
+  const letterCharCoverage = tokens.reduce((sum, t) => sum + t.length, 0);
+  const letterDensity = totalChars > 0 ? letterCharCoverage / totalChars : 1;
   const commonHits = tokens.filter((t) => COMMON_WORDS.has(t)).length;
-  return commonHits / tokens.length >= 0.03; // real prose easily clears this; scrambled text lands near 0
+  const commonRatio = tokens.length > 0 ? commonHits / tokens.length : 1;
+  return { totalChars, tokenCount: tokens.length, letterDensity, commonRatio };
+}
+function looksUnreadableText(text: string): boolean {
+  const { totalChars, tokenCount, letterDensity, commonRatio } = readabilitySignals(text);
+  if (totalChars < 300) return false; // not enough text to judge either way
+  if (letterDensity < 0.35) return true; // real prose/labels run well above this even with lots of numbers/units
+  if (tokenCount >= 30 && commonRatio < 0.02) return true; // letters present but scrambled word-for-word
+  return false;
 }
 
 // Weaker, precision-traded-for-recall signal for "this is probably a real
@@ -138,8 +157,6 @@ async function classifyDocument(path: string) {
   let totalChars = 0;
   let totalGarbled = 0;
   let allText = "";
-  let readablePages = 0;
-  let judgedPages = 0;
 
   for (let p = 1; p <= capPages; p++) {
     const fs = await fragsForPage(doc, p);
@@ -147,8 +164,6 @@ async function classifyDocument(path: string) {
     totalChars += fullText.length;
     totalGarbled += garbledRatio(fullText) * fullText.length;
     allText += " " + fullText;
-    const tokenCount = (fullText.match(/[a-záéíóúñ]{1,12}/gi) || []).length;
-    if (tokenCount >= 20) { judgedPages++; if (isReadableText(fullText)) readablePages++; }
     if (/Forma de pedido|C[oó]mo realizar el pedido|C[oó]digo de pedido/i.test(fullText)) hasOrderingPage = true;
     for (const band of grid(fs)) {
       const bandText = band.map((f) => f.text).join("").trim();
@@ -158,10 +173,7 @@ async function classifyDocument(path: string) {
   }
 
   const ratio = totalChars > 0 ? totalGarbled / totalChars : 0;
-  // Require a majority of judged pages to look unreadable before flagging --
-  // a single dense diagram/legend page can legitimately score low without
-  // the whole document being corrupted.
-  const looksUnreadable = judgedPages > 0 && (readablePages / judgedPages) < 0.5;
+  const looksUnreadable = looksUnreadableText(allText);
   const density = productSignalDensity(allText);
 
   let classification: string;
