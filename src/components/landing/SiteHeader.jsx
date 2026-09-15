@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Moon, Sun, Globe } from 'lucide-react';
+import { Moon, Sun, Globe, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/lib/i18n';
 
 export default function SiteHeader() {
   const [light, setLight] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { language, setLanguage, languages, t } = useLanguage();
 
   useEffect(() => {
@@ -40,6 +41,15 @@ export default function SiteHeader() {
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
+            type="button"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={mobileMenuOpen}
+            className="ip-mobile-menu-btn ip-button-tertiary items-center justify-center h-9 w-9 border border-white/10 bg-white/[0.03]"
+          >
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+          <button
             onClick={toggleTheme}
             aria-label={light ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
             title={light ? 'Modo claro activo · Cambiar a oscuro' : 'Modo oscuro activo · Cambiar a claro'}
@@ -61,6 +71,14 @@ export default function SiteHeader() {
           <Link to="/login" className="ip-button-secondary hidden xs:inline-flex sm:inline-flex px-3.5">{t.login}</Link>
         </div>
       </div>
+      {mobileMenuOpen && (
+        <nav className="absolute left-0 right-0 top-full flex flex-col gap-1 border-t border-white/10 bg-[hsl(var(--background))] p-3 shadow-xl md:hidden" aria-label="Navegación móvil">
+          <Link to="/buscar" onClick={() => setMobileMenuOpen(false)} className="ip-nav-item !block px-3 py-2.5 text-sm">{t.search}</Link>
+          <Link to="/comparar-referencia" onClick={() => setMobileMenuOpen(false)} className="ip-nav-item !block px-3 py-2.5 text-sm">{t.compare}</Link>
+          <Link to="/decidir" onClick={() => setMobileMenuOpen(false)} className="ip-nav-item !block px-3 py-2.5 text-sm">{t.decide}</Link>
+          <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="ip-nav-item !block px-3 py-2.5 text-sm xs:hidden">{t.login}</Link>
+        </nav>
+      )}
     </header>
   );
 }

@@ -7,6 +7,8 @@ import { useLanguage, localizeSpecAttributeStrict } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { normalizeImageUrl, resolveProductImage, clearProductImageCache } from '@/lib/productImage';
+import CompatibilityScore from '@/components/comparison/CompatibilityScore';
+import EvidenceBadge from '@/components/comparison/EvidenceBadge';
 
 const STATE = {
   compatible: { label: 'COMPATIBLE', short: 'Compatible', cls: 'border-[#16c79a]/60 bg-[#16c79a]/[0.08] ip-compare-match', icon: ShieldCheck },
@@ -222,7 +224,14 @@ export default function Comparar() {
       <IndustrialpediaLoader fullScreen label={language === 'es' ? 'Analizando especificaciones técnicas' : 'Analyzing technical specifications'} />
     </div>
   );
-  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={returnToFicha} className="ip-compare-accent">← Volver a ficha</button></div>;
+  if (error) return (
+    <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 px-4 text-center">
+      <p className="text-sm font-semibold text-white/85">No pudimos completar la comparación</p>
+      <p className="max-w-sm text-xs text-white/45">No encontramos información suficiente para comparar esta pieza en este momento. Puedes volver a la ficha e intentarlo de nuevo.</p>
+      <button type="button" onClick={returnToFicha} className="ip-button-secondary mt-1">← Volver a ficha</button>
+      <details className="mt-2 max-w-sm text-left"><summary className="cursor-pointer text-[10px] text-white/25">Detalle técnico</summary><p className="mt-1 text-[10px] text-white/30 break-words">{error}</p></details>
+    </div>
+  );
 
   const base = data.base;
   const alternatives = data.alternatives || [];
@@ -320,13 +329,12 @@ export default function Comparar() {
             <div className="hidden items-center justify-center lg:flex text-lg font-bold ip-signal-flow">→</div>
             <div className="grid min-w-0 flex-[2] gap-3 md:grid-cols-2 2xl:grid-cols-3">
               {alternatives.map((c, i) => {
-            const meta = statusMeta(c, t); const equal = c.comparison?.equal || 0; const compared = c.comparison?.compared || 0;
-            const evidence = evidenceSummary(c, language);
-            const visualState = decisionVisualState(c);
-            const visual = DECISION_VISUAL[visualState];
+            const meta = statusMeta(c, t);
             return <div key={i} className={`rounded-xl border p-4 shadow-[0_1px_2px_rgba(0,0,0,.3)] hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-26px_rgba(0,0,0,.7)] transition-all duration-200 ${meta.cls}`}>
-              <div className="flex items-center justify-between gap-2"><span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider`}><span className={`h-2.5 w-2.5 rounded-full ${visual.dot}`} />{visual.label}</span><span className="font-mono text-xs font-semibold">{equal}/{compared} {t.specsShort}</span></div>
-              <div className="mt-2 text-sm font-medium text-white/65">{visualState === 'compatible' ? `${equal} datos coinciden` : visualState === 'not_compatible' ? `${evidence.different.length} diferencias críticas` : `${equal} datos coinciden · ${evidence.different.length} diferentes`}</div>
+              {/* Design brief #3 -- the "5 second" answer: a score ring + state
+                  badge the user reads before touching the detailed matrix below. */}
+              <CompatibilityScore component={c} language={language} size="sm" />
+              <EvidenceBadge evidence={c.evidence} language={language} className="mt-2" />
               <div className="mt-3 flex items-center gap-3">
                 <div className="ip-thumb-frame flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/[0.08] bg-white">
                   {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[9px] text-black/35">{t.noImage}</span>}
@@ -413,9 +421,7 @@ export default function Comparar() {
                     <div className="mt-1 font-mono text-sm font-semibold ip-compare-accent break-all">{c.part_number}</div>
                     <div className="mt-0.5 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div>
                   </div>
-                  <div className={`shrink-0 rounded-md border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${statusMeta(c, t).cls}`}>
-                    {statusMeta(c, t).label}
-                  </div>
+                  <CompatibilityScore component={c} language={language} size="sm" />
                 </div>
                 <div className="px-3 py-2 text-[9px] text-white/30 border-b border-white/[0.06]">
                   <span className="text-white/50">Comparativa:</span> {c.part_number} · <span className="text-white/50">Original:</span> {base.part_number}
@@ -469,7 +475,9 @@ export default function Comparar() {
               {cols.map((c, i) => {
                 const isBaseColumn = c.id === base.id;
                 return <div key={i} className={`border-l p-4 ${isBaseColumn ? 'ip-sticky-col border-white/[0.08]' : 'border-white/[0.08]'}`} style={isBaseColumn ? { left: 170 } : undefined}>
-                {isBaseColumn && <div className="mb-2 inline-flex items-center gap-1 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3 w-3" /> {t.baseComponent}</div>}
+                {isBaseColumn
+                  ? <div className="mb-2 inline-flex items-center gap-1 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3 w-3" /> {t.baseComponent}</div>
+                  : <div className="mb-2"><CompatibilityScore component={c} language={language} size="sm" /></div>}
                 <div className="flex items-start gap-3">
                   <div className="ip-thumb-frame flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
                     {imageFor(c) ? <img src={imageFor(c)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" onError={() => recoverImage(c)} /> : <span className="text-[8px] text-black/35">{t.noImage}</span>}

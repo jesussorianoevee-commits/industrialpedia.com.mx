@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme';
 import IndustrialpediaLoader from '@/components/ui/IndustrialpediaLoader';
 import { normalizeImageUrl } from '@/lib/productImage';
 import { useComparisonSelection } from '@/lib/comparisonSelection';
+import CompatibilityScore from '@/components/comparison/CompatibilityScore';
 
 // Mismas funciones puras de lectura de specs que Comparar.jsx -- comparten
 // forma de datos (misma respuesta de compare_parts_batch_public_v1) pero
@@ -81,7 +82,14 @@ export default function CompararSeleccion() {
     </div>
   );
 
-  if (error) return <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 text-white/50 text-sm"><p>{error}</p><button type="button" onClick={goBack} className="ip-compare-accent">← Volver</button></div>;
+  if (error) return (
+    <div className="min-h-screen bg-[#080d12] flex flex-col items-center justify-center gap-3 px-4 text-center">
+      <p className="text-sm font-semibold text-white/85">No pudimos completar la comparación</p>
+      <p className="max-w-sm text-xs text-white/45">No encontramos información suficiente para comparar estas piezas en este momento.</p>
+      <button type="button" onClick={goBack} className="ip-button-secondary mt-1">← Volver</button>
+      <details className="mt-2 max-w-sm text-left"><summary className="cursor-pointer text-[10px] text-white/25">Detalle técnico</summary><p className="mt-1 text-[10px] text-white/30 break-words">{error}</p></details>
+    </div>
+  );
 
   const base = data.base;
   const alternatives = data.alternatives || [];
@@ -143,6 +151,7 @@ export default function CompararSeleccion() {
             <section key={c.id || ci} className="ip-card overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] p-3">
                 <div className="min-w-0"><div className="mt-1 font-mono text-sm font-semibold ip-compare-accent break-all">{c.part_number}</div><div className="mt-0.5 text-[10px] text-white/40">{c.manufacturer_name || t.manufacturerNotIndicated}</div></div>
+                <CompatibilityScore component={c} language={language} size="sm" />
               </div>
               <div className="divide-y divide-white/[0.06]">
                 {visible.map(({ s, originalValue, candidateValue, state }, j) => {
@@ -186,7 +195,9 @@ export default function CompararSeleccion() {
             {cols.map((c, i) => {
               const isBaseColumn = c.id === base.id;
               return <div key={i} className={`border-l p-4 ${isBaseColumn ? 'ip-sticky-col border-white/[0.08]' : 'border-white/[0.08]'}`} style={isBaseColumn ? { left: 170 } : undefined}>
-                {isBaseColumn && <div className="mb-2 inline-flex items-center gap-1 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3 w-3" /> Referencia</div>}
+                {isBaseColumn
+                  ? <div className="mb-2 inline-flex items-center gap-1 rounded-md border border-[#16c79a]/35 bg-[#16c79a]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ip-compare-match"><CheckCircle2 className="h-3 w-3" /> Referencia</div>
+                  : <div className="mb-2"><CompatibilityScore component={c} language={language} size="sm" /></div>}
                 <div className="flex items-start gap-3">
                   <div className="ip-thumb-frame flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
                     {normalizeImageUrl(c.image_url) ? <img src={normalizeImageUrl(c.image_url)} alt={c.part_number || ''} className="h-full w-full object-contain p-1" referrerPolicy="no-referrer" /> : <span className="text-[8px] text-black/35">Sin imagen</span>}
