@@ -89,10 +89,10 @@ export async function runBearingImageBackfill(sb: SupabaseClient) {
     if (!terminal && (Number(attempts) || 0) + 1 >= 3) terminal = true;
 
     const { error: re } = await sb.rpc("record_bearing_image_backfill_outcome_v1", { p_part_id: p.id, p_status: status, p_terminal: terminal });
-    if (re) return { error: "record_error", detail: re.message, status, detail };
+    if (re) return { error: "record_error", status, detail };
 
     const { data: autoStop, error: stopErr } = await sb.rpc("stop_bearing_image_backfill_if_complete_v3");
-    if (stopErr) return { error: "auto_stop_error", detail: stopErr.message, status, detail };
+    if (stopErr) return { error: "auto_stop_error", status, detail };
 
     return { status, detail, terminal, auto_stop: autoStop === true, duration_ms: Date.now() - start };
   } finally {
