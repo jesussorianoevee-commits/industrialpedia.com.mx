@@ -12,6 +12,7 @@ import { runCrawlerDiscover } from "./discovery/crawler_discover.ts";
 import { runBearingImageBackfill } from "./images/bearing_image_backfill.ts";
 import { runMouserDispatch } from "./manufacturers/mouser_dispatch.ts";
 import { runFestoCatalogExpander } from "./manufacturers/festo_catalog_expander.ts";
+import { runFestoIdentityBatch } from "./manufacturers/festo_identity_resolver.ts";
 
 const PORT = Number(Deno.env.get("PORT") || 8787);
 const SHARED_TOKEN = Deno.env.get("CRAWLER_SHARED_TOKEN") || "";
@@ -95,6 +96,12 @@ Deno.serve({ port: PORT }, async (req) => {
     if (url.pathname === "/manufacturer/festo/expand" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       const out = await runFestoCatalogExpander(sb, body.pdf_url);
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/manufacturer/festo/batch" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runFestoIdentityBatch(sb, Number(body.batch_size) || 5, body.publish_real === true);
       return Response.json(out, { headers: H });
     }
 

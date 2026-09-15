@@ -12,8 +12,8 @@ import { getDocumentProxy } from "npm:unpdf";
 const VERSION = "festo-catalog-expander-v14-vps-port";
 const clean = (x: unknown) => String(x ?? "").replace(/\s+/g, " ").trim();
 const norm = (x: unknown) => clean(x).toUpperCase().replace(/[\s._/]+/g, "");
-const PREFIXES = ["ADN", "ADVC", "ADVUL", "DSNU", "DSBC", "DNC", "DSBF", "DSBG", "DGST", "DGSL", "DSNA", "DSNB", "DGC", "DGS", "DN", "ESNU", "DFSP", "DRVS", "DSW"];
-const familyFor = (t: string) => /^(DGST|DGSL)/i.test(t) ? "pneumatic_mini_slide" : "pneumatic_cylinder";
+export const PREFIXES = ["ADN", "ADVC", "ADVUL", "DSNU", "DSBC", "DNC", "DSBF", "DSBG", "DGST", "DGSL", "DSNA", "DSNB", "DGC", "DGS", "DN", "ESNU", "DFSP", "DRVS", "DSW"];
+export const familyFor = (t: string) => /^(DGST|DGSL)/i.test(t) ? "pneumatic_mini_slide" : "pneumatic_cylinder";
 const prefixFromFile = (u: string): string | null => {
   try { const f = new URL(u).pathname.split("/").pop() || ""; const n = f.toUpperCase(); return PREFIXES.find((p) => n.startsWith(p)) || null; } catch { return null; }
 };
