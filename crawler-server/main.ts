@@ -96,7 +96,8 @@ Deno.serve({ port: PORT }, async (req) => {
     }
 
     if (url.pathname === "/manufacturer/smc/scan" && req.method === "POST") {
-      const out = await scanAndClassifySmcCatalogs(sb);
+      const body = await req.json().catch(() => ({}));
+      const out = await scanAndClassifySmcCatalogs(sb, Array.isArray(body.reclassify_statuses) ? body.reclassify_statuses : undefined);
       return Response.json(out, { headers: H });
     }
 
