@@ -20,6 +20,12 @@ const DELAY_BETWEEN_CALLS_MS = 350; // stay well under Mouser's per-second rate 
 const norm = (v: unknown) => String(v ?? "").toUpperCase().replace(/[\s._/-]+/g, "");
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Reasons the API call itself was inconclusive (quota, network, malformed
+// response) -- NOT evidence the stored image is wrong. Kept separate from
+// reasons that ARE a real negative signal (part_not_found_in_mouser_today,
+// ambiguous_match, image_mismatch) so the caller never rejects on these.
+const INCONCLUSIVE_REASONS = new Set(["quota_exceeded", "mouser_api_error", "timeout", "fetch_error", "non_json_response"]);
+
 async function mouserExactLookup(apiKey: string, partNumber: string): Promise<{ ok: true; imagePath: string } | { ok: false; reason: string }> {
   let response: Response;
   try {
@@ -35,7 +41,14 @@ async function mouserExactLookup(apiKey: string, partNumber: string): Promise<{ 
   const text = await response.text();
   let json: any;
   try { json = JSON.parse(text); } catch { return { ok: false, reason: "non_json_response" }; }
-  if (!response.ok || (json?.Errors || []).length) return { ok: false, reason: "mouser_api_error" };
+  const errors = json?.Errors || [];
+  // Daily/rate quota exhaustion is an infrastructure state, not a verdict on
+  // this image -- real incident 2026-09-15: the cron's call volume exceeded
+  // Mouser's daily cap ("Maximum calls per day exceeded"), and every
+  // subsequent call that day got misclassified as a real rejection,
+  // incorrectly rejecting ~238 previously-valid candidate images.
+  if (errors.some((e: any) => e?.Code === "TooManyRequests")) return { ok: false, reason: "quota_exceeded" };
+  if (!response.ok || errors.length) return { ok: false, reason: "mouser_api_error" };
   const parts = Array.isArray(json?.SearchResults?.Parts) ? json.SearchResults.Parts : [];
   const exact = parts.filter((p: any) => norm(p?.ManufacturerPartNumber) === norm(partNumber));
   if (exact.length === 0) return { ok: false, reason: "part_not_found_in_mouser_today" };
@@ -69,6 +82,15 @@ export async function runMouserImageVerification(sb: SupabaseClient, batchSizeRa
 
     const lookup = await mouserExactLookup(apiKey, partNumber);
     if (!lookup.ok) {
+      if (INCONCLUSIVE_REASONS.has(lookup.reason)) {
+        // Leave verification_status untouched -- an unreachable/erroring API
+        // is not evidence the image is wrong, and this row stays 'candidate'
+        // so a later run retries it once the API is available again.
+        results.push({ id: row.id, part_number: partNumber, outcome: "inconclusive", reason: lookup.reason });
+        if (lookup.reason === "quota_exceeded") break; // every remaining call this run would fail identically
+        await sleep(DELAY_BETWEEN_CALLS_MS);
+        continue;
+      }
       await sb.from("part_images").update({
         verification_status: "rejected",
         provenance_note: `Mouser API re-verification failed: ${lookup.reason}. Original candidate image could not be independently confirmed.`,
@@ -105,6 +127,7 @@ export async function runMouserImageVerification(sb: SupabaseClient, batchSizeRa
     verified: results.filter((r) => r.outcome === "verified").length,
     rejected: results.filter((r) => r.outcome === "rejected").length,
     skipped: results.filter((r) => r.outcome === "skipped").length,
+    inconclusive: results.filter((r) => r.outcome === "inconclusive").length,
     results,
   };
 }
