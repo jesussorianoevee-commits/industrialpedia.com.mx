@@ -12,6 +12,7 @@ import { runCrawlerDiscover } from "./discovery/crawler_discover.ts";
 import { runBearingImageBackfill } from "./images/bearing_image_backfill.ts";
 import { runMouserImageVerification } from "./images/mouser_image_verifier.ts";
 import { scanAndClassifySmcCatalogs, extractSimpleDatasheetStructure } from "./manufacturers/smc_catalog_pipeline.ts";
+import { runSmcAutoPublish } from "./manufacturers/smc_auto_publish.ts";
 import { runMouserDispatch } from "./manufacturers/mouser_dispatch.ts";
 import { runFestoCatalogExpander } from "./manufacturers/festo_catalog_expander.ts";
 import { runFestoIdentityBatch } from "./manufacturers/festo_identity_resolver.ts";
@@ -109,6 +110,12 @@ Deno.serve({ port: PORT }, async (req) => {
       if (body.save_to_queue === true) {
         await sb.from("smc_document_ingestion_queue").update({ extraction_result: out, updated_at: new Date().toISOString() }).eq("filename", filename);
       }
+      return Response.json(out, { headers: H });
+    }
+
+    if (url.pathname === "/manufacturer/smc/auto-publish" && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      const out = await runSmcAutoPublish(sb, body.batch_size, body.publish_real === true);
       return Response.json(out, { headers: H });
     }
 
