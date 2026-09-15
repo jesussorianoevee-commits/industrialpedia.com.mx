@@ -39,6 +39,21 @@ domain, never the bare IP/port.
   today only Festo uses it, but it's source-agnostic.
 - `POST /images/bearing-backfill` — ported from `industrialpedia-bearing-image-backfill-v6`.
   No body. Finds and verifies one official product-page image per bearing part per call.
+- `POST /images/mouser-verify` — new (`images/mouser_image_verifier.ts`), not a port. Re-
+  verifies `part_images` rows with `source_provider='mouser_search_api_v1'` stuck at
+  `verification_status='candidate'` (1,230 of them, from a since-dormant worker; the
+  dedicated Supabase verifier cron — `industrialpedia-part-image-verifier-v1` — is disabled
+  and only checks URL reachability, never product match, and explicitly excludes this
+  source anyway). Mouser's product pages are a client-rendered SPA (confirmed live: a plain
+  fetch returns a ~14KB app shell with neither the part number nor the image filename in
+  it), so the HTML-text-matching approach used for Siemens/Festo/SMC doesn't apply here.
+  Instead re-queries Mouser's own Search API v2 (`search/partnumber`, exact match — the
+  same source the image was originally sourced from) and compares today's `ImagePath`
+  against what's stored: match → `verified`, anything else (mismatch, part gone, ambiguous,
+  API error) → `rejected`. Found and fixed a real case this way: two distinct Schneider part
+  numbers (XB5KSB, XB5KSG) shared the exact same stored image. Body: `{ batch_size?: number
+  (max 20) }`. Needs the `mouser_search_api_key` vault secret (already present, fetched via
+  `get_secret_v1`, granted to `service_role`/`industrialpedia_worker` only — not public).
 - `POST /mouser/dispatch` — ported from `industrialpedia-mouser-enrichment-worker-v1`.
   Body: `{ batch_size?: number (max 50), publish_real?: boolean }`. Batch-claims Mouser
   candidates (`claim_deterministic_queue_row_v1`, requires `family_code` non-null) and
